@@ -9,6 +9,7 @@ import {
   getAllExpenses,
   addExpense as addExpenseDB,
   deleteExpense as deleteExpenseDB,
+  updateExpense as updateExpenseDB,
   getExpensesByCategory,
   getTotalExpenses,
   type Expense,
@@ -23,6 +24,7 @@ interface UseExpensesReturn {
   isLoading: boolean;
   addExpense: (input: Omit<ExpenseInput, 'season_code'>) => Promise<void>;
   deleteExpense: (id: number) => Promise<void>;
+  updateExpense: (id: number, input: Omit<ExpenseInput, 'season_code'>) => Promise<void>;
   refreshExpenses: () => Promise<void>;
 }
 
@@ -81,6 +83,19 @@ export function useExpenses(): UseExpensesReturn {
     [db, refreshExpenses]
   );
 
+  const updateExpense = useCallback(
+    async (id: number, input: Omit<ExpenseInput, 'season_code'>) => {
+      try {
+        await updateExpenseDB(db, id, input);
+        await refreshExpenses();
+      } catch (error) {
+        console.error('Error updating expense:', error);
+        throw error;
+      }
+    },
+    [db, refreshExpenses]
+  );
+
   return {
     expenses,
     categoryTotals,
@@ -88,6 +103,7 @@ export function useExpenses(): UseExpensesReturn {
     isLoading,
     addExpense,
     deleteExpense,
+    updateExpense,
     refreshExpenses,
   };
 }

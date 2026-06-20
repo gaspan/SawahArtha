@@ -11,6 +11,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { useIncome } from '../../src/hooks/useIncome';
@@ -32,6 +33,7 @@ export default function IncomeScreen() {
     updatePrice,
     deleteIncome,
     refreshIncome,
+    isLoading,
   } = useIncome();
 
   useFocusEffect(
@@ -64,18 +66,7 @@ export default function IncomeScreen() {
   };
 
   const handleDelete = (id: number) => {
-    Alert.alert(
-      'Hapus Data Panen',
-      'Apakah Anda yakin ingin menghapus data panen ini?',
-      [
-        { text: 'Batal', style: 'cancel' },
-        {
-          text: 'Hapus',
-          style: 'destructive',
-          onPress: () => deleteIncome(id),
-        },
-      ]
-    );
+    deleteIncome(id);
   };
 
   return (
@@ -115,11 +106,18 @@ export default function IncomeScreen() {
           <Text style={styles.sectionTitle}>
             Riwayat Panen ({incomeRecords.length})
           </Text>
-          <IncomeList
-            records={incomeRecords}
-            onUpdatePrice={handleUpdatePrice}
-            onDelete={handleDelete}
-          />
+          {isLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={COLORS.primary} />
+              <Text style={styles.loadingText}>Memuat riwayat...</Text>
+            </View>
+          ) : (
+            <IncomeList
+              records={incomeRecords}
+              onUpdatePrice={handleUpdatePrice}
+              onDelete={handleDelete}
+            />
+          )}
         </View>
 
         <View style={{ height: SPACING.xl }} />
@@ -193,5 +191,16 @@ const styles = StyleSheet.create({
     fontWeight: FONT_WEIGHT.bold,
     color: COLORS.text,
     marginBottom: SPACING.md,
+  },
+  loadingContainer: {
+    paddingVertical: SPACING.xl,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.sm,
+  },
+  loadingText: {
+    fontSize: FONT_SIZE.sm,
+    color: COLORS.textSecondary,
+    fontWeight: FONT_WEIGHT.medium,
   },
 });

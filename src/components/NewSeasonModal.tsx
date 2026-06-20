@@ -31,28 +31,35 @@ import {
 interface Props {
   visible: boolean;
   onClose: () => void;
-  onSave: (seasonCode: string) => void;
+  onSave: (seasonCode: string, landSizeM2: number) => void;
 }
 
 const NewSeasonModal: React.FC<Props> = ({ visible, onClose, onSave }) => {
   const [seasonCode, setSeasonCode] = useState('');
+  const [landSize, setLandSize] = useState('');
 
-  // Reset input when modal opens/closes
+  // Reset inputs when modal opens/closes
   useEffect(() => {
     if (!visible) {
       setSeasonCode('');
+      setLandSize('');
     }
   }, [visible]);
 
   const handleSave = () => {
-    const trimmed = seasonCode.trim();
-    if (trimmed.length > 0) {
-      onSave(trimmed);
+    const trimmedCode = seasonCode.trim();
+    const parsedSize = parseFloat(landSize);
+    if (trimmedCode.length > 0 && !isNaN(parsedSize) && parsedSize > 0) {
+      onSave(trimmedCode, parsedSize);
       setSeasonCode('');
+      setLandSize('');
     }
   };
 
-  const isSaveDisabled = seasonCode.trim().length === 0;
+  const isSaveDisabled =
+    seasonCode.trim().length === 0 ||
+    isNaN(parseFloat(landSize)) ||
+    parseFloat(landSize) <= 0;
 
   return (
     <Modal
@@ -82,10 +89,11 @@ const NewSeasonModal: React.FC<Props> = ({ visible, onClose, onSave }) => {
 
           {/* Title & Subtitle */}
           <Text style={styles.title}>Mulai Musim Tanam Baru</Text>
-          <Text style={styles.subtitle}>Masukkan kode musim baru</Text>
+          <Text style={styles.subtitle}>Masukkan rincian musim baru</Text>
 
-          {/* TextInput */}
+          {/* TextInput Kode Musim */}
           <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Kode Musim Tanam</Text>
             <TextInput
               style={styles.input}
               value={seasonCode}
@@ -95,6 +103,21 @@ const NewSeasonModal: React.FC<Props> = ({ visible, onClose, onSave }) => {
               autoCapitalize="characters"
               autoCorrect={false}
               maxLength={20}
+              returnKeyType="next"
+            />
+          </View>
+
+          {/* TextInput Luas Lahan */}
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Luas Lahan (m²)</Text>
+            <TextInput
+              style={styles.input}
+              value={landSize}
+              onChangeText={(text) => setLandSize(text.replace(/[^0-9.]/g, ''))}
+              placeholder="e.g., 1400"
+              placeholderTextColor={COLORS.textLight}
+              keyboardType="decimal-pad"
+              maxLength={10}
               returnKeyType="done"
               onSubmitEditing={handleSave}
             />
@@ -102,7 +125,7 @@ const NewSeasonModal: React.FC<Props> = ({ visible, onClose, onSave }) => {
 
           {/* Helper Text */}
           <Text style={styles.helperText}>
-            Contoh format: MT-2026-2 (Musim Tanam ke-2 tahun 2026)
+            Luas lahan digunakan untuk menghitung produktivitas pertanian Anda.
           </Text>
 
           {/* Action Buttons */}
@@ -150,7 +173,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   backdrop: {
-    ...StyleSheet.absoluteFillObject,
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
   },
   card: {
     width: '85%',
@@ -190,6 +217,14 @@ const styles = StyleSheet.create({
   inputContainer: {
     width: '100%',
     marginBottom: SPACING.sm,
+  },
+  inputLabel: {
+    fontSize: FONT_SIZE.xs,
+    fontWeight: FONT_WEIGHT.semibold,
+    color: COLORS.textSecondary,
+    marginBottom: 6,
+    alignSelf: 'flex-start',
+    paddingLeft: 4,
   },
   input: {
     width: '100%',

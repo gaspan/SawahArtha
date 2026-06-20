@@ -62,6 +62,23 @@ export async function deleteExpense(
   await db.runAsync('DELETE FROM expenses WHERE id = ?', [id]);
 }
 
+export async function updateExpense(
+  db: SQLiteDatabase,
+  id: number,
+  expense: Omit<ExpenseInput, 'season_code'>
+): Promise<void> {
+  await db.runAsync(
+    'UPDATE expenses SET title = ?, description = ?, amount = ?, category = ? WHERE id = ?',
+    [
+      expense.title,
+      expense.description || '',
+      expense.amount,
+      expense.category,
+      id,
+    ]
+  );
+}
+
 export async function getExpensesByCategory(
   db: SQLiteDatabase,
   seasonCode: string

@@ -2,7 +2,6 @@ import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
-  FlatList,
   TouchableOpacity,
   TextInput,
   StyleSheet,
@@ -237,19 +236,19 @@ export default function IncomeList({ records, onUpdatePrice, onDelete }: Props) 
     </View>
   );
 
+  if (records.length === 0) {
+    return renderEmpty();
+  }
+
   return (
-    <FlatList
-      data={records}
-      keyExtractor={(item) => item.id.toString()}
-      renderItem={renderItem}
-      ListEmptyComponent={renderEmpty}
-      contentContainerStyle={[
-        styles.listContent,
-        records.length === 0 && styles.listContentEmpty,
-      ]}
-      showsVerticalScrollIndicator={false}
-      ItemSeparatorComponent={() => <View style={styles.separator} />}
-    />
+    <View style={styles.listContent}>
+      {records.map((item, index) => (
+        <React.Fragment key={item.id.toString()}>
+          {index > 0 && <View style={styles.separator} />}
+          {renderItem({ item })}
+        </React.Fragment>
+      ))}
+    </View>
   );
 }
 

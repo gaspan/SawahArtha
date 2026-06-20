@@ -15,14 +15,14 @@ export const COLORS = {
   secondaryLight: '#FEF3C7',
 
   // Background
-  background: '#F0FDF4',
+  background: '#F5F5F5',
   surface: '#FFFFFF',
-  surfaceElevated: '#FAFFFE',
+  surfaceElevated: '#FAFAFA',
 
   // Text
-  text: '#1F2937',
-  textSecondary: '#6B7280',
-  textLight: '#9CA3AF',
+  text: '#0F172A',
+  textSecondary: '#374151',
+  textLight: '#6B7280',
   textInverse: '#FFFFFF',
 
   // Semantic
@@ -43,10 +43,13 @@ export const COLORS = {
   chartFungisida: '#8B5CF6',
   chartRodentisida: '#F59E0B',
   chartJasaPegawai: '#EC4899',
+  chartItemBarang: '#F97316',
+  chartHerbisida: '#14B8A6',
+  chartMoluksida: '#6366F1',
 
   // Borders & Shadows
-  border: '#E5E7EB',
-  borderLight: '#F3F4F6',
+  border: '#9CA3AF',
+  borderLight: '#D1D5DB',
   cardShadow: 'rgba(0, 0, 0, 0.08)',
 
   // Category badge colors
@@ -56,6 +59,9 @@ export const COLORS = {
     Rodentisida: '#FEF3C7',
     Pupuk: '#D1FAE5',
     'Jasa Pegawai': '#FCE7F3',
+    'Item Barang': '#FFEDD5',
+    Herbisida: '#CCFBF1',
+    Moluksida: '#E0E7FF',
   } as Record<string, string>,
   categoryText: {
     Insektisida: '#1D4ED8',
@@ -63,6 +69,9 @@ export const COLORS = {
     Rodentisida: '#D97706',
     Pupuk: '#047857',
     'Jasa Pegawai': '#BE185D',
+    'Item Barang': '#EA580C',
+    Herbisida: '#0F766E',
+    Moluksida: '#4338CA',
   } as Record<string, string>,
 };
 
@@ -130,6 +139,9 @@ export const CATEGORIES = [
   'Rodentisida',
   'Pupuk',
   'Jasa Pegawai',
+  'Item Barang',
+  'Herbisida',
+  'Moluksida',
 ] as const;
 
 export type ExpenseCategory = (typeof CATEGORIES)[number];

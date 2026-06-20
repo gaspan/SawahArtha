@@ -13,124 +13,111 @@ import { formatIDR } from '../utils/currency';
 interface Props {
   totalExpenses: number;
   totalRevenue: number;
-  zakatKg: number;
-  zakatRp: number;
 }
 
-interface CardData {
-  icon: string;
-  label: string;
-  value: string;
-  subValue?: string;
-  accentColor: string;
-  valueColor: string;
-}
-
-export default function SummaryCards({
-  totalExpenses,
-  totalRevenue,
-  zakatKg,
-  zakatRp,
-}: Props) {
+export default function SummaryCards({ totalExpenses, totalRevenue }: Props) {
   const netProfit = totalRevenue - totalExpenses;
-  const isNegative = netProfit < 0;
-
-  const cards: CardData[] = [
-    {
-      icon: '💰',
-      label: 'Total Modal',
-      value: formatIDR(totalExpenses),
-      accentColor: '#EF4444',
-      valueColor: '#EF4444',
-    },
-    {
-      icon: '🌾',
-      label: 'Total Pendapatan',
-      value: formatIDR(totalRevenue),
-      accentColor: '#059669',
-      valueColor: '#059669',
-    },
-    {
-      icon: '📊',
-      label: 'Profit Bersih',
-      value: formatIDR(netProfit),
-      accentColor: '#3B82F6',
-      valueColor: isNegative ? '#EF4444' : '#3B82F6',
-    },
-    {
-      icon: '🕌',
-      label: 'Zakat',
-      value:
-        zakatKg > 0
-          ? `${zakatKg.toLocaleString('id-ID', { maximumFractionDigits: 1 })} kg`
-          : '0 kg',
-      subValue: zakatRp > 0 ? formatIDR(zakatRp) : undefined,
-      accentColor: '#F59E0B',
-      valueColor: '#B45309',
-    },
-  ];
+  const isProfit = netProfit >= 0;
 
   return (
-    <View style={styles.grid}>
-      {cards.map((card, index) => (
-        <View key={index} style={styles.cardWrapper}>
-          <View style={styles.card}>
-            {/* Colored Accent Bar */}
-            <View
-              style={[styles.accentBar, { backgroundColor: card.accentColor }]}
-            />
+    <View style={styles.container}>
+      {/* 1. Net Profit Card (Full Width) */}
+      <View style={styles.fullCard}>
+        <View
+          style={[
+            styles.accentBar,
+            { backgroundColor: isProfit ? COLORS.success : COLORS.danger },
+          ]}
+        />
+        <View style={styles.cardBody}>
+          <View style={styles.labelRow}>
+            <Text style={styles.icon}>{isProfit ? '📈' : '📉'}</Text>
+            <Text style={styles.label}>Laba / Rugi Bersih</Text>
+          </View>
+          <Text
+            style={[
+              styles.profitValue,
+              { color: isProfit ? COLORS.success : COLORS.danger },
+            ]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+          >
+            {isProfit ? '+' : ''}
+            {formatIDR(netProfit)}
+          </Text>
+          <Text style={styles.profitSubtext}>
+            {isProfit ? 'Surplus pendapatan musim ini' : 'Defisit modal pertanian'}
+          </Text>
+        </View>
+      </View>
 
-            {/* Card Body */}
-            <View style={styles.cardBody}>
-              {/* Icon + Label Row */}
-              <View style={styles.labelRow}>
-                <Text style={styles.icon}>{card.icon}</Text>
-                <Text style={styles.label} numberOfLines={1}>
-                  {card.label}
-                </Text>
-              </View>
-
-              {/* Value */}
-              <Text
-                style={[styles.value, { color: card.valueColor }]}
-                numberOfLines={1}
-                adjustsFontSizeToFit
-                minimumFontScale={0.7}
-              >
-                {card.value}
+      {/* 2. Half Cards Row (Total Capital & Gross Revenue) */}
+      <View style={styles.halfRow}>
+        {/* Total Capital */}
+        <View style={styles.halfCard}>
+          <View style={[styles.accentBar, { backgroundColor: COLORS.danger }]} />
+          <View style={styles.cardBody}>
+            <View style={styles.labelRow}>
+              <Text style={styles.icon}>💰</Text>
+              <Text style={styles.label} numberOfLines={1}>
+                Total Modal
               </Text>
-
-              {/* Sub-value (for Zakat Rp) */}
-              {card.subValue && (
-                <Text
-                  style={[styles.subValue, { color: card.valueColor }]}
-                  numberOfLines={1}
-                  adjustsFontSizeToFit
-                  minimumFontScale={0.8}
-                >
-                  ≈ {card.subValue}
-                </Text>
-              )}
             </View>
+            <Text
+              style={[styles.value, { color: COLORS.danger }]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+            >
+              {formatIDR(totalExpenses)}
+            </Text>
+            <Text style={styles.subtext}>Pengeluaran</Text>
           </View>
         </View>
-      ))}
+
+        {/* Gross Revenue */}
+        <View style={styles.halfCard}>
+          <View style={[styles.accentBar, { backgroundColor: COLORS.success }]} />
+          <View style={styles.cardBody}>
+            <View style={styles.labelRow}>
+              <Text style={styles.icon}>🌾</Text>
+              <Text style={styles.label} numberOfLines={1}>
+                Total Pendapatan
+              </Text>
+            </View>
+            <Text
+              style={[styles.value, { color: COLORS.success }]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+            >
+              {formatIDR(totalRevenue)}
+            </Text>
+            <Text style={styles.subtext}>Hasil Kotor</Text>
+          </View>
+        </View>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+  container: {
     paddingHorizontal: SPACING.md,
+    marginBottom: SPACING.md,
     gap: SPACING.sm,
   },
-  cardWrapper: {
-    width: '48%',
+  fullCard: {
+    backgroundColor: COLORS.surface,
+    borderRadius: BORDER_RADIUS.lg,
+    overflow: 'hidden',
+    ...SHADOW.md,
   },
-  card: {
+  halfRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: SPACING.sm,
+  },
+  halfCard: {
+    flex: 1,
     backgroundColor: COLORS.surface,
     borderRadius: BORDER_RADIUS.lg,
     overflow: 'hidden',
@@ -141,34 +128,41 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   cardBody: {
-    padding: SPACING.sm,
+    padding: SPACING.md,
     paddingTop: SPACING.sm + 2,
-    paddingBottom: SPACING.md,
   },
   labelRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.xs,
-    marginBottom: SPACING.sm,
+    marginBottom: SPACING.xs,
   },
   icon: {
     fontSize: FONT_SIZE.md,
   },
   label: {
     fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.medium,
+    fontWeight: FONT_WEIGHT.semibold,
     color: COLORS.textSecondary,
-    flex: 1,
+  },
+  profitValue: {
+    fontSize: FONT_SIZE.xxl,
+    fontWeight: FONT_WEIGHT.bold,
+    marginVertical: 2,
+  },
+  profitSubtext: {
+    fontSize: FONT_SIZE.xs - 1,
+    color: COLORS.textLight,
+    marginTop: 2,
   },
   value: {
-    fontSize: FONT_SIZE.lg,
+    fontSize: FONT_SIZE.md + 2,
     fontWeight: FONT_WEIGHT.bold,
-    letterSpacing: -0.3,
+    marginVertical: 2,
   },
-  subValue: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.semibold,
+  subtext: {
+    fontSize: FONT_SIZE.xs - 1,
+    color: COLORS.textLight,
     marginTop: 2,
-    opacity: 0.8,
   },
 });

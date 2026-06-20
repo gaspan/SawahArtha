@@ -7,6 +7,7 @@ import { type SQLiteDatabase } from 'expo-sqlite';
 export interface Season {
   id: number;
   season_code: string;
+  land_size_m2: number;
   is_active: number;
 }
 
@@ -22,15 +23,16 @@ export async function getActiveSeason(db: SQLiteDatabase): Promise<Season | null
 
 export async function addSeason(
   db: SQLiteDatabase,
-  seasonCode: string
+  seasonCode: string,
+  landSizeM2: number
 ): Promise<void> {
   await db.withTransactionAsync(async () => {
     // Deactivate all existing seasons
     await db.runAsync('UPDATE seasons SET is_active = 0');
     // Insert and activate the new season
     await db.runAsync(
-      'INSERT INTO seasons (season_code, is_active) VALUES (?, 1)',
-      [seasonCode]
+      'INSERT INTO seasons (season_code, is_active, land_size_m2) VALUES (?, 1, ?)',
+      [seasonCode, landSizeM2]
     );
   });
 }
@@ -46,4 +48,15 @@ export async function setActiveSeason(
       [seasonCode]
     );
   });
+}
+
+export async function updateSeasonLandSize(
+  db: SQLiteDatabase,
+  seasonCode: string,
+  landSizeM2: number
+): Promise<void> {
+  await db.runAsync(
+    'UPDATE seasons SET land_size_m2 = ? WHERE season_code = ?',
+    [landSizeM2, seasonCode]
+  );
 }

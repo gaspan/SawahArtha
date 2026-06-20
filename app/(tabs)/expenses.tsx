@@ -2,7 +2,7 @@
  * Expenses Screen - SawahArtha
  * Expense input form and expense list with category tracking
  */
-import React, { useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,17 +11,21 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { useExpenses } from '../../src/hooks/useExpenses';
 import { formatIDR } from '../../src/utils/currency';
 import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOW } from '../../src/constants/theme';
+import { type Expense } from '../../src/database/expenseService';
 
 import ExpenseForm from '../../src/components/ExpenseForm';
 import ExpenseList from '../../src/components/ExpenseList';
+import EditExpenseModal from '../../src/components/EditExpenseModal';
 
 export default function ExpensesScreen() {
-  const { expenses, totalExpenses, addExpense, deleteExpense, refreshExpenses } = useExpenses();
+  const { expenses, totalExpenses, addExpense, updateExpense, deleteExpense, refreshExpenses, isLoading } = useExpenses();
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -43,19 +47,25 @@ export default function ExpensesScreen() {
     }
   };
 
+  const handleSaveEdit = async (
+    id: number,
+    data: {
+      title: string;
+      description: string;
+      amount: number;
+      category: string;
+    }
+  ) => {
+    try {
+      await updateExpense(id, data);
+      Alert.alert('Berhasil ✅', 'Pengeluaran berhasil diperbarui!');
+    } catch (error) {
+      Alert.alert('Error', 'Gagal memperbarui pengeluaran.');
+    }
+  };
+
   const handleDelete = (id: number) => {
-    Alert.alert(
-      'Hapus Pengeluaran',
-      'Apakah Anda yakin ingin menghapus pengeluaran ini?',
-      [
-        { text: 'Batal', style: 'cancel' },
-        {
-          text: 'Hapus',
-          style: 'destructive',
-          onPress: () => deleteExpense(id),
-        },
-      ]
-    );
+    deleteExpense(id);
   };
 
   return (
@@ -92,11 +102,30 @@ export default function ExpensesScreen() {
           <Text style={styles.sectionTitle}>
             Riwayat Pengeluaran ({expenses.length})
           </Text>
-          <ExpenseList expenses={expenses} onDelete={handleDelete} />
+          {isLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={COLORS.primary} />
+              <Text style={styles.loadingText}>Memuat riwayat...</Text>
+            </View>
+          ) : (
+            <ExpenseList
+              expenses={expenses}
+              onEdit={setEditingExpense}
+              onDelete={handleDelete}
+            />
+          )}
         </View>
 
         <View style={{ height: SPACING.xl }} />
       </ScrollView>
+
+      {/* Edit Expense Modal */}
+      <EditExpenseModal
+        visible={editingExpense !== null}
+        expense={editingExpense}
+        onClose={() => setEditingExpense(null)}
+        onSave={handleSaveEdit}
+      />
     </KeyboardAvoidingView>
   );
 }
@@ -166,5 +195,16 @@ const styles = StyleSheet.create({
     fontWeight: FONT_WEIGHT.bold,
     color: COLORS.text,
     marginBottom: SPACING.md,
+  },
+  loadingContainer: {
+    paddingVertical: SPACING.xl,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.sm,
+  },
+  loadingText: {
+    fontSize: FONT_SIZE.sm,
+    color: COLORS.textSecondary,
+    fontWeight: FONT_WEIGHT.medium,
   },
 });

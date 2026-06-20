@@ -33,6 +33,9 @@ const LABEL_MAP: Record<string, string> = {
   Fungisida: 'Fungi.',
   Rodentisida: 'Roden.',
   'Jasa Pegawai': 'Jasa',
+  'Item Barang': 'Barang',
+  Herbisida: 'Herbi.',
+  Moluksida: 'Moluk.',
 };
 
 /** Map category names to their chart colors */
@@ -42,6 +45,9 @@ const COLOR_MAP: Record<string, string> = {
   Fungisida: COLORS.chartFungisida,
   Rodentisida: COLORS.chartRodentisida,
   'Jasa Pegawai': COLORS.chartJasaPegawai,
+  'Item Barang': COLORS.chartItemBarang,
+  Herbisida: COLORS.chartHerbisida,
+  Moluksida: COLORS.chartMoluksida,
 };
 
 const CategoryBarChart: React.FC<Props> = ({ categoryTotals }) => {

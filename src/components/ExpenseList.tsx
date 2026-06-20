@@ -2,7 +2,6 @@ import React, { useCallback } from 'react';
 import {
   View,
   Text,
-  FlatList,
   TouchableOpacity,
   StyleSheet,
   Alert,
@@ -17,17 +16,11 @@ import {
 } from '../constants/theme';
 import { formatIDR } from '../utils/currency';
 
-interface Expense {
-  id: number;
-  title: string;
-  description: string | null;
-  amount: number;
-  category: string;
-  date: string;
-}
+import { type Expense } from '../database/expenseService';
 
 interface ExpenseListProps {
   expenses: Expense[];
+  onEdit: (item: Expense) => void;
   onDelete: (id: number) => void;
 }
 
@@ -58,9 +51,11 @@ function EmptyState() {
 
 function ExpenseItem({
   item,
+  onEdit,
   onDelete,
 }: {
   item: Expense;
+  onEdit: (item: Expense) => void;
   onDelete: (id: number) => void;
 }) {
   const bgColor = COLORS.categoryBg[item.category] || COLORS.borderLight;
@@ -98,7 +93,7 @@ function ExpenseItem({
         <Text style={styles.cardAmount}>{formatIDR(item.amount)}</Text>
       </View>
 
-      {/* Bottom Row: Category Badge + Date + Delete */}
+      {/* Bottom Row: Category Badge + Date + Actions */}
       <View style={styles.cardBottomRow}>
         <View style={styles.cardMeta}>
           <View style={[styles.categoryBadge, { backgroundColor: bgColor }]}>
@@ -109,45 +104,44 @@ function ExpenseItem({
           <Text style={styles.dateText}>📅 {formatDate(item.date)}</Text>
         </View>
 
-        <TouchableOpacity
-          style={styles.deleteButton}
-          onPress={handleDelete}
-          activeOpacity={0.7}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <Text style={styles.deleteIcon}>🗑️</Text>
-        </TouchableOpacity>
+        <View style={styles.actionButtons}>
+          <TouchableOpacity
+            style={styles.editButton}
+            onPress={() => onEdit(item)}
+            activeOpacity={0.7}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Text style={styles.editIcon}>✏️</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.deleteButton}
+            onPress={handleDelete}
+            activeOpacity={0.7}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Text style={styles.deleteIcon}>🗑️</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
 }
 
-export default function ExpenseList({ expenses, onDelete }: ExpenseListProps) {
-  const renderItem = useCallback(
-    ({ item }: { item: Expense }) => (
-      <ExpenseItem item={item} onDelete={onDelete} />
-    ),
-    [onDelete],
-  );
-
-  const keyExtractor = useCallback(
-    (item: Expense) => item.id.toString(),
-    [],
-  );
+export default function ExpenseList({ expenses, onEdit, onDelete }: ExpenseListProps) {
+  if (expenses.length === 0) {
+    return <EmptyState />;
+  }
 
   return (
-    <FlatList
-      data={expenses}
-      renderItem={renderItem}
-      keyExtractor={keyExtractor}
-      contentContainerStyle={[
-        styles.listContent,
-        expenses.length === 0 && styles.listContentEmpty,
-      ]}
-      showsVerticalScrollIndicator={false}
-      ListEmptyComponent={EmptyState}
-      ItemSeparatorComponent={() => <View style={styles.separator} />}
-    />
+    <View style={styles.listContent}>
+      {expenses.map((item, index) => (
+        <React.Fragment key={item.id.toString()}>
+          {index > 0 && <View style={styles.separator} />}
+          <ExpenseItem item={item} onEdit={onEdit} onDelete={onDelete} />
+        </React.Fragment>
+      ))}
+    </View>
   );
 }
 
@@ -259,12 +253,24 @@ const styles = StyleSheet.create({
     color: COLORS.textLight,
   },
 
-  // Delete
+  // Actions
+  actionButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.xs,
+  },
+  editButton: {
+    padding: SPACING.xs,
+    borderRadius: BORDER_RADIUS.sm,
+    backgroundColor: COLORS.secondaryLight,
+  },
+  editIcon: {
+    fontSize: 16,
+  },
   deleteButton: {
     padding: SPACING.xs,
     borderRadius: BORDER_RADIUS.sm,
     backgroundColor: COLORS.dangerLight,
-    marginLeft: SPACING.sm,
   },
   deleteIcon: {
     fontSize: 16,

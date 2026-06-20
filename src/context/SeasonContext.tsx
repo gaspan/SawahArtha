@@ -9,6 +9,7 @@ import {
   getActiveSeason,
   addSeason as addSeasonDB,
   setActiveSeason as setActiveSeasonDB,
+  updateSeasonLandSize as updateSeasonLandSizeDB,
   type Season,
 } from '../database/seasonService';
 
@@ -17,7 +18,8 @@ interface SeasonContextType {
   seasons: Season[];
   isLoading: boolean;
   switchSeason: (seasonCode: string) => Promise<void>;
-  createNewSeason: (seasonCode: string) => Promise<void>;
+  createNewSeason: (seasonCode: string, landSizeM2: number) => Promise<void>;
+  updateLandSize: (seasonCode: string, landSizeM2: number) => Promise<void>;
   refreshSeasons: () => Promise<void>;
 }
 
@@ -69,13 +71,23 @@ export function SeasonProvider({ children }: { children: ReactNode }) {
     }
   }, [db, refreshSeasons]);
 
-  const createNewSeason = useCallback(async (seasonCode: string) => {
+  const createNewSeason = useCallback(async (seasonCode: string, landSizeM2: number) => {
     try {
-      await addSeasonDB(db, seasonCode);
+      await addSeasonDB(db, seasonCode, landSizeM2);
       setSelectedSeason(seasonCode);
       await refreshSeasons();
     } catch (error) {
       console.error('Error creating season:', error);
+      throw error;
+    }
+  }, [db, refreshSeasons]);
+
+  const updateLandSize = useCallback(async (seasonCode: string, landSizeM2: number) => {
+    try {
+      await updateSeasonLandSizeDB(db, seasonCode, landSizeM2);
+      await refreshSeasons();
+    } catch (error) {
+      console.error('Error updating land size:', error);
       throw error;
     }
   }, [db, refreshSeasons]);
@@ -92,6 +104,7 @@ export function SeasonProvider({ children }: { children: ReactNode }) {
         isLoading,
         switchSeason,
         createNewSeason,
+        updateLandSize,
         refreshSeasons,
       }}
     >
