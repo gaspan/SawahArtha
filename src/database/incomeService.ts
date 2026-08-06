@@ -10,6 +10,10 @@ export interface Income {
   id: number;
   gkp_weight: number;
   gkg_weight: number;
+  gacong_type: string;
+  gacong_input: number;
+  gacong_weight: number;
+  net_gkp: number;
   price_per_kg: number;
   total_revenue: number;
   season_code: string;
@@ -19,6 +23,10 @@ export interface Income {
 export interface IncomeInput {
   gkp_weight: number;
   gkg_weight: number;
+  gacong_type: string;
+  gacong_input: number;
+  gacong_weight: number;
+  net_gkp: number;
   price_per_kg: number;
   total_revenue: number;
   season_code: string;
@@ -39,10 +47,14 @@ export async function addIncome(
   income: IncomeInput
 ): Promise<number> {
   const result = await db.runAsync(
-    'INSERT INTO income (gkp_weight, gkg_weight, price_per_kg, total_revenue, season_code, date) VALUES (?, ?, ?, ?, ?, ?)',
+    'INSERT INTO income (gkp_weight, gkg_weight, gacong_type, gacong_input, gacong_weight, net_gkp, price_per_kg, total_revenue, season_code, date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
     [
       income.gkp_weight,
       income.gkg_weight,
+      income.gacong_type,
+      income.gacong_input,
+      income.gacong_weight,
+      income.net_gkp,
       income.price_per_kg,
       income.total_revenue,
       income.season_code,
@@ -54,7 +66,7 @@ export async function addIncome(
 
 /**
  * Update selling price and recalculate total revenue atomically.
- * total_revenue = gkp_weight * new_price_per_kg (calculated in SQL using stored gkp_weight)
+ * total_revenue = gkg_weight * new_price_per_kg (revenue is based on GKG)
  */
 export async function updateIncomePrice(
   db: SQLiteDatabase,
@@ -62,7 +74,7 @@ export async function updateIncomePrice(
   pricePerKg: number
 ): Promise<void> {
   await db.runAsync(
-    'UPDATE income SET price_per_kg = ?, total_revenue = gkp_weight * ? WHERE id = ?',
+    'UPDATE income SET price_per_kg = ?, total_revenue = gkg_weight * ? WHERE id = ?',
     [pricePerKg, pricePerKg, id]
   );
 }

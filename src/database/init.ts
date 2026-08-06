@@ -31,6 +31,10 @@ export async function initializeDatabase(db: SQLiteDatabase): Promise<void> {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       gkp_weight REAL NOT NULL,
       gkg_weight REAL NOT NULL,
+      gacong_type TEXT NOT NULL DEFAULT 'berat',
+      gacong_input REAL DEFAULT 0,
+      gacong_weight REAL DEFAULT 0,
+      net_gkp REAL NOT NULL DEFAULT 0,
       price_per_kg REAL DEFAULT 0,
       total_revenue REAL DEFAULT 0,
       season_code TEXT NOT NULL,
@@ -44,6 +48,31 @@ export async function initializeDatabase(db: SQLiteDatabase): Promise<void> {
   } catch (error) {
     // Column already exists or table isn't created yet (handled above)
   }
+
+  // Migrate income table to add gacong (harvest fee) columns
+  try {
+    await db.execAsync("ALTER TABLE income ADD COLUMN gacong_type TEXT NOT NULL DEFAULT 'berat'");
+  } catch (error) {
+    // Column already exists
+  }
+  try {
+    await db.execAsync('ALTER TABLE income ADD COLUMN gacong_input REAL DEFAULT 0');
+  } catch (error) {
+    // Column already exists
+  }
+  try {
+    await db.execAsync('ALTER TABLE income ADD COLUMN gacong_weight REAL DEFAULT 0');
+  } catch (error) {
+    // Column already exists
+  }
+  try {
+    await db.execAsync('ALTER TABLE income ADD COLUMN net_gkp REAL');
+  } catch (error) {
+    // Column already exists
+  }
+
+  // Backfill legacy rows: net_gkp = gross gkp (no gacong recorded)
+  await db.execAsync('UPDATE income SET net_gkp = gkp_weight WHERE net_gkp IS NULL');
 
   // Seed default season if no seasons exist
   const existing = await db.getFirstAsync<{ count: number }>(

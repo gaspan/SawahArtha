@@ -358,15 +358,15 @@ const styles = StyleSheet.create({
     color: COLORS.text,
   },
   calcCard: {
-    backgroundColor: '#FFFBEB',
+    backgroundColor: COLORS.amberBg,
     borderRadius: BORDER_RADIUS.md,
     padding: SPACING.sm,
     borderWidth: 1,
-    borderColor: '#FDE68A',
+    borderColor: COLORS.amberLight,
   },
   calcDivider: {
     height: 1,
-    backgroundColor: '#FDE68A',
+    backgroundColor: COLORS.amberLight,
     marginVertical: SPACING.xs,
   },
   calcRow: {
@@ -396,7 +396,7 @@ const styles = StyleSheet.create({
   calcResultValueGold: {
     fontSize: FONT_SIZE.lg,
     fontWeight: FONT_WEIGHT.bold,
-    color: '#B45309',
+    color: COLORS.amberDark,
   },
 
   // Footer Note

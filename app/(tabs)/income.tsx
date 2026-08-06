@@ -16,7 +16,7 @@ import {
 import { useFocusEffect } from 'expo-router';
 import { useIncome } from '../../src/hooks/useIncome';
 import { formatIDR } from '../../src/utils/currency';
-import { calculateGKG } from '../../src/utils/zakat';
+import { getZakatSummary } from '../../src/utils/zakat';
 import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOW } from '../../src/constants/theme';
 
 import IncomeForm from '../../src/components/IncomeForm';
@@ -36,6 +36,9 @@ export default function IncomeScreen() {
     isLoading,
   } = useIncome();
 
+  const zakatSummary = getZakatSummary(totalGKG, avgPricePerKg);
+  const netRevenue = totalRevenue - zakatSummary.zakatRp;
+
   useFocusEffect(
     useCallback(() => {
       refreshIncome();
@@ -45,6 +48,10 @@ export default function IncomeScreen() {
   const handleAddIncome = async (data: {
     gkp_weight: number;
     gkg_weight: number;
+    gacong_type: string;
+    gacong_input: number;
+    gacong_weight: number;
+    net_gkp: number;
     price_per_kg: number;
     total_revenue: number;
   }) => {
@@ -91,8 +98,11 @@ export default function IncomeScreen() {
       >
         {/* Total Revenue Banner */}
         <View style={styles.totalBanner}>
-          <Text style={styles.totalLabel}>Total Pendapatan Musim Ini</Text>
-          <Text style={styles.totalValue}>{formatIDR(totalRevenue)}</Text>
+          <Text style={styles.totalLabel}>Estimasi Total Pendapatan</Text>
+          <Text style={styles.totalValue}>{formatIDR(netRevenue)}</Text>
+          {zakatSummary.zakatRp > 0 && (
+            <Text style={styles.totalSubtext}>sudah dikurangi zakat {formatIDR(zakatSummary.zakatRp)}</Text>
+          )}
         </View>
 
         {/* Income Form */}
@@ -161,14 +171,14 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: SPACING.md,
-    paddingTop: SPACING.lg,
+    paddingTop: SPACING.sm,
   },
   totalBanner: {
     backgroundColor: COLORS.primaryLight,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.lg,
     alignItems: 'center',
-    marginBottom: SPACING.lg,
+    marginBottom: SPACING.md,
     borderWidth: 1,
     borderColor: 'rgba(5, 150, 105, 0.2)',
   },
@@ -182,6 +192,12 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZE.xxl,
     fontWeight: FONT_WEIGHT.bold,
     color: COLORS.primaryDark,
+  },
+  totalSubtext: {
+    fontSize: FONT_SIZE.xs,
+    color: COLORS.secondary,
+    fontWeight: FONT_WEIGHT.medium,
+    marginTop: SPACING.xs,
   },
   listSection: {
     marginTop: SPACING.lg,

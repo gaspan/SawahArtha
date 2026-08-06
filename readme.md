@@ -9,7 +9,7 @@ SawahArtha adalah aplikasi mobile berbasis Android yang dirancang khusus untuk m
 
 Aplikasi ini dibangun menggunakan tumpukan teknologi modern untuk memastikan stabilitas di lapangan tanpa koneksi internet (*Offline-First*):
 
-*   **Framework Core:** React Native (Expo SDK 56)
+*   **Framework Core:** React Native (Expo SDK 57)
 *   **Bahasa Pemrograman:** TypeScript (Type-Safe & Clean Code)
 *   **Database Lokal:** SQLite via `expo-sqlite` (dilengkapi dengan WAL mode untuk performa transaksi cepat)
 *   **Visualisasi Data:** `react-native-chart-kit` & `react-native-svg` (grafik interaktif dan responsif)
@@ -32,14 +32,27 @@ Semua pencatatan pengeluaran dan pendapatan dikelompokkan berdasarkan kode musim
 *   **Donut Chart**: Grafik perbandingan persentase total modal keluar dibandingkan total omzet pendapatan hasil panen.
 *   **Bar Chart Kategori**: Visualisasi pengeluaran modal berdasarkan 8 kategori tani khusus: *Pupuk, Insektisida, Fungisida, Rodentisida, Herbisida, Moluksida, Jasa Pegawai,* dan *Item Barang*.
 
-### 4. Ekspor Backup Data (CSV)
-Aplikasi mendukung kepatuhan data safety dengan menyediakan tombol ekspor data. Seluruh rekaman pengeluaran dan pemasukan akan dikonversi menjadi file format CSV standar secara lokal, lalu memicu *Native Android Share Sheet* untuk dibackup ke Google Drive, WhatsApp, atau Email.
+### 4. Ekspor & Impor Backup Data (CSV)
+Aplikasi mendukung portabilitas data dengan menyediakan fitur ekspor dan impor data:
+*   **Ekspor Data**: Mengonversi seluruh rekaman pengeluaran dan pemasukan menjadi file format CSV standar secara lokal di direktori dokumen aplikasi, menampilkan letak path penyimpanan file tersebut di Dashboard secara interaktif (dapat ditekankan/salin), serta meniadakan alur share sheet eksternal.
+*   **Impor Data**: Memilih file backup CSV menggunakan *Native Document Picker*, mem-parsing isi file secara aman (termasuk deteksi desimal lokal), menghindari data duplikat secara otomatis, dan memperbarui database lokal seketika melalui transaksi SQLite atomic.
 
-### 5. Kalkulator Zakat Hasil Tani Otomatis
+### 5. Pencatatan Data Panen & Biaya Gacong
+Tab **Penghasilan** menampilkan alur pencatatan hasil panen yang transparan dan berurutan:
+*   **Input Berat GKP (Gabah Kering Panen)**: Berat kotor hasil panen dalam kilogram.
+*   **Biaya Gacong (Upah Panen)**: Mendukung dua metode pemotongan biaya panen:
+    *   *Berat (kg)*: potongan langsung dalam kilogram.
+    *   *Pembagian (1/n)*: potongan berbasis pecahan hasil panen, misal 1/6 dari total GKP.
+*   **Ringkasan Panen Terpadu**: Menampilkan alur GKP kotor → Gacong → Hasil Bersih → Estimasi GKG → Zakat → Estimasi Pendapatan dalam satu kartu ringkasan.
+*   **Riwayat Panen Detail**: Setiap record menampilkan GKP, Gacong (beserta metode), Hasil Bersih, dan GKG, dengan edit harga jual langsung di tempat.
+
+### 6. Kalkulator Zakat Hasil Tani Otomatis
 Mengalkulasi kewajiban zakat pertanian secara otomatis:
-*   Mendukung konversi otomatis dari Gabah Kering Panen (GKP) ke Gabah Kering Giling (GKG) dengan rasio penyusutan standar 85%.
+*   Mendukung konversi otomatis dari **Hasil Bersih GKP (setelah dikurangi biaya gacong)** ke Gabah Kering Giling (GKG) dengan rasio penyusutan standar 80%.
 *   Validasi otomatis terhadap batas minimal kewajiban zakat (Nisab pertanian sebesar $653 \text{ kg GKG}$).
 *   Penerapan kadar zakat sebesar 5% (untuk sistem pengairan berbayar/irigasi pompa).
+*   **Estimasi Zakat dalam Rupiah**: Perhitungan estimasi nilai zakat dalam mata uang Rupiah dengan mengalikan berat zakat (kg) terhadap harga jual per kg yang tercatat pada data panen (apabila diisi).
+*   **Total Pendapatan Net Zakat**: Estimasi total pendapatan ditampilkan setelah dikurangi kewajiban zakat, baik pada banner ringkasan maupun pada setiap record riwayat panen.
 
 ---
 
@@ -72,12 +85,30 @@ CREATE TABLE IF NOT EXISTS income (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   gkp_weight REAL NOT NULL,
   gkg_weight REAL NOT NULL,
+  gacong_type TEXT NOT NULL DEFAULT 'berat',
+  gacong_input REAL DEFAULT 0,
+  gacong_weight REAL DEFAULT 0,
+  net_gkp REAL NOT NULL DEFAULT 0,
   price_per_kg REAL DEFAULT 0,
   total_revenue REAL DEFAULT 0,
   season_code TEXT NOT NULL,
   date TEXT NOT NULL
 );
 ```
+
+> **Catatan kolom `income`:** `gkp_weight` menyimpan berat kotor GKP, `gacong_*` menyimpan detail biaya panen (metode, input, dan hasil potongan dalam kg), `net_gkp` adalah hasil bersih setelah gacong, sedangkan `gkg_weight` dihitung dari `net_gkp × 0.8` dan `total_revenue` dihitung dari `gkg_weight × price_per_kg`.
+
+---
+
+## ✅ Pengujian (Unit Test)
+
+Logika perhitungan inti (gacong, konversi GKP→GKG, nisab, dan kalkulasi zakat) diuji menggunakan **Node.js built-in test runner** (`node:test`) dengan `tsx`:
+
+```bash
+npm test
+```
+
+Berjalan pada `src/utils/zakat.test.ts` dan mencakup 25 skenario, termasuk uji batas nisab (653 kg GKG) dan skenario alur lengkap panen dengan biaya gacong.
 
 ---
 

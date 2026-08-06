@@ -1,21 +1,48 @@
 /**
  * Zakat Pertanian Calculator
- * 
+ *
  * Based on Indonesian rice farming standards:
- * - GKP to GKG conversion: 85% (standard moisture reduction)
+ * - Net GKP to GKG conversion: 80% (standard moisture reduction)
  * - Nisab: 653 kg GKG (Gabah Kering Giling)
  * - Rate: 5% (for irrigated/artificial irrigation farming with high operational costs)
+ * - Gacong (harvest fee) is deducted from gross GKP before GKG conversion
  */
 
 export const NISAB_KG = 653;
 export const ZAKAT_RATE = 0.05;
-export const GKP_TO_GKG_RATIO = 0.85;
+export const GKP_TO_GKG_RATIO = 0.8;
+
+export const GACONG_BERAT = 'berat';
+export const GACONG_PEMBAGIAN = 'pembagian';
+export type GacongType = typeof GACONG_BERAT | typeof GACONG_PEMBAGIAN;
 
 /**
- * Convert GKP (Gabah Kering Panen) to GKG (Gabah Kering Giling)
+ * Calculate gacong (harvest fee) deduction weight in kg.
+ * - 'berat': direct kg deduction (gacongInput = kg)
+ * - 'pembagian': fraction deduction (gacongInput = denominator n, e.g. 6 for 1/6)
  */
-export function calculateGKG(gkpWeight: number): number {
-  return gkpWeight * GKP_TO_GKG_RATIO;
+export function calculateGacongWeight(
+  gkpWeight: number,
+  gacongType: GacongType,
+  gacongInput: number,
+): number {
+  if (gacongInput <= 0 || gkpWeight <= 0) return 0;
+  if (gacongType === GACONG_BERAT) return Math.min(gacongInput, gkpWeight);
+  return gkpWeight / gacongInput;
+}
+
+/**
+ * Net GKP after gacong deduction (what the farmer actually keeps)
+ */
+export function calculateNetGKP(gkpWeight: number, gacongWeight: number): number {
+  return Math.max(gkpWeight - gacongWeight, 0);
+}
+
+/**
+ * Convert net GKP (Gabah Kering Panen after gacong) to GKG (Gabah Kering Giling)
+ */
+export function calculateGKG(netGkp: number): number {
+  return netGkp * GKP_TO_GKG_RATIO;
 }
 
 /**

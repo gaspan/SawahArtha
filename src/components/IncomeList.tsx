@@ -16,11 +16,16 @@ import {
   SHADOW,
 } from '../constants/theme';
 import { formatIDR, formatCurrencyInput } from '../utils/currency';
+import { calculateZakatKg } from '../utils/zakat';
 
 interface HarvestRecord {
   id: number;
   gkp_weight: number;
   gkg_weight: number;
+  gacong_type: string;
+  gacong_input: number;
+  gacong_weight: number;
+  net_gkp: number;
   price_per_kg: number;
   total_revenue: number;
   date: string;
@@ -105,9 +110,21 @@ export default function IncomeList({ records, onUpdatePrice, onDelete }: Props) 
   const renderItem = useCallback(
     ({ item }: { item: HarvestRecord }) => {
       const isEditing = editingId === item.id;
+      const zakatKg = calculateZakatKg(item.gkg_weight);
+      const estimasiRevenue =
+        item.price_per_kg > 0 && zakatKg > 0
+          ? (item.gkg_weight - zakatKg) * item.price_per_kg
+          : 0;
 
       return (
-        <View style={styles.card}>
+        <View
+          style={[
+            styles.card,
+            item.price_per_kg > 0
+              ? { borderLeftWidth: 3, borderLeftColor: COLORS.primary }
+              : { borderLeftWidth: 3, borderLeftColor: COLORS.borderLight },
+          ]}
+        >
           {/* Header Row: Date + Delete */}
           <View style={styles.cardHeader}>
             <View style={styles.dateContainer}>
@@ -133,14 +150,35 @@ export default function IncomeList({ records, onUpdatePrice, onDelete }: Props) 
             </View>
             <View style={styles.weightDivider} />
             <View style={styles.weightItem}>
+              <Text style={styles.weightLabel}>Gacong</Text>
+              <Text style={styles.weightValue}>
+                {item.gacong_weight > 0
+                  ? `${item.gacong_weight.toLocaleString('id-ID', { maximumFractionDigits: 1 })} kg`
+                  : '—'}
+              </Text>
+              {item.gacong_weight > 0 && (
+                <Text style={styles.weightSublabel}>
+                  {item.gacong_type === 'pembagian'
+                    ? `1/${item.gacong_input.toLocaleString('id-ID', { maximumFractionDigits: 1 })}`
+                    : 'berat'}
+                </Text>
+              )}
+            </View>
+            <View style={styles.weightDivider} />
+            <View style={styles.weightItem}>
+              <Text style={styles.weightLabel}>Bersih</Text>
+              <Text style={styles.weightValue}>
+                {item.net_gkp.toLocaleString('id-ID', { maximumFractionDigits: 1 })}
+              </Text>
+              <Text style={styles.weightSublabel}>kg</Text>
+            </View>
+            <View style={styles.weightDivider} />
+            <View style={styles.weightItem}>
               <Text style={styles.weightLabel}>GKG</Text>
               <Text style={styles.weightValue}>
-                {item.gkg_weight.toLocaleString('id-ID', {
-                  maximumFractionDigits: 1,
-                })}{' '}
-                kg
+                {item.gkg_weight.toLocaleString('id-ID', { maximumFractionDigits: 1 })}
               </Text>
-              <Text style={styles.weightSublabel}>Gabah Kering Giling</Text>
+              <Text style={styles.weightSublabel}>kg</Text>
             </View>
           </View>
 
@@ -200,17 +238,29 @@ export default function IncomeList({ records, onUpdatePrice, onDelete }: Props) 
             )}
           </View>
 
-          {/* Total Revenue */}
+          {/* Revenue */}
           <View style={styles.revenueSection}>
-            <Text style={styles.revenueLabel}>Total Pendapatan</Text>
-            <Text
-              style={[
-                styles.revenueValue,
-                item.total_revenue === 0 && styles.revenueZero,
-              ]}
-            >
-              {formatIDR(item.total_revenue)}
-            </Text>
+            <View style={styles.revenueRow}>
+              <Text style={styles.revenueLabel}>Pendapatan</Text>
+              <Text
+                style={[
+                  styles.revenueValue,
+                  item.total_revenue === 0 && styles.revenueZero,
+                ]}
+              >
+                {formatIDR(item.total_revenue)}
+              </Text>
+            </View>
+            {estimasiRevenue > 0 && (
+              <View style={styles.revenueRow}>
+                <Text style={styles.estimasiLabel}>
+                  Estimasi (net setelah zakat)
+                </Text>
+                <Text style={styles.estimasiValue}>
+                  {formatIDR(estimasiRevenue)}
+                </Text>
+              </View>
+            )}
           </View>
         </View>
       );
@@ -316,7 +366,7 @@ const styles = StyleSheet.create({
   weightDivider: {
     width: 1,
     backgroundColor: COLORS.border,
-    marginHorizontal: SPACING.sm,
+    marginHorizontal: SPACING.xs,
   },
   weightLabel: {
     fontSize: FONT_SIZE.xs,
@@ -327,7 +377,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   weightValue: {
-    fontSize: FONT_SIZE.lg,
+    fontSize: FONT_SIZE.md,
     fontWeight: FONT_WEIGHT.bold,
     color: COLORS.text,
   },
@@ -339,6 +389,9 @@ const styles = StyleSheet.create({
 
   // Price Section
   priceSection: {
+    borderTopWidth: 1,
+    borderTopColor: COLORS.borderLight,
+    paddingTop: SPACING.sm,
     marginBottom: SPACING.sm,
   },
   priceDisplay: {
@@ -369,7 +422,7 @@ const styles = StyleSheet.create({
   unsoldBadgeText: {
     fontSize: FONT_SIZE.xs,
     fontWeight: FONT_WEIGHT.semibold,
-    color: '#B45309',
+    color: COLORS.amberDark,
   },
   editPriceButton: {
     backgroundColor: COLORS.secondaryLight,
@@ -380,7 +433,7 @@ const styles = StyleSheet.create({
   editPriceButtonText: {
     fontSize: FONT_SIZE.xs,
     fontWeight: FONT_WEIGHT.semibold,
-    color: '#B45309',
+    color: COLORS.amberDark,
   },
 
   // Edit Mode
@@ -453,12 +506,15 @@ const styles = StyleSheet.create({
 
   // Revenue Section
   revenueSection: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     borderTopWidth: 1,
     borderTopColor: COLORS.borderLight,
     paddingTop: SPACING.sm,
+    gap: SPACING.xs,
+  },
+  revenueRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   revenueLabel: {
     fontSize: FONT_SIZE.sm,
@@ -472,6 +528,16 @@ const styles = StyleSheet.create({
   },
   revenueZero: {
     color: COLORS.textLight,
+  },
+  estimasiLabel: {
+    fontSize: FONT_SIZE.xs,
+    color: COLORS.secondary,
+    fontWeight: FONT_WEIGHT.medium,
+  },
+  estimasiValue: {
+    fontSize: FONT_SIZE.md,
+    fontWeight: FONT_WEIGHT.bold,
+    color: COLORS.amberDark,
   },
 
   // Empty State

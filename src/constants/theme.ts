@@ -14,6 +14,17 @@ export const COLORS = {
   secondary: '#F59E0B',
   secondaryLight: '#FEF3C7',
 
+  // Blue tones (gacong, info)
+  blue: '#3B82F6',
+  blueDark: '#1E40AF',
+  blueLight: '#BFDBFE',
+
+  // Amber tones (zakat)
+  amberDark: '#B45309',
+  amberDeep: '#92400E',
+  amberLight: '#FDE68A',
+  amberBg: '#FFFBEB',
+
   // Background
   background: '#F5F5F5',
   surface: '#FFFFFF',
