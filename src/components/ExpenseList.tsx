@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import { Fragment, useCallback } from 'react';
 import {
   View,
   Text,
@@ -58,7 +58,6 @@ function ExpenseItem({
   onEdit: (item: Expense) => void;
   onDelete: (id: number) => void;
 }) {
-  const bgColor = COLORS.categoryBg[item.category] || COLORS.borderLight;
   const textColor = COLORS.categoryText[item.category] || COLORS.textSecondary;
 
   const handleDelete = useCallback(() => {
@@ -77,31 +76,17 @@ function ExpenseItem({
   }, [item.id, item.title, onDelete]);
 
   return (
-    <View style={styles.card}>
-      {/* Top Row: Title + Amount */}
-      <View style={styles.cardTopRow}>
-        <View style={styles.cardInfo}>
-          <Text style={styles.cardTitle} numberOfLines={1}>
-            {item.title}
-          </Text>
-          {item.description ? (
-            <Text style={styles.cardDescription} numberOfLines={2}>
-              {item.description}
-            </Text>
-          ) : null}
-        </View>
-        <Text style={styles.cardAmount}>{formatIDR(item.amount)}</Text>
-      </View>
-
-      {/* Bottom Row: Category Badge + Date + Actions */}
-      <View style={styles.cardBottomRow}>
-        <View style={styles.cardMeta}>
-          <View style={[styles.categoryBadge, { backgroundColor: bgColor }]}>
-            <Text style={[styles.categoryBadgeText, { color: textColor }]}>
-              {item.category}
-            </Text>
-          </View>
-          <Text style={styles.dateText}>📅 {formatDate(item.date)}</Text>
+    <View
+      style={[
+        styles.card,
+        { borderLeftWidth: 3, borderLeftColor: COLORS.danger },
+      ]}
+    >
+      {/* Header Row: Date + Actions */}
+      <View style={styles.cardHeader}>
+        <View style={styles.dateContainer}>
+          <Text style={styles.dateIcon}>📅</Text>
+          <Text style={styles.dateText}>{formatDate(item.date)}</Text>
         </View>
 
         <View style={styles.actionButtons}>
@@ -124,6 +109,30 @@ function ExpenseItem({
           </TouchableOpacity>
         </View>
       </View>
+
+      {/* Title + Amount */}
+      <View style={styles.cardTopRow}>
+        <View style={styles.cardInfo}>
+          <Text style={styles.cardTitle} numberOfLines={1}>
+            {item.title}
+          </Text>
+          {item.description ? (
+            <Text style={styles.cardDescription} numberOfLines={2}>
+              {item.description}
+            </Text>
+          ) : null}
+        </View>
+        <Text style={styles.cardAmount}>{formatIDR(item.amount)}</Text>
+      </View>
+
+      {/* Category Badge */}
+      <View style={styles.cardBottomRow}>
+        <View style={styles.categoryBadge}>
+          <Text style={[styles.categoryBadgeText, { color: textColor }]}>
+            {item.category}
+          </Text>
+        </View>
+      </View>
     </View>
   );
 }
@@ -136,10 +145,10 @@ export default function ExpenseList({ expenses, onEdit, onDelete }: ExpenseListP
   return (
     <View style={styles.listContent}>
       {expenses.map((item, index) => (
-        <React.Fragment key={item.id.toString()}>
+        <Fragment key={item.id.toString()}>
           {index > 0 && <View style={styles.separator} />}
           <ExpenseItem item={item} onEdit={onEdit} onDelete={onDelete} />
-        </React.Fragment>
+        </Fragment>
       ))}
     </View>
   );
@@ -147,12 +156,8 @@ export default function ExpenseList({ expenses, onEdit, onDelete }: ExpenseListP
 
 const styles = StyleSheet.create({
   listContent: {
-    padding: SPACING.md,
-    paddingBottom: SPACING.xxl,
-  },
-  listContentEmpty: {
-    flex: 1,
-    justifyContent: 'center',
+    paddingHorizontal: SPACING.md,
+    paddingBottom: SPACING.xl,
   },
   separator: {
     height: SPACING.sm,
@@ -188,9 +193,28 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.surface,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.md,
-    borderWidth: 1,
-    borderColor: COLORS.borderLight,
     ...SHADOW.md,
+  },
+
+  // Header Row
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: SPACING.sm + 2,
+  },
+  dateContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.xs,
+  },
+  dateIcon: {
+    fontSize: FONT_SIZE.sm,
+  },
+  dateText: {
+    fontSize: FONT_SIZE.sm,
+    fontWeight: FONT_WEIGHT.medium,
+    color: COLORS.textSecondary,
   },
 
   // Top Row
@@ -217,40 +241,30 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   cardAmount: {
-    fontSize: FONT_SIZE.md,
+    fontSize: FONT_SIZE.lg,
     fontWeight: FONT_WEIGHT.bold,
     color: COLORS.danger,
     letterSpacing: 0.3,
   },
 
-  // Bottom Row
+  // Category Badge
   cardBottomRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     paddingTop: SPACING.sm,
     borderTopWidth: 1,
     borderTopColor: COLORS.borderLight,
   },
-  cardMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-    flex: 1,
-  },
   categoryBadge: {
     paddingHorizontal: SPACING.sm + 2,
     paddingVertical: SPACING.xs,
     borderRadius: BORDER_RADIUS.full,
+    backgroundColor: COLORS.dangerLight,
   },
   categoryBadgeText: {
     fontSize: FONT_SIZE.xs,
     fontWeight: FONT_WEIGHT.semibold,
     letterSpacing: 0.2,
-  },
-  dateText: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textLight,
   },
 
   // Actions
@@ -260,19 +274,25 @@ const styles = StyleSheet.create({
     gap: SPACING.xs,
   },
   editButton: {
-    padding: SPACING.xs,
+    width: 32,
+    height: 32,
     borderRadius: BORDER_RADIUS.sm,
     backgroundColor: COLORS.secondaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   editIcon: {
-    fontSize: 16,
+    fontSize: FONT_SIZE.sm,
   },
   deleteButton: {
-    padding: SPACING.xs,
+    width: 32,
+    height: 32,
     borderRadius: BORDER_RADIUS.sm,
     backgroundColor: COLORS.dangerLight,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   deleteIcon: {
-    fontSize: 16,
+    fontSize: FONT_SIZE.sm,
   },
 });

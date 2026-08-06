@@ -49,6 +49,13 @@ export async function initializeDatabase(db: SQLiteDatabase): Promise<void> {
     // Column already exists or table isn't created yet (handled above)
   }
 
+  // Migrate seasons table to add ref_price_per_kg column
+  try {
+    await db.execAsync('ALTER TABLE seasons ADD COLUMN ref_price_per_kg REAL DEFAULT 0');
+  } catch (error) {
+    // Column already exists
+  }
+
   // Migrate income table to add gacong (harvest fee) columns
   try {
     await db.execAsync("ALTER TABLE income ADD COLUMN gacong_type TEXT NOT NULL DEFAULT 'berat'");

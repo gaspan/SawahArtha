@@ -13,10 +13,11 @@ import { formatIDR } from '../utils/currency';
 interface Props {
   totalExpenses: number;
   totalRevenue: number;
+  zakatRp: number;
 }
 
-export default function SummaryCards({ totalExpenses, totalRevenue }: Props) {
-  const netProfit = totalRevenue - totalExpenses;
+export default function SummaryCards({ totalExpenses, totalRevenue, zakatRp }: Props) {
+  const netProfit = totalRevenue - zakatRp - totalExpenses;
   const isProfit = netProfit >= 0;
 
   return (
@@ -32,7 +33,7 @@ export default function SummaryCards({ totalExpenses, totalRevenue }: Props) {
         <View style={styles.cardBody}>
           <View style={styles.labelRow}>
             <Text style={styles.icon}>{isProfit ? '📈' : '📉'}</Text>
-            <Text style={styles.label}>Laba / Rugi Bersih</Text>
+            <Text style={styles.label}>Laba / Rugi Bersih (Setelah Zakat)</Text>
           </View>
           <Text
             style={[

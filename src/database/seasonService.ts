@@ -8,6 +8,7 @@ export interface Season {
   id: number;
   season_code: string;
   land_size_m2: number;
+  ref_price_per_kg: number;
   is_active: number;
 }
 
@@ -58,5 +59,16 @@ export async function updateSeasonLandSize(
   await db.runAsync(
     'UPDATE seasons SET land_size_m2 = ? WHERE season_code = ?',
     [landSizeM2, seasonCode]
+  );
+}
+
+export async function updateSeasonRefPrice(
+  db: SQLiteDatabase,
+  seasonCode: string,
+  refPricePerKg: number
+): Promise<void> {
+  await db.runAsync(
+    'UPDATE seasons SET ref_price_per_kg = ? WHERE season_code = ?',
+    [refPricePerKg, seasonCode]
   );
 }

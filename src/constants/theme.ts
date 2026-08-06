@@ -57,6 +57,7 @@ export const COLORS = {
   chartItemBarang: '#F97316',
   chartHerbisida: '#14B8A6',
   chartMoluksida: '#6366F1',
+  chartGacong: '#A855F7',
 
   // Borders & Shadows
   border: '#9CA3AF',

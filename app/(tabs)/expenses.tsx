@@ -12,25 +12,66 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  TouchableOpacity,
+  type NativeSyntheticEvent,
+  type NativeScrollEvent,
 } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { useExpenses } from '../../src/hooks/useExpenses';
 import { formatIDR } from '../../src/utils/currency';
-import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOW } from '../../src/constants/theme';
+import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOW, CATEGORIES } from '../../src/constants/theme';
 import { type Expense } from '../../src/database/expenseService';
 
 import ExpenseForm from '../../src/components/ExpenseForm';
 import ExpenseList from '../../src/components/ExpenseList';
 import EditExpenseModal from '../../src/components/EditExpenseModal';
 
+const LOAD_MORE_THRESHOLD = 120;
+
 export default function ExpensesScreen() {
-  const { expenses, totalExpenses, addExpense, updateExpense, deleteExpense, refreshExpenses, isLoading } = useExpenses();
+  const {
+    expenses,
+    totalExpenses,
+    totalCount,
+    hasMore,
+    isLoading,
+    isLoadingMore,
+    addExpense,
+    updateExpense,
+    deleteExpense,
+    refreshExpenses,
+    loadMoreExpenses,
+  } = useExpenses();
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+  const [filterCategory, setFilterCategory] = useState<string | null>(null);
 
   useFocusEffect(
     useCallback(() => {
       refreshExpenses();
     }, [refreshExpenses])
+  );
+
+  const handleSelectCategory = useCallback(
+    (category: string | null) => {
+      setFilterCategory(category);
+      refreshExpenses(category);
+    },
+    [refreshExpenses]
+  );
+
+  const handleScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
+      if (
+        !isLoading &&
+        !isLoadingMore &&
+        hasMore &&
+        layoutMeasurement.height + contentOffset.y >= contentSize.height - LOAD_MORE_THRESHOLD
+      ) {
+        loadMoreExpenses();
+      }
+    },
+    [isLoading, isLoadingMore, hasMore, loadMoreExpenses]
   );
 
   const handleAddExpense = async (data: {
@@ -87,6 +128,8 @@ export default function ExpensesScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        scrollEventThrottle={16}
+        onScroll={handleScroll}
       >
         {/* Total Banner */}
         <View style={styles.totalBanner}>
@@ -100,8 +143,57 @@ export default function ExpensesScreen() {
         {/* Expense List */}
         <View style={styles.listSection}>
           <Text style={styles.sectionTitle}>
-            Riwayat Pengeluaran ({expenses.length})
+            Riwayat Pengeluaran ({totalCount})
           </Text>
+
+          {/* Category Filter */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.filterRow}
+          >
+            <TouchableOpacity
+              style={[
+                styles.filterChip,
+                filterCategory === null && styles.filterChipActive,
+              ]}
+              onPress={() => handleSelectCategory(null)}
+              activeOpacity={0.7}
+            >
+              <Text
+                style={[
+                  styles.filterChipText,
+                  filterCategory === null && styles.filterChipTextActive,
+                ]}
+              >
+                Semua
+              </Text>
+            </TouchableOpacity>
+            {CATEGORIES.map((category) => {
+              const isActive = filterCategory === category;
+              return (
+                <TouchableOpacity
+                  key={category}
+                  style={[
+                    styles.filterChip,
+                    isActive && styles.filterChipActive,
+                  ]}
+                  onPress={() => handleSelectCategory(category)}
+                  activeOpacity={0.7}
+                >
+                  <Text
+                    style={[
+                      styles.filterChipText,
+                      isActive && styles.filterChipTextActive,
+                    ]}
+                  >
+                    {category}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+
           {isLoading ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color={COLORS.primary} />
@@ -113,6 +205,16 @@ export default function ExpensesScreen() {
               onEdit={setEditingExpense}
               onDelete={handleDelete}
             />
+          )}
+
+          {!isLoading && (isLoadingMore || hasMore) && (
+            <View style={styles.listFooter}>
+              {isLoadingMore ? (
+                <ActivityIndicator size="small" color={COLORS.primary} />
+              ) : (
+                <Text style={styles.footerText}>Geser ke bawah untuk memuat lebih banyak</Text>
+              )}
+            </View>
           )}
         </View>
 
@@ -165,14 +267,14 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: SPACING.md,
-    paddingTop: SPACING.lg,
+    paddingTop: SPACING.sm,
   },
   totalBanner: {
     backgroundColor: COLORS.dangerLight,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.lg,
     alignItems: 'center',
-    marginBottom: SPACING.lg,
+    marginBottom: SPACING.md,
     borderWidth: 1,
     borderColor: 'rgba(239, 68, 68, 0.2)',
   },
@@ -195,6 +297,40 @@ const styles = StyleSheet.create({
     fontWeight: FONT_WEIGHT.bold,
     color: COLORS.text,
     marginBottom: SPACING.md,
+  },
+  filterRow: {
+    gap: SPACING.sm,
+    paddingRight: SPACING.md,
+    marginBottom: SPACING.md,
+  },
+  filterChip: {
+    backgroundColor: COLORS.surface,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+    borderRadius: BORDER_RADIUS.full,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+  },
+  filterChipActive: {
+    backgroundColor: COLORS.danger,
+    borderColor: COLORS.danger,
+  },
+  filterChipText: {
+    fontSize: FONT_SIZE.sm,
+    fontWeight: FONT_WEIGHT.medium,
+    color: COLORS.textSecondary,
+  },
+  filterChipTextActive: {
+    color: COLORS.textInverse,
+    fontWeight: FONT_WEIGHT.semibold,
+  },
+  listFooter: {
+    alignItems: 'center',
+    paddingVertical: SPACING.md,
+  },
+  footerText: {
+    fontSize: FONT_SIZE.xs,
+    color: COLORS.textLight,
   },
   loadingContainer: {
     paddingVertical: SPACING.xl,

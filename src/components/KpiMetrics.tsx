@@ -13,6 +13,7 @@ import { formatIDR } from '../utils/currency';
 interface Props {
   totalExpenses: number;
   totalRevenue: number;
+  totalGKG: number;
   totalGKP: number;
   landSizeM2: number | null | undefined;
   onUpdateLandSize?: (size: number) => Promise<void>;
@@ -21,6 +22,7 @@ interface Props {
 export default function KpiMetrics({
   totalExpenses,
   totalRevenue,
+  totalGKG,
   totalGKP,
   landSizeM2,
   onUpdateLandSize,
@@ -63,11 +65,11 @@ export default function KpiMetrics({
   };
   const netProfit = totalRevenue - totalExpenses;
   
-  // 1. ROI / Net Profit Margin
   const roi = totalExpenses > 0 ? (netProfit / totalExpenses) * 100 : 0;
   
-  // 2. HPP per kg GKP (Harga Pokok Produksi)
-  const hpp = totalGKP > 0 ? totalExpenses / totalGKP : 0;
+  const margin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
+  
+  const hpp = totalGKG > 0 ? totalExpenses / totalGKG : 0;
   
   // 3. Land Productivity (Kuintal/Ha)
   // Formula: (Total GKP in kg / 100) / (Land Size in m² / 10000)
@@ -82,11 +84,10 @@ export default function KpiMetrics({
     <View style={styles.card}>
       <Text style={styles.cardTitle}>📊 Analisis Bisnis & Produktivitas</Text>
       
-      {/* Top row: ROI & HPP */}
+      {/* Top row: ROI, Margin & HPP */}
       <View style={styles.topRow}>
-        {/* ROI Metric */}
         <View style={styles.metricBox}>
-          <Text style={styles.label}>ROI / Margin Laba</Text>
+          <Text style={styles.label}>ROI (Return on Investment)</Text>
           <Text
             style={[
               styles.value,
@@ -113,19 +114,32 @@ export default function KpiMetrics({
           >
             {isPositive ? ' Untung' : ' Rugi'}
           </Text>
+          <View style={styles.miniDivider} />
+          <Text style={styles.subLabel}>Margin Laba</Text>
+          <Text
+            style={[
+              styles.subValue,
+              { color: isPositive ? COLORS.success : COLORS.danger },
+            ]}
+          >
+            {isPositive ? '+' : ''}
+            {margin.toLocaleString('id-ID', {
+              minimumFractionDigits: 1,
+              maximumFractionDigits: 1,
+            })}
+            %
+          </Text>
         </View>
 
-        {/* Vertical Divider */}
         <View style={styles.verticalDivider} />
 
-        {/* HPP Metric */}
         <View style={styles.metricBox}>
-          <Text style={styles.label}>HPP (Modal / kg)</Text>
+          <Text style={styles.label}>HPP (Modal / kg GKG)</Text>
           <Text style={[styles.value, styles.hppValue]}>
             {formatIDR(hpp)}
           </Text>
-          <Text style={styles.subtext}>per kg GKP</Text>
-          <Text style={styles.helperText}>Batas harga jual modal</Text>
+          <Text style={styles.subtext}>per kg GKG</Text>
+          <Text style={styles.helperText}>Harga jual minimum balik modal</Text>
         </View>
       </View>
 
@@ -274,6 +288,24 @@ const styles = StyleSheet.create({
     fontSize: 9,
     color: COLORS.textLight,
     textAlign: 'center',
+  },
+  miniDivider: {
+    height: 1,
+    backgroundColor: COLORS.borderLight,
+    width: '60%',
+    marginVertical: 6,
+    alignSelf: 'center',
+  },
+  subLabel: {
+    fontSize: FONT_SIZE.xs - 1,
+    fontWeight: FONT_WEIGHT.semibold,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    marginBottom: 2,
+  },
+  subValue: {
+    fontSize: FONT_SIZE.md,
+    fontWeight: FONT_WEIGHT.bold,
   },
 
   // Productivity

@@ -120,7 +120,8 @@ export async function getTotalGKP(
 }
 
 /**
- * Calculate weighted average price per kg for zakat rupiah calculation.
+ * Weighted average price per kg for zakat rupiah calculation.
+ * Weights each harvest by gkg_weight so large harvests matter more.
  * Only includes records that have a price set (price_per_kg > 0).
  */
 export async function getAveragePricePerKg(
@@ -128,8 +129,44 @@ export async function getAveragePricePerKg(
   seasonCode: string
 ): Promise<number> {
   const result = await db.getFirstAsync<{ avg_price: number | null }>(
-    'SELECT AVG(price_per_kg) as avg_price FROM income WHERE season_code = ? AND price_per_kg > 0',
+    `SELECT CASE WHEN SUM(gkg_weight) > 0
+       THEN SUM(gkg_weight * price_per_kg) / SUM(gkg_weight)
+       ELSE 0 END as avg_price
+     FROM income WHERE season_code = ? AND price_per_kg > 0`,
     [seasonCode]
   );
   return result?.avg_price ?? 0;
+}
+
+export async function getUnsoldGKG(
+  db: SQLiteDatabase,
+  seasonCode: string
+): Promise<number> {
+  const result = await db.getFirstAsync<{ total: number | null }>(
+    'SELECT SUM(gkg_weight) as total FROM income WHERE season_code = ? AND price_per_kg = 0',
+    [seasonCode]
+  );
+  return result?.total ?? 0;
+}
+
+export async function getTotalRevenueSold(
+  db: SQLiteDatabase,
+  seasonCode: string
+): Promise<number> {
+  const result = await db.getFirstAsync<{ total: number | null }>(
+    'SELECT SUM(total_revenue) as total FROM income WHERE season_code = ? AND price_per_kg > 0',
+    [seasonCode]
+  );
+  return result?.total ?? 0;
+}
+
+export async function getGacongValueRp(
+  db: SQLiteDatabase,
+  seasonCode: string
+): Promise<number> {
+  const result = await db.getFirstAsync<{ total: number | null }>(
+    'SELECT SUM(gacong_weight * price_per_kg) as total FROM income WHERE season_code = ? AND price_per_kg > 0',
+    [seasonCode]
+  );
+  return result?.total ?? 0;
 }

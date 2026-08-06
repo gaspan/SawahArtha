@@ -37,6 +37,44 @@ export async function getAllExpenses(
   );
 }
 
+export const EXPENSES_PAGE_SIZE = 10;
+
+export async function getExpensesPaginated(
+  db: SQLiteDatabase,
+  seasonCode: string,
+  category: string | null,
+  limit: number,
+  offset: number
+): Promise<Expense[]> {
+  if (category) {
+    return db.getAllAsync<Expense>(
+      'SELECT * FROM expenses WHERE season_code = ? AND category = ? ORDER BY date DESC, id DESC LIMIT ? OFFSET ?',
+      [seasonCode, category, limit, offset]
+    );
+  }
+  return db.getAllAsync<Expense>(
+    'SELECT * FROM expenses WHERE season_code = ? ORDER BY date DESC, id DESC LIMIT ? OFFSET ?',
+    [seasonCode, limit, offset]
+  );
+}
+
+export async function countExpenses(
+  db: SQLiteDatabase,
+  seasonCode: string,
+  category: string | null
+): Promise<number> {
+  const result = category
+    ? await db.getFirstAsync<{ count: number }>(
+        'SELECT COUNT(*) as count FROM expenses WHERE season_code = ? AND category = ?',
+        [seasonCode, category]
+      )
+    : await db.getFirstAsync<{ count: number }>(
+        'SELECT COUNT(*) as count FROM expenses WHERE season_code = ?',
+        [seasonCode]
+      );
+  return result?.count ?? 0;
+}
+
 export async function addExpense(
   db: SQLiteDatabase,
   expense: ExpenseInput

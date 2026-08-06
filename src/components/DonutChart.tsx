@@ -25,28 +25,64 @@ const screenWidth = Dimensions.get('window').width;
 interface Props {
   totalExpenses: number;
   totalRevenue: number;
+  zakatRp: number;
 }
 
-const DonutChart: React.FC<Props> = ({ totalExpenses, totalRevenue }) => {
-  const netProfit = totalRevenue - totalExpenses;
+const DonutChart: React.FC<Props> = ({ totalExpenses, totalRevenue, zakatRp }) => {
+  const netProfit = totalRevenue - zakatRp - totalExpenses;
   const isEmpty = totalExpenses === 0 && totalRevenue === 0;
 
-  const data = [
-    {
-      name: 'Pengeluaran',
+  const segments: { name: string; population: number; color: string; legendFontColor: string; legendFontSize: number }[] = [];
+
+  if (totalExpenses > 0) {
+    segments.push({
+      name: 'Modal',
       population: totalExpenses,
       color: COLORS.chartExpense,
       legendFontColor: COLORS.textSecondary,
       legendFontSize: 12,
-    },
-    {
-      name: 'Penghasilan',
-      population: totalRevenue,
+    });
+  }
+
+  if (zakatRp > 0) {
+    segments.push({
+      name: 'Zakat',
+      population: zakatRp,
+      color: COLORS.secondary,
+      legendFontColor: COLORS.textSecondary,
+      legendFontSize: 12,
+    });
+  }
+
+  if (netProfit > 0) {
+    segments.push({
+      name: 'Laba Bersih',
+      population: netProfit,
       color: COLORS.chartRevenue,
       legendFontColor: COLORS.textSecondary,
       legendFontSize: 12,
-    },
-  ];
+    });
+  } else if (netProfit < 0) {
+    segments.push({
+      name: 'Defisit',
+      population: Math.abs(netProfit),
+      color: '#FCA5A5',
+      legendFontColor: COLORS.textSecondary,
+      legendFontSize: 12,
+    });
+  }
+
+  if (segments.length === 0) {
+    segments.push({
+      name: 'Belum ada data',
+      population: 1,
+      color: COLORS.borderLight,
+      legendFontColor: COLORS.textSecondary,
+      legendFontSize: 12,
+    });
+  }
+
+  const data = segments;
 
   const chartConfig = {
     color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
@@ -55,7 +91,7 @@ const DonutChart: React.FC<Props> = ({ totalExpenses, totalRevenue }) => {
   return (
     <View style={styles.card}>
       {/* Card Header */}
-      <Text style={styles.title}>Pengeluaran vs Penghasilan</Text>
+      <Text style={styles.title}>Rincian Modal, Zakat & Laba</Text>
 
       {isEmpty ? (
         /* Empty State */
@@ -101,33 +137,33 @@ const DonutChart: React.FC<Props> = ({ totalExpenses, totalRevenue }) => {
 
           {/* Custom Legend */}
           <View style={styles.legendContainer}>
-            {/* Pengeluaran Legend */}
-            <View style={styles.legendItem}>
-              <View
-                style={[styles.legendDot, { backgroundColor: COLORS.chartExpense }]}
-              />
-              <View style={styles.legendTextContainer}>
-                <Text style={styles.legendLabel}>Pengeluaran</Text>
-                <Text style={styles.legendValue}>{formatIDR(totalExpenses)}</Text>
-              </View>
-            </View>
-
-            {/* Penghasilan Legend */}
-            <View style={styles.legendItem}>
-              <View
-                style={[styles.legendDot, { backgroundColor: COLORS.chartRevenue }]}
-              />
-              <View style={styles.legendTextContainer}>
-                <Text style={styles.legendLabel}>Penghasilan</Text>
-                <Text style={styles.legendValue}>{formatIDR(totalRevenue)}</Text>
-              </View>
-            </View>
+            <LegendItem color={COLORS.chartExpense} label="Modal" value={formatIDR(totalExpenses)} />
+            {zakatRp > 0 && (
+              <LegendItem color={COLORS.secondary} label="Zakat" value={formatIDR(zakatRp)} />
+            )}
+            {netProfit >= 0 ? (
+              <LegendItem color={COLORS.chartRevenue} label="Laba Bersih" value={formatIDR(netProfit)} />
+            ) : (
+              <LegendItem color="#FCA5A5" label="Defisit" value={formatIDR(Math.abs(netProfit))} />
+            )}
           </View>
         </>
       )}
     </View>
   );
 };
+
+function LegendItem({ color, label, value }: { color: string; label: string; value: string }) {
+  return (
+    <View style={styles.legendItem}>
+      <View style={[styles.legendDot, { backgroundColor: color }]} />
+      <View style={styles.legendTextContainer}>
+        <Text style={styles.legendLabel}>{label}</Text>
+        <Text style={styles.legendValue}>{value}</Text>
+      </View>
+    </View>
+  );
+}
 
 const DONUT_HOLE_SIZE = 100;
 
@@ -174,7 +210,9 @@ const styles = StyleSheet.create({
   },
   legendContainer: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-around',
+    gap: SPACING.sm,
     marginTop: SPACING.lg,
     paddingTop: SPACING.md,
     borderTopWidth: 1,

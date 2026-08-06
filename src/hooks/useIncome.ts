@@ -15,6 +15,9 @@ import {
   getTotalGKG,
   getTotalGKP,
   getAveragePricePerKg,
+  getUnsoldGKG,
+  getTotalRevenueSold,
+  getGacongValueRp,
   type Income,
   type IncomeInput,
 } from '../database/incomeService';
@@ -25,6 +28,9 @@ interface UseIncomeReturn {
   totalGKG: number;
   totalGKP: number;
   avgPricePerKg: number;
+  unsoldGKG: number;
+  totalRevenueSold: number;
+  gacongValueRp: number;
   isLoading: boolean;
   addIncome: (input: Omit<IncomeInput, 'season_code'>) => Promise<void>;
   updatePrice: (id: number, pricePerKg: number) => Promise<void>;
@@ -40,22 +46,31 @@ export function useIncome(): UseIncomeReturn {
   const [totalGKG, setTotalGKG] = useState(0);
   const [totalGKP, setTotalGKP] = useState(0);
   const [avgPricePerKg, setAvgPricePerKg] = useState(0);
+  const [unsoldGKG, setUnsoldGKG] = useState(0);
+  const [totalRevenueSold, setTotalRevenueSold] = useState(0);
+  const [gacongValueRp, setGacongValueRp] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
   const refreshIncome = useCallback(async () => {
     try {
-      const [records, revenue, gkg, gkp, avgPrice] = await Promise.all([
+      const [records, revenue, gkg, gkp, avgPrice, unsold, revSold, gacongVal] = await Promise.all([
         getAllIncome(db, selectedSeason),
         getTotalRevenue(db, selectedSeason),
         getTotalGKG(db, selectedSeason),
         getTotalGKP(db, selectedSeason),
         getAveragePricePerKg(db, selectedSeason),
+        getUnsoldGKG(db, selectedSeason),
+        getTotalRevenueSold(db, selectedSeason),
+        getGacongValueRp(db, selectedSeason),
       ]);
       setIncomeRecords(records);
       setTotalRevenue(revenue);
       setTotalGKG(gkg);
       setTotalGKP(gkp);
       setAvgPricePerKg(avgPrice);
+      setUnsoldGKG(unsold);
+      setTotalRevenueSold(revSold);
+      setGacongValueRp(gacongVal);
     } catch (error) {
       console.error('Error fetching income:', error);
     } finally {
@@ -112,6 +127,9 @@ export function useIncome(): UseIncomeReturn {
     totalGKG,
     totalGKP,
     avgPricePerKg,
+    unsoldGKG,
+    totalRevenueSold,
+    gacongValueRp,
     isLoading,
     addIncome,
     updatePrice,

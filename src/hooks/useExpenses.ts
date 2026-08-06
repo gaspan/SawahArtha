@@ -1,17 +1,20 @@
 /**
  * useExpenses hook
- * Manages expense state with SQLite persistence, filtered by selected season
+ * Manages expense state with SQLite persistence, filtered by selected season.
+ * Supports lazy-load pagination and category filtering for the history list.
  */
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useSeason } from '../context/SeasonContext';
 import {
-  getAllExpenses,
+  getExpensesPaginated,
+  countExpenses,
   addExpense as addExpenseDB,
   deleteExpense as deleteExpenseDB,
   updateExpense as updateExpenseDB,
   getExpensesByCategory,
   getTotalExpenses,
+  EXPENSES_PAGE_SIZE,
   type Expense,
   type ExpenseInput,
   type CategoryTotal,
@@ -21,11 +24,15 @@ interface UseExpensesReturn {
   expenses: Expense[];
   categoryTotals: CategoryTotal[];
   totalExpenses: number;
+  totalCount: number;
+  hasMore: boolean;
   isLoading: boolean;
+  isLoadingMore: boolean;
   addExpense: (input: Omit<ExpenseInput, 'season_code'>) => Promise<void>;
   deleteExpense: (id: number) => Promise<void>;
   updateExpense: (id: number, input: Omit<ExpenseInput, 'season_code'>) => Promise<void>;
-  refreshExpenses: () => Promise<void>;
+  refreshExpenses: (category?: string | null) => Promise<void>;
+  loadMoreExpenses: () => Promise<void>;
 }
 
 export function useExpenses(): UseExpensesReturn {
@@ -34,24 +41,65 @@ export function useExpenses(): UseExpensesReturn {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [categoryTotals, setCategoryTotals] = useState<CategoryTotal[]>([]);
   const [totalExpenses, setTotalExpenses] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const categoryRef = useRef<string | null>(null);
+  const offsetRef = useRef(0);
+  const countRef = useRef(0);
 
-  const refreshExpenses = useCallback(async () => {
+  const refreshExpenses = useCallback(
+    async (category?: string | null) => {
+      if (category !== undefined) {
+        categoryRef.current = category;
+      }
+      offsetRef.current = 0;
+      try {
+        setIsLoading(true);
+        const cat = categoryRef.current;
+        const [page, count, catTotals, total] = await Promise.all([
+          getExpensesPaginated(db, selectedSeason, cat, EXPENSES_PAGE_SIZE, 0),
+          countExpenses(db, selectedSeason, cat),
+          getExpensesByCategory(db, selectedSeason),
+          getTotalExpenses(db, selectedSeason),
+        ]);
+        countRef.current = count;
+        setExpenses(page);
+        setTotalCount(count);
+        setHasMore(page.length < count);
+        setCategoryTotals(catTotals);
+        setTotalExpenses(total);
+      } catch (error) {
+        console.error('Error fetching expenses:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [db, selectedSeason]
+  );
+
+  const loadMoreExpenses = useCallback(async () => {
+    if (isLoadingMore || !hasMore) return;
     try {
-      const [allExpenses, catTotals, total] = await Promise.all([
-        getAllExpenses(db, selectedSeason),
-        getExpensesByCategory(db, selectedSeason),
-        getTotalExpenses(db, selectedSeason),
-      ]);
-      setExpenses(allExpenses);
-      setCategoryTotals(catTotals);
-      setTotalExpenses(total);
+      setIsLoadingMore(true);
+      const nextOffset = offsetRef.current + EXPENSES_PAGE_SIZE;
+      const page = await getExpensesPaginated(
+        db,
+        selectedSeason,
+        categoryRef.current,
+        EXPENSES_PAGE_SIZE,
+        nextOffset
+      );
+      offsetRef.current = nextOffset;
+      setExpenses((prev) => [...prev, ...page]);
+      setHasMore(nextOffset + page.length < countRef.current);
     } catch (error) {
-      console.error('Error fetching expenses:', error);
+      console.error('Error loading more expenses:', error);
     } finally {
-      setIsLoading(false);
+      setIsLoadingMore(false);
     }
-  }, [db, selectedSeason]);
+  }, [db, selectedSeason, isLoadingMore, hasMore]);
 
   useEffect(() => {
     refreshExpenses();
@@ -100,10 +148,14 @@ export function useExpenses(): UseExpensesReturn {
     expenses,
     categoryTotals,
     totalExpenses,
+    totalCount,
+    hasMore,
     isLoading,
+    isLoadingMore,
     addExpense,
     deleteExpense,
     updateExpense,
     refreshExpenses,
+    loadMoreExpenses,
   };
 }

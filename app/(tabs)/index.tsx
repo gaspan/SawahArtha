@@ -1,8 +1,8 @@
 /**
  * Dashboard Screen - SawahArtha
- * Shows season picker, summary cards, and charts
+ * Shows season picker, financial summary, KPI metrics, and charts
  */
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -22,15 +22,20 @@ import { useExpenses } from '../../src/hooks/useExpenses';
 import { useIncome } from '../../src/hooks/useIncome';
 import { getZakatSummary } from '../../src/utils/zakat';
 import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOW } from '../../src/constants/theme';
+import { formatIDR } from '../../src/utils/currency';
 import * as DocumentPicker from 'expo-document-picker';
 import { convertToCSV, exportToCSVFile, importFromCSV } from '../../src/utils/csv';
 
 import SeasonPicker from '../../src/components/SeasonPicker';
 import NewSeasonModal from '../../src/components/NewSeasonModal';
 import SummaryCards from '../../src/components/SummaryCards';
+import ProfitWaterfallCard from '../../src/components/ProfitWaterfallCard';
+import BreakEvenCard from '../../src/components/BreakEvenCard';
+import KpiMetrics from '../../src/components/KpiMetrics';
+import UnsoldGrainCard from '../../src/components/UnsoldGrainCard';
+import PriceSimulatorCard from '../../src/components/PriceSimulatorCard';
 import DonutChart from '../../src/components/DonutChart';
 import CategoryBarChart from '../../src/components/CategoryBarChart';
-import KpiMetrics from '../../src/components/KpiMetrics';
 import QuickFeed, { type FeedTransaction } from '../../src/components/QuickFeed';
 
 function formatDisplayPath(path: string): string {
@@ -40,7 +45,6 @@ function formatDisplayPath(path: string): string {
       const decoded = decodeURIComponent(path);
       const parts = decoded.split('/');
       const fileName = parts[parts.length - 1] || 'SawahArtha_Backup.csv';
-      
       if (decoded.includes('Download')) {
         return `Penyimpanan Internal > Download > ${fileName}`;
       }
@@ -56,21 +60,30 @@ function formatDisplayPath(path: string): string {
       return path;
     }
   }
-  
   if (path.startsWith('file://')) {
     const parts = path.split('/');
     const fileName = parts[parts.length - 1] || 'SawahArtha_Backup.csv';
     return `Documents (Files App) > SawahArtha > ${fileName}`;
   }
-  
   return path;
 }
 
 export default function DashboardScreen() {
   const db = useSQLiteContext();
-  const { selectedSeason, seasons, switchSeason, createNewSeason, updateLandSize, refreshSeasons } = useSeason();
+  const { selectedSeason, seasons, switchSeason, createNewSeason, updateLandSize, updateRefPrice, refreshSeasons } = useSeason();
   const { expenses, totalExpenses, categoryTotals, refreshExpenses, isLoading: expensesLoading } = useExpenses();
-  const { incomeRecords, totalRevenue, totalGKG, totalGKP, avgPricePerKg, refreshIncome, isLoading: incomeLoading } = useIncome();
+  const {
+    incomeRecords,
+    totalRevenue,
+    totalGKG,
+    totalGKP,
+    avgPricePerKg,
+    unsoldGKG,
+    totalRevenueSold,
+    gacongValueRp,
+    refreshIncome,
+    isLoading: incomeLoading,
+  } = useIncome();
   const isDataLoading = expensesLoading || incomeLoading;
 
   const [showNewSeasonModal, setShowNewSeasonModal] = useState(false);
@@ -87,26 +100,27 @@ export default function DashboardScreen() {
           setLastExportPath(savedPath);
         }
       } catch (err) {
-        console.log('Error reading last export path:', err);
+        // ignore
       }
     };
     loadLastExportPath();
   }, []);
 
-  // Find land size of the currently selected season
   const currentSeasonObj = seasons.find((s) => s.season_code === selectedSeason);
-  const landSizeM2 = currentSeasonObj?.land_size_m2 ?? 1400; // default to 1400 if not set
+  const landSizeM2 = currentSeasonObj?.land_size_m2 ?? 1400;
+  const refPrice = currentSeasonObj?.ref_price_per_kg ?? avgPricePerKg;
+  const totalRevenueEstimate = totalRevenueSold + (unsoldGKG * (refPrice || 0));
+  const zakatSummary = getZakatSummary(totalGKG, avgPricePerKg);
+
+  const hpp = totalGKG > 0 ? totalExpenses / totalGKG : 0;
 
   const handleExportCSV = async () => {
     try {
-      // Query ALL expenses and income records across all seasons
       const allExpenses = await db.getAllAsync('SELECT * FROM expenses ORDER BY date DESC, id DESC');
       const allIncome = await db.getAllAsync('SELECT * FROM income ORDER BY date DESC, id DESC');
-      
       const csvStr = convertToCSV(allExpenses, allIncome);
       const filePath = await exportToCSVFile(csvStr);
 
-      // Save path to local file for persistence
       const pathFile = `${FileSystem.documentDirectory}last_export_path.txt`;
       await FileSystem.writeAsStringAsync(pathFile, filePath, {
         encoding: FileSystem.EncodingType.UTF8,
@@ -136,7 +150,7 @@ export default function DashboardScreen() {
       }
 
       const fileAsset = result.assets[0];
-      
+
       Alert.alert(
         'Konfirmasi Impor 📥',
         `Apakah Anda yakin ingin mengimpor data dari "${fileAsset.name}"?\n\nData lama tidak akan terhapus, dan data duplikat akan diabaikan secara otomatis.`,
@@ -147,7 +161,6 @@ export default function DashboardScreen() {
             onPress: async () => {
               try {
                 const { expensesAdded, incomesAdded } = await importFromCSV(db, fileAsset.uri);
-                
                 await Promise.all([
                   refreshExpenses(),
                   refreshIncome(),
@@ -172,7 +185,6 @@ export default function DashboardScreen() {
     }
   };
 
-  // Refresh data when tab is focused
   useFocusEffect(
     useCallback(() => {
       refreshExpenses();
@@ -180,8 +192,7 @@ export default function DashboardScreen() {
     }, [refreshExpenses, refreshIncome])
   );
 
-  // Calculate combined latest 3 transactions for Quick Feed
-  const combinedTransactions: FeedTransaction[] = React.useMemo(() => {
+  const combinedTransactions: FeedTransaction[] = useMemo(() => {
     const list: FeedTransaction[] = [
       ...expenses.map((e) => ({
         id: `expense-${e.id}`,
@@ -200,8 +211,6 @@ export default function DashboardScreen() {
         categoryOrMeta: `${i.gkp_weight.toLocaleString('id-ID')} kg`,
       })),
     ];
-
-    // Sort by date (descending), then ID (descending)
     return list.sort((a, b) => b.date.localeCompare(a.date)).slice(0, 3);
   }, [expenses, incomeRecords]);
 
@@ -229,9 +238,17 @@ export default function DashboardScreen() {
     }
   };
 
+  const handleUpdateRefPrice = async (price: number) => {
+    try {
+      await updateRefPrice(selectedSeason, price);
+    } catch (error) {
+      console.error('Error updating ref price:', error);
+      throw error;
+    }
+  };
+
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerContent}>
           <Text style={styles.headerEmoji}>🌾</Text>
@@ -255,7 +272,6 @@ export default function DashboardScreen() {
           />
         }
       >
-        {/* Season Picker */}
         <SeasonPicker
           selectedSeason={selectedSeason}
           seasons={seasons}
@@ -263,7 +279,6 @@ export default function DashboardScreen() {
           onNewSeason={() => setShowNewSeasonModal(true)}
         />
 
-        {/* Backup Export & Import Buttons */}
         <View style={styles.actionRow}>
           <TouchableOpacity
             style={styles.actionButton}
@@ -281,7 +296,6 @@ export default function DashboardScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Last Export Path Card */}
         {lastExportPath ? (
           <View style={styles.pathCard}>
             <Text style={styles.pathLabel}>💾 File Ekspor Terakhir:</Text>
@@ -298,40 +312,78 @@ export default function DashboardScreen() {
           </View>
         ) : (
           <>
-            {/* Summary Cards */}
+            {/* Zona Keuangan Utama */}
+            <ProfitWaterfallCard
+              totalRevenue={totalRevenueEstimate}
+              zakatRp={zakatSummary.zakatRp}
+              gacongValueRp={gacongValueRp}
+              totalExpenses={totalExpenses}
+            />
+
+            <BreakEvenCard
+              totalExpenses={totalExpenses}
+              totalRevenue={totalRevenueEstimate}
+              totalGKG={totalGKG}
+              avgOrRefPrice={refPrice || avgPricePerKg}
+            />
+
+            {/* Summary Cards (Net Zakat) */}
             <SummaryCards
               totalExpenses={totalExpenses}
-              totalRevenue={totalRevenue}
+              totalRevenue={totalRevenueEstimate}
+              zakatRp={zakatSummary.zakatRp}
             />
 
             {/* KPI Metrics */}
             <KpiMetrics
               totalExpenses={totalExpenses}
-              totalRevenue={totalRevenue}
+              totalRevenue={totalRevenueEstimate}
+              totalGKG={totalGKG}
               totalGKP={totalGKP}
               landSizeM2={landSizeM2}
               onUpdateLandSize={handleUpdateLandSize}
             />
 
-            {/* Donut Chart - Expenses vs Revenue */}
+            {/* Zona Stok & Proyeksi */}
+            {unsoldGKG > 0 && (
+              <>
+                <UnsoldGrainCard
+                  unsoldKgGKG={unsoldGKG}
+                  refPricePerKg={refPrice || 0}
+                  onUpdateRefPrice={handleUpdateRefPrice}
+                  totalExpenses={totalExpenses}
+                  totalRevenueSold={totalRevenueSold}
+                  totalRevenueEstimate={totalRevenueEstimate}
+                  zakatRp={zakatSummary.zakatRp}
+                />
+
+                <PriceSimulatorCard
+                  unsoldKgGKG={unsoldGKG}
+                  totalExpenses={totalExpenses}
+                  totalRevenueSold={totalRevenueSold}
+                  zakatRp={zakatSummary.zakatRp}
+                  minPrice={hpp}
+                  maxPrice={hpp * 2}
+                />
+              </>
+            )}
+
+            {/* Zona Visualisasi */}
             <DonutChart
               totalExpenses={totalExpenses}
-              totalRevenue={totalRevenue}
+              totalRevenue={totalRevenueEstimate}
+              zakatRp={zakatSummary.zakatRp}
             />
 
-            {/* Category Bar Chart */}
             <CategoryBarChart categoryTotals={categoryTotals} />
 
-            {/* Quick Feed */}
             <QuickFeed transactions={combinedTransactions} />
           </>
         )}
 
-        {/* Bottom spacing */}
         <View style={{ height: SPACING.xl }} />
       </ScrollView>
 
-      {/* New Season Modal */}
       <NewSeasonModal
         visible={showNewSeasonModal}
         onClose={() => setShowNewSeasonModal(false)}

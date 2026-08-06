@@ -10,6 +10,7 @@ import {
   addSeason as addSeasonDB,
   setActiveSeason as setActiveSeasonDB,
   updateSeasonLandSize as updateSeasonLandSizeDB,
+  updateSeasonRefPrice as updateSeasonRefPriceDB,
   type Season,
 } from '../database/seasonService';
 
@@ -20,6 +21,7 @@ interface SeasonContextType {
   switchSeason: (seasonCode: string) => Promise<void>;
   createNewSeason: (seasonCode: string, landSizeM2: number) => Promise<void>;
   updateLandSize: (seasonCode: string, landSizeM2: number) => Promise<void>;
+  updateRefPrice: (seasonCode: string, refPrice: number) => Promise<void>;
   refreshSeasons: () => Promise<void>;
 }
 
@@ -92,6 +94,16 @@ export function SeasonProvider({ children }: { children: ReactNode }) {
     }
   }, [db, refreshSeasons]);
 
+  const updateRefPrice = useCallback(async (seasonCode: string, refPrice: number) => {
+    try {
+      await updateSeasonRefPriceDB(db, seasonCode, refPrice);
+      await refreshSeasons();
+    } catch (error) {
+      console.error('Error updating ref price:', error);
+      throw error;
+    }
+  }, [db, refreshSeasons]);
+
   if (isLoading || !selectedSeason) {
     return null; // or a loading spinner
   }
@@ -105,6 +117,7 @@ export function SeasonProvider({ children }: { children: ReactNode }) {
         switchSeason,
         createNewSeason,
         updateLandSize,
+        updateRefPrice,
         refreshSeasons,
       }}
     >

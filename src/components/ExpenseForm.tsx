@@ -6,9 +6,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
 import {
   COLORS,
@@ -70,25 +67,7 @@ export default function ExpenseForm({ onSubmit }: ExpenseFormProps) {
   }, [isValid, title, description, amountValue, selectedCategory, onSubmit]);
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={styles.keyboardView}
-    >
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.container}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerIcon}>🌾</Text>
-          <Text style={styles.headerTitle}>Catat Pengeluaran</Text>
-          <Text style={styles.headerSubtitle}>
-            Tambahkan biaya operasional sawah Anda
-          </Text>
-        </View>
-
+    <View style={styles.container}>
         {/* Title Input */}
         <View style={styles.fieldGroup}>
           <Text style={styles.label}>Judul Pengeluaran</Text>
@@ -197,43 +176,14 @@ export default function ExpenseForm({ onSubmit }: ExpenseFormProps) {
         >
           <Text style={styles.submitButtonText}>💾 Simpan Pengeluaran</Text>
         </TouchableOpacity>
-      </ScrollView>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  keyboardView: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
   container: {
     padding: SPACING.lg,
     paddingBottom: SPACING.xxl,
-  },
-
-  // Header
-  header: {
-    alignItems: 'center',
-    marginBottom: SPACING.lg,
-    paddingVertical: SPACING.md,
-  },
-  headerIcon: {
-    fontSize: 36,
-    marginBottom: SPACING.sm,
-  },
-  headerTitle: {
-    fontSize: FONT_SIZE.xl,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.text,
-    marginBottom: SPACING.xs,
-  },
-  headerSubtitle: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textSecondary,
   },
 
   // Fields
@@ -269,15 +219,17 @@ const styles = StyleSheet.create({
     ...SHADOW.sm,
   },
   input: {
-    fontSize: FONT_SIZE.md,
+    fontSize: FONT_SIZE.lg,
     color: COLORS.text,
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.md,
-    minHeight: 50,
+    minHeight: 56,
+    fontWeight: FONT_WEIGHT.semibold,
   },
   textArea: {
     minHeight: 90,
     paddingTop: SPACING.md,
+    fontWeight: FONT_WEIGHT.normal,
   },
 
   // Amount
