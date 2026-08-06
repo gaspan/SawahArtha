@@ -20,6 +20,7 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { useSeason } from '../../src/context/SeasonContext';
 import { useExpenses } from '../../src/hooks/useExpenses';
 import { useIncome } from '../../src/hooks/useIncome';
+import { useSeasonMetrics } from '../../src/hooks/useSeasonMetrics';
 import { getZakatSummary } from '../../src/utils/zakat';
 import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOW } from '../../src/constants/theme';
 import { formatIDR } from '../../src/utils/currency';
@@ -34,6 +35,7 @@ import BreakEvenCard from '../../src/components/BreakEvenCard';
 import KpiMetrics from '../../src/components/KpiMetrics';
 import UnsoldGrainCard from '../../src/components/UnsoldGrainCard';
 import PriceSimulatorCard from '../../src/components/PriceSimulatorCard';
+import SeasonComparisonChart from '../../src/components/SeasonComparisonChart';
 import DonutChart from '../../src/components/DonutChart';
 import CategoryBarChart from '../../src/components/CategoryBarChart';
 import QuickFeed, { type FeedTransaction } from '../../src/components/QuickFeed';
@@ -84,6 +86,7 @@ export default function DashboardScreen() {
     refreshIncome,
     isLoading: incomeLoading,
   } = useIncome();
+  const { metrics: seasonMetrics, refreshMetrics } = useSeasonMetrics();
   const isDataLoading = expensesLoading || incomeLoading;
 
   const [showNewSeasonModal, setShowNewSeasonModal] = useState(false);
@@ -189,7 +192,8 @@ export default function DashboardScreen() {
     useCallback(() => {
       refreshExpenses();
       refreshIncome();
-    }, [refreshExpenses, refreshIncome])
+      refreshMetrics();
+    }, [refreshExpenses, refreshIncome, refreshMetrics])
   );
 
   const combinedTransactions: FeedTransaction[] = useMemo(() => {
@@ -216,7 +220,7 @@ export default function DashboardScreen() {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([refreshExpenses(), refreshIncome()]);
+    await Promise.all([refreshExpenses(), refreshIncome(), refreshMetrics()]);
     setRefreshing(false);
   }, [refreshExpenses, refreshIncome]);
 
@@ -340,6 +344,7 @@ export default function DashboardScreen() {
               totalRevenue={totalRevenueEstimate}
               totalGKG={totalGKG}
               totalGKP={totalGKP}
+              zakatRp={zakatSummary.zakatRp}
               landSizeM2={landSizeM2}
               onUpdateLandSize={handleUpdateLandSize}
             />
@@ -369,13 +374,18 @@ export default function DashboardScreen() {
             )}
 
             {/* Zona Visualisasi */}
+            <SeasonComparisonChart
+              metrics={seasonMetrics}
+              currentSeasonCode={selectedSeason}
+            />
+
             <DonutChart
               totalExpenses={totalExpenses}
               totalRevenue={totalRevenueEstimate}
               zakatRp={zakatSummary.zakatRp}
             />
 
-            <CategoryBarChart categoryTotals={categoryTotals} />
+            <CategoryBarChart categoryTotals={categoryTotals} totalGKG={totalGKG} />
 
             <QuickFeed transactions={combinedTransactions} />
           </>

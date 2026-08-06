@@ -1,15 +1,6 @@
-/**
- * CategoryBarChart - Expense Breakdown by Category
- *
- * A bar chart that visualizes expense totals across farming categories
- * (Pupuk, Insektisida, Fungisida, Rodentisida, Jasa Pegawai).
- * Uses react-native-chart-kit BarChart with farming green bars.
- * Shows formatted IDR values and handles empty data gracefully.
- */
-
-import React from 'react';
-import { View, Text, StyleSheet, Dimensions } from 'react-native';
-import { BarChart } from 'react-native-chart-kit';
+import React, { useMemo } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { BarChart } from 'react-native-gifted-charts';
 import {
   COLORS,
   SPACING,
@@ -18,15 +9,13 @@ import {
   FONT_WEIGHT,
   SHADOW,
 } from '../constants/theme';
-import { formatCompact } from '../utils/currency';
-
-const screenWidth = Dimensions.get('window').width;
+import { formatIDR, formatCompact } from '../utils/currency';
 
 interface Props {
   categoryTotals: Array<{ category: string; total: number }>;
+  totalGKG: number;
 }
 
-/** Shorten category names for chart labels */
 const LABEL_MAP: Record<string, string> = {
   Pupuk: 'Pupuk',
   Insektisida: 'Insek.',
@@ -38,7 +27,6 @@ const LABEL_MAP: Record<string, string> = {
   Moluksida: 'Moluk.',
 };
 
-/** Map category names to their chart colors */
 const COLOR_MAP: Record<string, string> = {
   Pupuk: COLORS.chartPupuk,
   Insektisida: COLORS.chartInsektisida,
@@ -50,46 +38,42 @@ const COLOR_MAP: Record<string, string> = {
   Moluksida: COLORS.chartMoluksida,
 };
 
-const CategoryBarChart: React.FC<Props> = ({ categoryTotals }) => {
-  const hasData = categoryTotals.some((item) => item.total > 0);
+const CategoryBarChart: React.FC<Props> = ({ categoryTotals, totalGKG }) => {
+  const totalAll = categoryTotals.reduce((s, c) => s + c.total, 0);
+  const hasData = totalAll > 0;
 
-  // Build chart data from category totals
-  const labels = categoryTotals.map(
-    (item) => LABEL_MAP[item.category] || item.category.slice(0, 5)
+  const barData = useMemo(() =>
+    categoryTotals.map((item) => {
+      const pct = totalAll > 0 ? (item.total / totalAll) * 100 : 0;
+      return {
+        value: item.total,
+        frontColor: COLOR_MAP[item.category] || COLORS.primary,
+        label: LABEL_MAP[item.category] || item.category.slice(0, 5),
+        labelTextStyle: { color: COLORS.textLight, fontSize: 9 },
+        topLabelComponent: () => (
+          <View style={styles.topLabel}>
+            <Text style={styles.topLabelText}>
+              {pct.toLocaleString('id-ID', { maximumFractionDigits: 0 })}%
+            </Text>
+          </View>
+        ),
+      };
+    }),
+    [categoryTotals, totalAll],
   );
-  const values = categoryTotals.map((item) => item.total);
 
-  // Ensure there's at least a tiny value so the chart renders properly
-  const safeValues = values.map((v) => (v === 0 ? 0.01 : v));
+  const largest = useMemo(() =>
+    categoryTotals.reduce((max, c) => (c.total > max.total ? c : max), categoryTotals[0]),
+    [categoryTotals],
+  );
 
-  const data = {
-    labels,
-    datasets: [{ data: safeValues }],
-  };
-
-  const chartConfig = {
-    backgroundColor: COLORS.surface,
-    backgroundGradientFrom: COLORS.surface,
-    backgroundGradientTo: COLORS.surface,
-    decimalPlaces: 0,
-    color: (opacity = 1) => `rgba(5, 150, 105, ${opacity})`,
-    labelColor: (opacity = 1) => `rgba(107, 114, 128, ${opacity})`,
-    fillShadowGradient: COLORS.primary,
-    fillShadowGradientOpacity: 1,
-    barPercentage: 0.6,
-    propsForLabels: {
-      fontSize: 10,
-    },
-    formatYLabel: (yValue: string) => formatCompact(Number(yValue)),
-  };
+  const showPricePerKg = totalGKG > 0;
 
   return (
     <View style={styles.card}>
-      {/* Card Header */}
       <Text style={styles.title}>Pengeluaran per Kategori</Text>
 
       {!hasData ? (
-        /* Empty State */
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyIcon}>📋</Text>
           <Text style={styles.emptyText}>Belum ada data pengeluaran</Text>
@@ -99,43 +83,60 @@ const CategoryBarChart: React.FC<Props> = ({ categoryTotals }) => {
         </View>
       ) : (
         <>
-          {/* Bar Chart */}
           <View style={styles.chartContainer}>
             <BarChart
-              data={data}
-              width={screenWidth - 64}
-              height={220}
-              chartConfig={chartConfig}
-              style={styles.chart}
-              showValuesOnTopOfBars
-              fromZero
-              yAxisLabel=""
-              yAxisSuffix=""
+              data={barData}
+              width={280}
+              height={200}
+              barWidth={22}
+              spacing={14}
+              initialSpacing={10}
+              endSpacing={10}
+              noOfSections={4}
+              yAxisTextStyle={{ color: COLORS.textLight, fontSize: 9 }}
+              yAxisLabelPrefix=""
+              yAxisLabelSuffix=""
+              formatYLabel={(v) => formatCompact(Number(v))}
+              roundedTop
+              isAnimated
             />
           </View>
 
-          {/* Category Color Legend */}
           <View style={styles.legendContainer}>
-            {categoryTotals.map((item) => (
-              <View key={item.category} style={styles.legendItem}>
-                <View
-                  style={[
-                    styles.legendDot,
-                    {
-                      backgroundColor:
-                        COLOR_MAP[item.category] || COLORS.primary,
-                    },
-                  ]}
-                />
-                <Text style={styles.legendLabel}>
-                  {LABEL_MAP[item.category] || item.category}
-                </Text>
-                <Text style={styles.legendValue}>
-                  {formatCompact(item.total)}
-                </Text>
-              </View>
-            ))}
+            {categoryTotals.map((item) => {
+              const pct = totalAll > 0 ? (item.total / totalAll) * 100 : 0;
+              const pricePerKg = showPricePerKg ? item.total / totalGKG : 0;
+              return (
+                <View key={item.category} style={styles.legendItem}>
+                  <View style={[styles.legendDot, { backgroundColor: COLOR_MAP[item.category] || COLORS.primary }]} />
+                  <View style={styles.legendTextCol}>
+                    <View style={styles.legendTopRow}>
+                      <Text style={styles.legendLabel}>
+                        {LABEL_MAP[item.category] || item.category}
+                      </Text>
+                      <Text style={styles.legendPct}>
+                        {pct.toLocaleString('id-ID', { maximumFractionDigits: 0 })}%
+                      </Text>
+                    </View>
+                    <Text style={styles.legendValue}>
+                      {formatCompact(item.total)}
+                      {showPricePerKg ? (
+                        <Text style={styles.legendSub}> · {formatIDR(pricePerKg)}/kg</Text>
+                      ) : null}
+                    </Text>
+                  </View>
+                </View>
+              );
+            })}
           </View>
+
+          {largest && totalAll > 0 && (
+            <View style={styles.insightRow}>
+              <Text style={styles.insightText}>
+                💡 Biaya terbesar: {LABEL_MAP[largest.category] || largest.category} ({((largest.total / totalAll) * 100).toLocaleString('id-ID', { maximumFractionDigits: 0 })}% dari modal)
+              </Text>
+            </View>
+          )}
         </>
       )}
     </View>
@@ -159,45 +160,74 @@ const styles = StyleSheet.create({
   },
   chartContainer: {
     alignItems: 'center',
-    marginHorizontal: -SPACING.sm,
+    marginBottom: SPACING.md,
   },
-  chart: {
-    borderRadius: BORDER_RADIUS.md,
+  topLabel: {
+    marginBottom: 4,
+    alignItems: 'center',
+  },
+  topLabelText: {
+    fontSize: FONT_SIZE.xs - 1,
+    fontWeight: FONT_WEIGHT.bold,
+    color: COLORS.textSecondary,
   },
   legendContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    marginTop: SPACING.md,
-    paddingTop: SPACING.md,
+    paddingTop: SPACING.sm,
     borderTopWidth: 1,
     borderTopColor: COLORS.borderLight,
-    gap: SPACING.sm,
+    gap: SPACING.xs + 2,
   },
   legendItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: SPACING.xs,
-    backgroundColor: COLORS.background,
-    borderRadius: BORDER_RADIUS.full,
+    gap: SPACING.sm,
   },
   legendDot: {
     width: 8,
     height: 8,
     borderRadius: BORDER_RADIUS.full,
-    marginRight: SPACING.xs,
+  },
+  legendTextCol: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  legendTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.xs,
   },
   legendLabel: {
     fontSize: FONT_SIZE.xs,
     fontWeight: FONT_WEIGHT.medium,
+    color: COLORS.text,
+  },
+  legendPct: {
+    fontSize: FONT_SIZE.xs - 1,
+    fontWeight: FONT_WEIGHT.semibold,
     color: COLORS.textSecondary,
-    marginRight: SPACING.xs,
   },
   legendValue: {
     fontSize: FONT_SIZE.xs,
     fontWeight: FONT_WEIGHT.semibold,
+    color: COLORS.textSecondary,
+  },
+  legendSub: {
+    fontSize: FONT_SIZE.xs - 1,
+    fontWeight: FONT_WEIGHT.normal,
+    color: COLORS.textLight,
+  },
+  insightRow: {
+    marginTop: SPACING.sm,
+    backgroundColor: COLORS.warningLight,
+    borderRadius: BORDER_RADIUS.md,
+    padding: SPACING.sm,
+  },
+  insightText: {
+    fontSize: FONT_SIZE.xs,
     color: COLORS.text,
+    textAlign: 'center',
   },
   emptyContainer: {
     alignItems: 'center',

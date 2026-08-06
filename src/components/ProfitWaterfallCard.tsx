@@ -23,10 +23,10 @@ export default function ProfitWaterfallCard({
   gacongValueRp,
   totalExpenses,
 }: Props) {
-  const netProfit = totalRevenue - zakatRp - gacongValueRp - totalExpenses;
+  const netProfit = totalRevenue - zakatRp - totalExpenses;
   const isProfit = netProfit >= 0;
 
-  const maxAmount = Math.max(totalRevenue, zakatRp, gacongValueRp, totalExpenses, Math.abs(netProfit));
+  const maxAmount = Math.max(totalRevenue, zakatRp, totalExpenses, Math.abs(netProfit));
 
   const renderBar = (color: string, amount: number) => {
     const widthPct = maxAmount > 0 ? (Math.abs(amount) / maxAmount) * 100 : 0;
@@ -63,9 +63,10 @@ export default function ProfitWaterfallCard({
           <WaterfallRow
             label="Nilai Gacong"
             value={gacongValueRp}
-            color={COLORS.chartGacong}
-            bar={renderBar(COLORS.chartGacong, gacongValueRp)}
+            color={COLORS.textLight}
+            bar={renderBar(COLORS.borderLight, gacongValueRp)}
             isPositive={false}
+            info
           />
         )}
 
@@ -100,6 +101,7 @@ function WaterfallRow({
   isPositive,
   isBold,
   dimmed,
+  info,
 }: {
   label: string;
   value: number;
@@ -108,10 +110,11 @@ function WaterfallRow({
   isPositive: boolean;
   isBold?: boolean;
   dimmed?: boolean;
+  info?: boolean;
 }) {
   return (
     <View style={[wfStyles.row, dimmed && wfStyles.dimmed]}>
-      <Text style={[wfStyles.label, isBold && wfStyles.labelBold]}>{label}</Text>
+      <Text style={[wfStyles.label, isBold && wfStyles.labelBold, info && wfStyles.infoLabel]}>{label}</Text>
       {bar}
       <Text
         style={[
@@ -119,11 +122,12 @@ function WaterfallRow({
           { color },
           isBold && wfStyles.valueBold,
           dimmed && wfStyles.dimmedText,
+          info && wfStyles.infoText,
         ]}
         numberOfLines={1}
         adjustsFontSizeToFit
       >
-        {isPositive ? '+' : (dimmed ? '' : '−')}
+        {isPositive ? '+' : (dimmed || info ? '' : '−')}
         {formatIDR(Math.abs(value))}
       </Text>
     </View>
@@ -142,6 +146,15 @@ const wfStyles = StyleSheet.create({
   },
   dimmedText: {
     textDecorationLine: 'line-through',
+  },
+  infoLabel: {
+    fontSize: FONT_SIZE.xs,
+    color: COLORS.textLight,
+  },
+  infoText: {
+    fontWeight: FONT_WEIGHT.normal,
+    color: COLORS.textLight,
+    fontSize: FONT_SIZE.xs,
   },
   label: {
     fontSize: FONT_SIZE.xs + 1,

@@ -1,15 +1,6 @@
-/**
- * DonutChart - Expense vs Revenue Comparison
- *
- * A premium donut/pie chart that visualizes Pengeluaran (expenses) vs
- * Penghasilan (revenue) with a centered net profit/loss display.
- * Uses react-native-chart-kit PieChart with a white circle overlay
- * for the donut hole effect.
- */
-
 import React from 'react';
-import { View, Text, StyleSheet, Dimensions } from 'react-native';
-import { PieChart } from 'react-native-chart-kit';
+import { View, Text, StyleSheet, useWindowDimensions } from 'react-native';
+import { PieChart } from 'react-native-gifted-charts';
 import {
   COLORS,
   SPACING,
@@ -20,81 +11,58 @@ import {
 } from '../constants/theme';
 import { formatIDR } from '../utils/currency';
 
-const screenWidth = Dimensions.get('window').width;
-
 interface Props {
   totalExpenses: number;
   totalRevenue: number;
   zakatRp: number;
 }
 
-const DonutChart: React.FC<Props> = ({ totalExpenses, totalRevenue, zakatRp }) => {
+const DonutChartComponent: React.FC<Props> = ({ totalExpenses, totalRevenue, zakatRp }) => {
+  const { width: screenWidth } = useWindowDimensions();
   const netProfit = totalRevenue - zakatRp - totalExpenses;
   const isEmpty = totalExpenses === 0 && totalRevenue === 0;
 
-  const segments: { name: string; population: number; color: string; legendFontColor: string; legendFontSize: number }[] = [];
+  const segments: { value: number; color: string }[] = [];
 
   if (totalExpenses > 0) {
-    segments.push({
-      name: 'Modal',
-      population: totalExpenses,
-      color: COLORS.chartExpense,
-      legendFontColor: COLORS.textSecondary,
-      legendFontSize: 12,
-    });
+    segments.push({ value: totalExpenses, color: COLORS.chartExpense });
   }
-
   if (zakatRp > 0) {
-    segments.push({
-      name: 'Zakat',
-      population: zakatRp,
-      color: COLORS.secondary,
-      legendFontColor: COLORS.textSecondary,
-      legendFontSize: 12,
-    });
+    segments.push({ value: zakatRp, color: COLORS.secondary });
   }
-
   if (netProfit > 0) {
-    segments.push({
-      name: 'Laba Bersih',
-      population: netProfit,
-      color: COLORS.chartRevenue,
-      legendFontColor: COLORS.textSecondary,
-      legendFontSize: 12,
-    });
+    segments.push({ value: netProfit, color: COLORS.chartRevenue });
   } else if (netProfit < 0) {
-    segments.push({
-      name: 'Defisit',
-      population: Math.abs(netProfit),
-      color: '#FCA5A5',
-      legendFontColor: COLORS.textSecondary,
-      legendFontSize: 12,
-    });
+    segments.push({ value: Math.abs(netProfit), color: COLORS.chartDeficit });
   }
 
   if (segments.length === 0) {
-    segments.push({
-      name: 'Belum ada data',
-      population: 1,
-      color: COLORS.borderLight,
-      legendFontColor: COLORS.textSecondary,
-      legendFontSize: 12,
-    });
+    segments.push({ value: 1, color: COLORS.borderLight });
   }
 
-  const data = segments;
+  const legendItems: { color: string; label: string; value: number }[] = [];
+  if (totalExpenses > 0) {
+    legendItems.push({ color: COLORS.chartExpense, label: 'Modal', value: totalExpenses });
+  }
+  if (zakatRp > 0) {
+    legendItems.push({ color: COLORS.secondary, label: 'Zakat', value: zakatRp });
+  }
+  if (netProfit >= 0 && netProfit !== 0) {
+    legendItems.push({ color: COLORS.chartRevenue, label: 'Laba Bersih', value: netProfit });
+  } else if (netProfit < 0) {
+    legendItems.push({ color: COLORS.chartDeficit, label: 'Defisit', value: Math.abs(netProfit) });
+  }
+  if (legendItems.length === 0 && isEmpty) {
+    legendItems.push({ color: COLORS.borderLight, label: 'Belum ada data', value: 0 });
+  }
 
-  const chartConfig = {
-    color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-  };
+  const chartWidth = Math.min(screenWidth - 64, 320);
 
   return (
     <View style={styles.card}>
-      {/* Card Header */}
       <Text style={styles.title}>Rincian Modal, Zakat & Laba</Text>
 
       {isEmpty ? (
-        /* Empty State */
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyIcon}>📊</Text>
           <Text style={styles.emptyText}>Belum ada data</Text>
@@ -104,68 +72,49 @@ const DonutChart: React.FC<Props> = ({ totalExpenses, totalRevenue, zakatRp }) =
         </View>
       ) : (
         <>
-          {/* Chart Container */}
           <View style={styles.chartWrapper}>
             <PieChart
-              data={data}
-              width={screenWidth - 64}
-              height={200}
-              chartConfig={chartConfig}
-              accessor="population"
-              backgroundColor="transparent"
-              paddingLeft="15"
-              hasLegend={false}
+              data={segments}
+              donut
+              radius={chartWidth / 2 - 20}
+              innerRadius={chartWidth / 2 - 55}
+              innerCircleColor={COLORS.surface}
+              centerLabelComponent={() => (
+                <View style={styles.centerLabel}>
+                  <Text style={styles.netLabel}>
+                    {netProfit >= 0 ? 'Laba Bersih' : 'Rugi Bersih'}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.netValue,
+                      { color: netProfit >= 0 ? COLORS.chartRevenue : COLORS.chartExpense },
+                    ]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                  >
+                    {formatIDR(netProfit)}
+                  </Text>
+                </View>
+              )}
             />
-
-            {/* Donut Hole Overlay */}
-            <View style={styles.donutHole}>
-              <Text style={styles.netLabel}>
-                {netProfit >= 0 ? 'Laba Bersih' : 'Rugi Bersih'}
-              </Text>
-              <Text
-                style={[
-                  styles.netValue,
-                  { color: netProfit >= 0 ? COLORS.chartRevenue : COLORS.chartExpense },
-                ]}
-                numberOfLines={1}
-                adjustsFontSizeToFit
-              >
-                {formatIDR(netProfit)}
-              </Text>
-            </View>
           </View>
 
-          {/* Custom Legend */}
           <View style={styles.legendContainer}>
-            <LegendItem color={COLORS.chartExpense} label="Modal" value={formatIDR(totalExpenses)} />
-            {zakatRp > 0 && (
-              <LegendItem color={COLORS.secondary} label="Zakat" value={formatIDR(zakatRp)} />
-            )}
-            {netProfit >= 0 ? (
-              <LegendItem color={COLORS.chartRevenue} label="Laba Bersih" value={formatIDR(netProfit)} />
-            ) : (
-              <LegendItem color="#FCA5A5" label="Defisit" value={formatIDR(Math.abs(netProfit))} />
-            )}
+            {legendItems.map((item) => (
+              <View key={item.label} style={styles.legendItem}>
+                <View style={[styles.legendDot, { backgroundColor: item.color }]} />
+                <View style={styles.legendTextContainer}>
+                  <Text style={styles.legendLabel}>{item.label}</Text>
+                  <Text style={styles.legendValue}>{formatIDR(item.value)}</Text>
+                </View>
+              </View>
+            ))}
           </View>
         </>
       )}
     </View>
   );
 };
-
-function LegendItem({ color, label, value }: { color: string; label: string; value: string }) {
-  return (
-    <View style={styles.legendItem}>
-      <View style={[styles.legendDot, { backgroundColor: color }]} />
-      <View style={styles.legendTextContainer}>
-        <Text style={styles.legendLabel}>{label}</Text>
-        <Text style={styles.legendValue}>{value}</Text>
-      </View>
-    </View>
-  );
-}
-
-const DONUT_HOLE_SIZE = 100;
 
 const styles = StyleSheet.create({
   card: {
@@ -185,17 +134,10 @@ const styles = StyleSheet.create({
   chartWrapper: {
     alignItems: 'center',
     justifyContent: 'center',
-    position: 'relative',
   },
-  donutHole: {
-    position: 'absolute',
-    width: DONUT_HOLE_SIZE,
-    height: DONUT_HOLE_SIZE,
-    borderRadius: DONUT_HOLE_SIZE / 2,
-    backgroundColor: COLORS.surface,
+  centerLabel: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: SPACING.sm,
   },
   netLabel: {
     fontSize: FONT_SIZE.xs,
@@ -263,4 +205,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default DonutChart;
+export default DonutChartComponent;

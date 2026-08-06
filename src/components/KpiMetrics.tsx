@@ -15,6 +15,7 @@ interface Props {
   totalRevenue: number;
   totalGKG: number;
   totalGKP: number;
+  zakatRp: number;
   landSizeM2: number | null | undefined;
   onUpdateLandSize?: (size: number) => Promise<void>;
 }
@@ -24,6 +25,7 @@ export default function KpiMetrics({
   totalRevenue,
   totalGKG,
   totalGKP,
+  zakatRp,
   landSizeM2,
   onUpdateLandSize,
 }: Props) {
@@ -63,7 +65,7 @@ export default function KpiMetrics({
     setLandSizeInput(safeLandSize.toString());
     setIsEditing(false);
   };
-  const netProfit = totalRevenue - totalExpenses;
+  const netProfit = totalRevenue - zakatRp - totalExpenses;
   
   const roi = totalExpenses > 0 ? (netProfit / totalExpenses) * 100 : 0;
   
@@ -77,6 +79,11 @@ export default function KpiMetrics({
   const totalHectares = safeLandSize / 10000;
   const productivity = totalHectares > 0 ? totalKuintal / totalHectares : 0;
   const productivityTon = productivity / 10;
+
+  const expensePerHa = totalHectares > 0 ? totalExpenses / totalHectares : 0;
+  const revenuePerHa = totalHectares > 0 ? totalRevenue / totalHectares : 0;
+  const profitPerHa = totalHectares > 0 ? netProfit / totalHectares : 0;
+  const isProfitPerHa = profitPerHa >= 0;
 
   const isPositive = roi >= 0;
 
@@ -214,6 +221,28 @@ export default function KpiMetrics({
           <Text style={styles.prodSubtext}>
             Hasil: {totalKuintal.toLocaleString('id-ID', { maximumFractionDigits: 1 })} Ku ({totalGKP.toLocaleString('id-ID')} kg) GKP
           </Text>
+        </View>
+
+        <View style={styles.perHaDivider} />
+
+        <View style={styles.perHaSection}>
+          <Text style={styles.perHaTitle}>Per Hektar</Text>
+          <View style={styles.perHaRow}>
+            <View style={styles.perHaBox}>
+              <Text style={styles.perHaLabel}>Modal</Text>
+              <Text style={styles.perHaValue} numberOfLines={1} adjustsFontSizeToFit>{formatIDR(expensePerHa)}</Text>
+            </View>
+            <View style={styles.perHaBox}>
+              <Text style={styles.perHaLabel}>Pendapatan</Text>
+              <Text style={styles.perHaValue} numberOfLines={1} adjustsFontSizeToFit>{formatIDR(revenuePerHa)}</Text>
+            </View>
+            <View style={styles.perHaBox}>
+              <Text style={styles.perHaLabel}>Laba</Text>
+              <Text style={[styles.perHaValue, { color: isProfitPerHa ? COLORS.success : COLORS.danger }]} numberOfLines={1} adjustsFontSizeToFit>
+                {isProfitPerHa ? '+' : ''}{formatIDR(profitPerHa)}
+              </Text>
+            </View>
+          </View>
         </View>
       </View>
     </View>
@@ -427,5 +456,40 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: COLORS.textSecondary,
     marginTop: 2,
+  },
+  perHaDivider: {
+    height: 1,
+    backgroundColor: COLORS.borderLight,
+    marginTop: SPACING.sm,
+    marginBottom: SPACING.xs,
+  },
+  perHaSection: {
+    paddingTop: SPACING.xs,
+  },
+  perHaTitle: {
+    fontSize: FONT_SIZE.xs - 1,
+    fontWeight: FONT_WEIGHT.semibold,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    marginBottom: SPACING.xs,
+  },
+  perHaRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: SPACING.xs,
+  },
+  perHaBox: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  perHaLabel: {
+    fontSize: FONT_SIZE.xs - 1,
+    color: COLORS.textLight,
+    marginBottom: 2,
+  },
+  perHaValue: {
+    fontSize: FONT_SIZE.xs + 1,
+    fontWeight: FONT_WEIGHT.semibold,
+    color: COLORS.text,
   },
 });

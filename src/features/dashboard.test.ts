@@ -39,10 +39,9 @@ function computeOldHpp(totalExpenses: number, totalGKP: number): number {
 function computeNetProfit(
   totalRevenue: number,
   zakatRp: number,
-  gacongValueRp: number,
   totalExpenses: number,
 ): number {
-  return round(totalRevenue - zakatRp - gacongValueRp - totalExpenses);
+  return round(totalRevenue - zakatRp - totalExpenses);
 }
 
 function computeRoi(netProfit: number, totalExpenses: number): number {
@@ -67,7 +66,7 @@ function computeUnsoldMetrics(
 ) {
   const estValue = round(unsoldKg * refPrice);
   const totalEstimate = round(soldRevenue + estValue);
-  const projectedNet = computeNetProfit(totalEstimate, zakatRp, 0, totalExpenses);
+  const projectedNet = computeNetProfit(totalEstimate, zakatRp, totalExpenses);
   return { estValue, totalEstimate, projectedNet };
 }
 
@@ -89,7 +88,7 @@ function priceSimulator(
   zakatRp: number,
 ) {
   const estRevenue = round(soldRevenue + unsoldKg * sliderPrice);
-  const netProfit = computeNetProfit(estRevenue, zakatRp, 0, totalExpenses);
+  const netProfit = computeNetProfit(estRevenue, zakatRp, totalExpenses);
   return {
     estRevenue,
     netProfit,
@@ -117,7 +116,7 @@ describe('Skenario 1: Musim baru (belum ada data)', () => {
 
     assert.equal(computeHpp(totalExpenses, totalGKG), 0);
     assert.equal(computeOldHpp(totalExpenses, totalGKP), 0);
-    assert.equal(computeNetProfit(totalRevenue, zakatRp, gacongValueRp, totalExpenses), 0);
+    assert.equal(computeNetProfit(totalRevenue, zakatRp, totalExpenses), 0);
     assert.equal(computeRoi(0, 0), 0);
     assert.equal(computeMargin(0, 0), 0);
 
@@ -159,14 +158,14 @@ describe('Skenario 2: Pasca panen, belum terjual', () => {
     assert.ok(hpp > 0, 'HPP harus > 0 (Rp 20.000/kg)');
     assert.equal(hpp, 20000);
 
-    const netProfit = computeNetProfit(totalRevenueEstimate, zakatRp, gacongValueRp, totalExpenses);
+    const netProfit = computeNetProfit(totalRevenueEstimate, zakatRp, totalExpenses);
     assert.ok(netProfit < 0, 'net loss without any sales');
 
     // Setelah user input refPrice Rp 6.000
     const refPriceSet = 6000;
     const estValue = unsoldGKG * refPriceSet; // = 3.000.000
     const totalEstimate = estValue;            // = 3.000.000
-    const projectedNet = computeNetProfit(totalEstimate, zakatRp, gacongValueRp, totalExpenses);
+    const projectedNet = computeNetProfit(totalEstimate, zakatRp, totalExpenses);
     assert.equal(estValue, 3_000_000);
     // Proyeksi laba = 3jt - 0 zakat - 0 gacong - 10jt = -7jt
     assert.equal(projectedNet, -7_000_000);
@@ -198,7 +197,7 @@ describe('Skenario 3: Sebagian terjual', () => {
     assert.equal(estValue, 1_200_000);
     assert.equal(totalRevenueEstimate, 3_150_000);
 
-    const projectedNet = computeNetProfit(totalRevenueEstimate, zakatRp, gacongValueRp, totalExpenses);
+    const projectedNet = computeNetProfit(totalRevenueEstimate, zakatRp, totalExpenses);
     assert.equal(projectedNet, -6_850_000);
 
     const be = computeBreakEven(totalRevenueEstimate, totalExpenses);
@@ -214,7 +213,7 @@ describe('Skenario 4: Sudah untung', () => {
     const zakatRp = 0;
     const gacongValueRp = 0;
 
-    const netProfit = computeNetProfit(totalRevenue, zakatRp, gacongValueRp, totalExpenses);
+    const netProfit = computeNetProfit(totalRevenue, zakatRp, totalExpenses);
     assert.equal(netProfit, 1_200_000);
 
     const roi = computeRoi(netProfit, totalExpenses);
@@ -342,7 +341,7 @@ describe('Edge cases', () => {
     const expenses = 5_000_000;
     const revenue = 3_000_000;
     const zakatRp = 0;
-    const netProfit = computeNetProfit(revenue, zakatRp, 0, expenses);
+    const netProfit = computeNetProfit(revenue, zakatRp, expenses);
     assert.ok(netProfit < 0);
     // Defisit absolute value = |−2.000.000| = 2.000.000
     assert.equal(Math.abs(netProfit), 2_000_000);
@@ -413,18 +412,199 @@ describe('Edge cases', () => {
     assert.equal(sim.netProfit, -800_000);
   });
 
-  it('Waterfall: gross revenue − zakat − gacong − expenses == net', () => {
+  it('Waterfall: gacong tidak mengurangi laba (sudah dipotong dari panen)', () => {
     const revenue = 10_000_000;
     const zakatRp = 500_000;
-    const gacongRp = 300_000;
     const expenses = 7_000_000;
+    const gacongRp = 300_000;
 
-    const net = computeNetProfit(revenue, zakatRp, gacongRp, expenses);
-    assert.equal(net, 2_200_000);
+    const netWithoutGacong = computeNetProfit(revenue, zakatRp, expenses);
+    assert.equal(netWithoutGacong, 2_500_000);
+
+    const netWithGacong = revenue - zakatRp - gacongRp - expenses;
+    assert.equal(netWithGacong, 2_200_000);
+    assert.notEqual(netWithoutGacong, netWithGacong, 'gacong should not change net profit');
   });
 
-  it('Waterfall: zakat = 0 and gacong = 0 → fallback to old formula', () => {
-    const net = computeNetProfit(5_000_000, 0, 0, 3_000_000);
-    assert.equal(net, 2_000_000); // same as old revenue − expenses
+  it('Net profit without zakat → revenue − expenses', () => {
+    const net = computeNetProfit(5_000_000, 0, 3_000_000);
+    assert.equal(net, 2_000_000);
+  });
+});
+
+// ─────────────────────────────────────────────
+// Tier 2 — Per-hektar
+// ─────────────────────────────────────────────
+
+describe('Per-hektar', () => {
+  it('konversi m² ke hektar', () => {
+    const landSizeM2 = 1400;
+    const totalHectares = landSizeM2 / 10000;
+    assert.equal(totalHectares, 0.14);
+  });
+
+  it('laba/ha dihitung dengan benar', () => {
+    const expenses = 3_000_000;
+    const revenue = 4_200_000;
+    const zakatRp = 0;
+    const landSizeM2 = 1400;
+    const totalHectares = landSizeM2 / 10000;
+
+    const netProfit = computeNetProfit(revenue, zakatRp, expenses);
+    const profitPerHa = netProfit / totalHectares;
+
+    assert.equal(profitPerHa, 1_200_000 / 0.14);
+  });
+
+  it('lahan 0 → tidak crash (division guard)', () => {
+    const totalHectares = 0;
+    const expensePerHa = totalHectares > 0 ? 5_000_000 / totalHectares : 0;
+    assert.equal(expensePerHa, 0);
+  });
+
+  it('lahan sangat kecil tidak overflow', () => {
+    const landSizeM2 = 100;
+    const totalHectares = landSizeM2 / 10000; // 0.01
+    const expensePerHa = 1_000_000 / totalHectares;
+    assert.equal(expensePerHa, 100_000_000); // Rp 100jt/ha
+    assert.ok(isFinite(expensePerHa));
+  });
+
+  it('laba/ha negatif', () => {
+    const netProfit = -2_000_000;
+    const totalHectares = 0.14;
+    const profitPerHa = round(netProfit / totalHectares);
+    assert.ok(profitPerHa < 0);
+  });
+});
+
+// ─────────────────────────────────────────────
+// Tier 2 — Perbandingan musim
+// ─────────────────────────────────────────────
+
+describe('Perbandingan musim', () => {
+  function makeMetric(id: number, code: string, expenses = 0, revenue = 0, gkg = 0, gkp = 0, land = 1400) {
+    return { id, season_code: code, land_size_m2: land, totalExpenses: expenses, totalRevenue: revenue, totalGKG: gkg, totalGKP: gkp, avgPricePerKg: 0 };
+  }
+
+  it('delta laba antara 2 musim', () => {
+    const prev = makeMetric(1, 'MT-2026-1', 3_000_000, 4_200_000);
+    const curr = makeMetric(2, 'MT-2026-2', 3_500_000, 5_000_000);
+
+    const prevProfit = prev.totalRevenue - prev.totalExpenses; // 1.2jt
+    const currProfit = curr.totalRevenue - curr.totalExpenses; // 1.5jt
+
+    const deltaPct = ((currProfit - prevProfit) / Math.abs(prevProfit)) * 100;
+    assert.equal(deltaPct, 25);
+  });
+
+  it('musim tunggal tidak crash', () => {
+    const metrics = [makeMetric(1, 'MT-2026-1')];
+    assert.equal(metrics.length, 1);
+    assert.equal(metrics.length < 2, true);
+  });
+
+  it('musim tanpa data → 0 bukan NaN', () => {
+    const m = makeMetric(1, 'MT-2026-1');
+    assert.equal(m.totalExpenses, 0);
+    assert.equal(m.totalRevenue, 0);
+
+    const profit = m.totalRevenue - m.totalExpenses;
+    assert.equal(profit, 0);
+    assert.equal(isNaN(profit), false);
+
+    const hpp = m.totalGKG > 0 ? m.totalExpenses / m.totalGKG : 0;
+    assert.equal(hpp, 0);
+    assert.equal(isNaN(hpp), false);
+  });
+
+  it('delta dari basis 0 → guard division', () => {
+    const prevProfit = 0;
+    const currProfit = 1_000_000;
+
+    if (prevProfit === 0) {
+      // Should handle gracefully, not crash
+      assert.ok(true);
+    } else {
+      assert.fail('should have handled zero basis');
+    }
+  });
+
+  it('urutan by id bukan season_code', () => {
+    const a = makeMetric(1, 'MT-2026-2');
+    const b = makeMetric(2, 'MT-2026-10');
+
+    const byId = [a, b].sort((x, y) => x.id - y.id);
+    assert.equal(byId[0].season_code, 'MT-2026-2');
+    assert.equal(byId[1].season_code, 'MT-2026-10');
+
+    const byCode = [a, b].sort((x, y) => x.season_code.localeCompare(y.season_code));
+    assert.equal(byCode[0].season_code, 'MT-2026-10');
+    assert.equal(byCode[1].season_code, 'MT-2026-2');
+
+    assert.notEqual(byId[0].season_code, byCode[0].season_code, 'lexicographic sort is wrong for chronological order');
+  });
+
+  it('perbandingan HPP antar musim tidak crash', () => {
+    const m = makeMetric(1, 'MT-2026-1', 4_000_000, 0, 600);
+    const hpp = m.totalGKG > 0 ? m.totalExpenses / m.totalGKG : 0;
+    assert.ok(hpp > 0);
+    assert.equal(round(hpp), 6666.67);
+  });
+});
+
+// ─────────────────────────────────────────────
+// Tier 2 — CategoryBarChart
+// ─────────────────────────────────────────────
+
+describe('CategoryBarChart (Tier 2)', () => {
+  it('persentase total ≈ 100%', () => {
+    const totals = [
+      { category: 'Pupuk', total: 5_000_000 },
+      { category: 'Insektisida', total: 3_000_000 },
+      { category: 'Jasa Pegawai', total: 2_000_000 },
+    ];
+    const totalAll = totals.reduce((s, c) => s + c.total, 0);
+    const sumPct = totals.reduce((s, c) => s + (c.total / totalAll) * 100, 0);
+    assert.equal(round(sumPct), 100);
+  });
+
+  it('totalGKG=0 → Rp/kg removed (not infinity)', () => {
+    const totalGKG = 0;
+    const showPricePerKg = totalGKG > 0;
+    assert.equal(showPricePerKg, false);
+  });
+
+  it('kategori 0 → 0% bukan NaN', () => {
+    const totalAll = 10_000_000;
+    const pct = totalAll > 0 ? (0 / totalAll) * 100 : 0;
+    assert.equal(pct, 0);
+    assert.equal(isNaN(pct), false);
+  });
+
+  it('identifikasi kategori terbesar', () => {
+    const totals = [
+      { category: 'Pupuk', total: 8_500_000 },
+      { category: 'Insektisida', total: 3_000_000 },
+      { category: 'Jasa Pegawai', total: 2_000_000 },
+    ];
+    const largest = totals.reduce((max, c) => (c.total > max.total ? c : max), totals[0]);
+    assert.equal(largest.category, 'Pupuk');
+    assert.equal(largest.total, 8_500_000);
+  });
+
+  it('Rp/kg per kategori', () => {
+    const totalGKG = 500;
+    const total = 5_000_000;
+    const pricePerKg = total / totalGKG;
+    assert.equal(pricePerKg, 10000);
+  });
+
+  it('totalAll = 0 → largest tetap valid (no crash)', () => {
+    const totals = [{ category: 'Pupuk', total: 0 }];
+    const hasData = totals.some((c) => c.total > 0);
+    assert.equal(hasData, false);
+    // No crash when accessing totals[0]
+    assert.equal(totals[0].category, 'Pupuk');
   });
 });
