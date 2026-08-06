@@ -12,7 +12,7 @@ Aplikasi ini dibangun menggunakan tumpukan teknologi modern untuk memastikan sta
 *   **Framework Core:** React Native (Expo SDK 57)
 *   **Bahasa Pemrograman:** TypeScript (Type-Safe & Clean Code)
 *   **Database Lokal:** SQLite via `expo-sqlite` (dilengkapi dengan WAL mode untuk performa transaksi cepat)
-*   **Visualisasi Data:** `react-native-chart-kit` & `react-native-svg` (grafik interaktif dan responsif)
+*   **Visualisasi Data:** `react-native-gifted-charts` & `react-native-svg` (grafik interaktif dan responsif)
 *   **Manajemen Status:** React Context API (untuk sinkronisasi data musim tanam global)
 
 ---
@@ -26,20 +26,21 @@ Semua pencatatan pengeluaran dan pendapatan dikelompokkan berdasarkan kode musim
 *   **Harga Referensi Jual (Rp/kg)**: Harga jual gabah per kilogram dapat diatur per musim, digunakan sebagai dasar estimasi pendapatan gabah yang belum dijual dan perhitungan kartu potensi harga jual (Break-Even & Simulasi Harga).
 
 ### 2. Analisis Keuangan & KPI Produktivitas Lahan
-*   **ROI / Profit Margin (%)**: Menampilkan persentase laba bersih terhadap total pengeluaran modal (teks hijau untuk untung, merah untuk rugi).
+*   **ROI / Profit Margin (%)**: Menampilkan persentase laba bersih terhadap total pengeluaran modal (teks hijau untuk untung, merah untuk rugi). Laba bersih dihitung setelah dikurangi zakat.
 *   **Harga Pokok Produksi (HPP/kg)**: Menghitung batas minimal harga jual gabah kering panen agar modal awal kembali (Break-Even Point).
 *   **Produktivitas Lahan**: Mengukur tingkat efisiensi tani dalam satuan **Kuintal/Ha** dan **Ton/Ha** menggunakan ukuran luas lahan riil ($m^2$).
+*   **Analisis Per Hektar**: Rincian modal, pendapatan, dan laba bersih per hektar lahan untuk perbandingan efisiensi antar musim.
 *   **Estimasi Hasil Tani Gabah**: Menampilkan total GKG hasil panen, estimasi harga jual per kg (harga aktual atau harga referensi musim), serta estimasi total pendapatan berdasarkan gabah yang sudah dijual dan yang masih belum dijual (*unsold*).
 
 ### 3. Kartu Analisis Mendalam
 *   **Kartu Break-Even Point**: Menghitung HPP (Harga Pokok Produksi) per kg berdasarkan total pengeluaran dibagi total GKG, serta margin keuntungan/kerugian terhadap harga jual aktual atau harga referensi.
 *   **Kartu Simulasi Harga**: Alat bantu simulasi untuk melihat estimasi pendapatan bersih (setelah zakat) di berbagai titik harga jual gabah, dengan batas minimum = HPP (break-even point).
-*   **Kartu Waterfall Profit**: Visualisasi alur pendapatan kotor → Zakat → Biaya Gacong → Total Pengeluaran → Laba Bersih dalam bentuk kartu ringkas.
+*   **Kartu Waterfall Profit**: Visualisasi alur pendapatan kotor → Zakat → Total Pengeluaran → Laba Bersih dalam bentuk kartu ringkas. Biaya gacong ditampilkan sebagai informasi (tidak dikurangkan dari laba bersih).
 *   **Kartu Gabah Belum Dijual**: Melacak stok gabah GKG yang belum memiliki harga jual, menampilkan estimasi potensi pendapatan jika menggunakan harga referensi musim.
 
 ### 4. Grafik Pengeluaran & Pendapatan Visual
-*   **Donut Chart**: Grafik perbandingan persentase total modal keluar dibandingkan total omzet pendapatan hasil panen.
-*   **Bar Chart Kategori**: Visualisasi pengeluaran modal berdasarkan 8 kategori tani khusus: *Pupuk, Insektisida, Fungisida, Rodentisida, Herbisida, Moluksida, Jasa Pegawai,* dan *Item Barang*.
+*   **Donut Chart**: Grafik perbandingan persentase total modal keluar dibandingkan total omzet pendapatan hasil panen, dengan tampilan responsif menyesuaikan lebar layar.
+*   **Bar Chart Kategori**: Visualisasi pengeluaran modal berdasarkan 8 kategori tani khusus: *Pupuk, Insektisida, Fungisida, Rodentisida, Herbisida, Moluksida, Jasa Pegawai,* dan *Item Barang*. Menampilkan informasi HPP per kg (total pengeluaran / total GKG) di bawah grafik.
 
 ### 5. Ekspor & Impor Backup Data (CSV)
 Aplikasi mendukung portabilitas data dengan menyediakan fitur ekspor dan impor data:
@@ -119,13 +120,13 @@ CREATE TABLE IF NOT EXISTS income (
 
 ## ✅ Pengujian (Unit Test)
 
-Logika perhitungan inti (gacong, konversi GKP→GKG, nisab, dan kalkulasi zakat) diuji menggunakan **Node.js built-in test runner** (`node:test`) dengan `tsx`:
+Logika perhitungan inti (gacong, konversi GKP→GKG, nisab, kalkulasi zakat, laba bersih, ROI, simulasi harga, dan estimasi gabah belum dijual) diuji menggunakan **Node.js built-in test runner** (`node:test`) dengan `tsx`:
 
 ```bash
 npm test
 ```
 
-Berjalan pada `src/utils/zakat.test.ts` dan mencakup 25 skenario, termasuk uji batas nisab (653 kg GKG) dan skenario alur lengkap panen dengan biaya gacong.
+Berjalan pada `src/utils/zakat.test.ts` dan `src/features/dashboard.test.ts`, mencakup skenario uji batas nisab (653 kg GKG), alur lengkap panen dengan biaya gacong, serta kalkulasi laba bersih dan simulasi harga jual.
 
 ---
 
