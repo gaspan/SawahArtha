@@ -101,6 +101,41 @@ Mengalkulasi kewajiban zakat pertanian secara otomatis:
 
 ---
 
+## 🗺️ Roadmap
+
+### ✅ Sudah Diimplementasikan
+
+| Tier | Fitur | Status |
+|---|---|---|
+| **Tier 1** | Perbaikan akurasi keuangan: HPP per GKG (bukan GKP), laba bersih setelah zakat, harga referensi jual per musim | ✅ |
+| **Tier 1** | Kartu analisis: Profit Waterfall, Break-Even Point, Simulasi Harga, Gabah Belum Dijual, KPI (ROI, margin, produktivitas) | ✅ |
+| **Tier 1** | 40 unit test dashboard (nisab, HPP, waterfall, simulasi, edge cases) | ✅ |
+| **Tier 2** | Migrasi chart ke `react-native-gifted-charts`: Donut Chart, Bar Chart Kategori (Rp/kg) | ✅ |
+| **Tier 2** | Analisis per hektar & perbandingan antar musim (line chart, 3 tab metrik) | ✅ |
+| **Tier 2** | `analyticsService` lintas musim + 107 total unit test | ✅ |
+| **Tier 3A** | Anggaran RAB per kategori: budget default Rp 25jt/ha, progress bar, badge merah, edit/hapus, audit log | ✅ |
+| **Tier 3A** | 37 unit test anggaran (seed, realisasi vs anggaran, audit, edge cases) | ✅ |
+| **Tier 3B** | Piutang gabah: status bayar + buyer + tanggal bayar (`is_paid` di income/sales) | ✅ |
+| **Tier 3B** | Hutang saprotan: `is_paid` + vendor di expenses, `markExpensePaid`, daftar belum bayar | ✅ |
+| **Tier 3B** | Pinjaman modal: tabel `debts` + `debt_payments`, bunga, jatuh tempo, cicilan, badge overdue, kas riil vs akrual (`CashPositionCard`) | ✅ |
+| **Tier 3B** | Tab keempat 💳 Hutang & Piutang, `MarkPaidModal` terbagi (penjualan + pengeluaran) | ✅ |
+| **Bonus** | Split panen/penjualan: tabel `sales` terpisah, sub-tab 🌾 Panen / 💰 Jual, `StockCard` (panen/terjual/sisa), harga rata-rata tertimbang, validasi stok | ✅ |
+| **Bonus** | Input GKG riil saat panen (fallback estimasi ×0.8), edit GKG inline di riwayat, badge estimasi/riil, peringatan jika GKG < stok terjual | ✅ |
+| **Bonus** | Ekspor/Impor CSV dengan tipe Panen/Penjualan + backward compat legacy | ✅ |
+| **Testing** | 130 unit test / 33 suite, `tsc --noEmit` bersih | ✅ |
+
+### 🔜 Belum Diimplementasikan (Rencana)
+
+| Tier | Fitur | Catatan |
+|---|---|---|
+| **Tier 5** | **Notifikasi** — reminder jatuh tempo hutang, peringatan anggaran terlampaui, pengingat jadwal tani | via `expo-notifications` (jadwal lokal) |
+| — | **Laporan PDF/Cetak** — ringkasan musim untuk koperasi/bank | — |
+| — | **Multi-lahan** — satu musim dengan beberapa petak lahan terpisah | — |
+| — | **Jurnal kegiatan tani** — catat tanam/pupuk/semprot/panen dengan tanggal | untuk analisis jadwal |
+| — | **Sinkronisasi cloud / backup online** | saat ini offline-first penuh |
+
+---
+
 ## 🗄️ Arsitektur Database (SQLite Schema)
 
 Database SQLite lokal didefinisikan dengan enam tabel utama dan satu tabel migrasi:
