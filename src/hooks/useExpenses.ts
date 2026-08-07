@@ -14,6 +14,8 @@ import {
   updateExpense as updateExpenseDB,
   getExpensesByCategory,
   getTotalExpenses,
+  getTotalUnpaidExpenses,
+  markExpensePaid,
   EXPENSES_PAGE_SIZE,
   type Expense,
   type ExpenseInput,
@@ -28,9 +30,11 @@ interface UseExpensesReturn {
   hasMore: boolean;
   isLoading: boolean;
   isLoadingMore: boolean;
+  unpaidAmount: number;
   addExpense: (input: Omit<ExpenseInput, 'season_code'>) => Promise<void>;
   deleteExpense: (id: number) => Promise<void>;
   updateExpense: (id: number, input: Omit<ExpenseInput, 'season_code'>) => Promise<void>;
+  markPaid: (id: number, paymentDate: string) => Promise<void>;
   refreshExpenses: (category?: string | null) => Promise<void>;
   loadMoreExpenses: () => Promise<void>;
 }
@@ -45,6 +49,7 @@ export function useExpenses(): UseExpensesReturn {
   const [hasMore, setHasMore] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [unpaidAmount, setUnpaidAmount] = useState(0);
   const categoryRef = useRef<string | null>(null);
   const offsetRef = useRef(0);
   const countRef = useRef(0);
@@ -58,11 +63,12 @@ export function useExpenses(): UseExpensesReturn {
       try {
         setIsLoading(true);
         const cat = categoryRef.current;
-        const [page, count, catTotals, total] = await Promise.all([
+        const [page, count, catTotals, total, unpaid] = await Promise.all([
           getExpensesPaginated(db, selectedSeason, cat, EXPENSES_PAGE_SIZE, 0),
           countExpenses(db, selectedSeason, cat),
           getExpensesByCategory(db, selectedSeason),
           getTotalExpenses(db, selectedSeason),
+          getTotalUnpaidExpenses(db, selectedSeason),
         ]);
         countRef.current = count;
         setExpenses(page);
@@ -70,6 +76,7 @@ export function useExpenses(): UseExpensesReturn {
         setHasMore(page.length < count);
         setCategoryTotals(catTotals);
         setTotalExpenses(total);
+        setUnpaidAmount(unpaid);
       } catch (error) {
         console.error('Error fetching expenses:', error);
       } finally {
@@ -144,6 +151,19 @@ export function useExpenses(): UseExpensesReturn {
     [db, refreshExpenses]
   );
 
+  const markPaid = useCallback(
+    async (id: number, paymentDate: string) => {
+      try {
+        await markExpensePaid(db, id, paymentDate);
+        await refreshExpenses();
+      } catch (error) {
+        console.error('Error marking expense as paid:', error);
+        throw error;
+      }
+    },
+    [db, refreshExpenses]
+  );
+
   return {
     expenses,
     categoryTotals,
@@ -152,9 +172,11 @@ export function useExpenses(): UseExpensesReturn {
     hasMore,
     isLoading,
     isLoadingMore,
+    unpaidAmount,
     addExpense,
     deleteExpense,
     updateExpense,
+    markPaid,
     refreshExpenses,
     loadMoreExpenses,
   };

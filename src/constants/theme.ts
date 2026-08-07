@@ -159,4 +159,19 @@ export const CATEGORIES = [
 
 export type ExpenseCategory = (typeof CATEGORIES)[number];
 
+export const DEFAULT_BUDGET_PER_HA = 25_000_000;
+
+export const DEFAULT_BUDGET_RATIO: Record<ExpenseCategory, number> = {
+  Pupuk: 0.30,
+  'Jasa Pegawai': 0.25,
+  Insektisida: 0.12,
+  Herbisida: 0.10,
+  'Item Barang': 0.08,
+  Fungisida: 0.07,
+  Rodentisida: 0.04,
+  Moluksida: 0.04,
+};
+
+export const BUDGET_AUDIT_LOG_LIMIT = 50;
+
 export const CURRENT_SEASON = 'MT-2026-1';

@@ -12,6 +12,9 @@ export interface Expense {
   category: string;
   season_code: string;
   date: string;
+  is_paid: number;
+  vendor_name: string | null;
+  payment_date: string | null;
 }
 
 export interface ExpenseInput {
@@ -20,6 +23,8 @@ export interface ExpenseInput {
   amount: number;
   category: string;
   season_code: string;
+  is_paid?: number;
+  vendor_name?: string;
 }
 
 export interface CategoryTotal {
@@ -80,7 +85,7 @@ export async function addExpense(
   expense: ExpenseInput
 ): Promise<number> {
   const result = await db.runAsync(
-    'INSERT INTO expenses (title, description, amount, category, season_code, date) VALUES (?, ?, ?, ?, ?, ?)',
+    'INSERT INTO expenses (title, description, amount, category, season_code, date, is_paid, vendor_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
     [
       expense.title,
       expense.description || '',
@@ -88,6 +93,8 @@ export async function addExpense(
       expense.category,
       expense.season_code,
       new Date().toISOString().split('T')[0],
+      expense.is_paid ?? 1,
+      expense.vendor_name || null,
     ]
   );
   return result.lastInsertRowId;
@@ -133,6 +140,49 @@ export async function getTotalExpenses(
 ): Promise<number> {
   const result = await db.getFirstAsync<{ total: number | null }>(
     'SELECT SUM(amount) as total FROM expenses WHERE season_code = ?',
+    [seasonCode]
+  );
+  return result?.total ?? 0;
+}
+
+export async function markExpensePaid(
+  db: SQLiteDatabase,
+  id: number,
+  paymentDate: string
+): Promise<void> {
+  await db.runAsync(
+    'UPDATE expenses SET is_paid = 1, payment_date = ? WHERE id = ?',
+    [paymentDate, id]
+  );
+}
+
+export async function getUnpaidExpenses(
+  db: SQLiteDatabase,
+  seasonCode: string
+): Promise<Expense[]> {
+  return db.getAllAsync<Expense>(
+    'SELECT * FROM expenses WHERE season_code = ? AND is_paid = 0 ORDER BY date DESC, id DESC',
+    [seasonCode]
+  );
+}
+
+export async function getTotalUnpaidExpenses(
+  db: SQLiteDatabase,
+  seasonCode: string
+): Promise<number> {
+  const result = await db.getFirstAsync<{ total: number | null }>(
+    'SELECT SUM(amount) as total FROM expenses WHERE season_code = ? AND is_paid = 0',
+    [seasonCode]
+  );
+  return result?.total ?? 0;
+}
+
+export async function getTotalExpensesPaid(
+  db: SQLiteDatabase,
+  seasonCode: string
+): Promise<number> {
+  const result = await db.getFirstAsync<{ total: number | null }>(
+    'SELECT SUM(amount) as total FROM expenses WHERE season_code = ? AND is_paid = 1',
     [seasonCode]
   );
   return result?.total ?? 0;

@@ -18,8 +18,10 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useSeason } from '../../src/context/SeasonContext';
+import { useBudget } from '../../src/context/BudgetContext';
 import { useExpenses } from '../../src/hooks/useExpenses';
 import { useIncome } from '../../src/hooks/useIncome';
+import { useSales } from '../../src/hooks/useSales';
 import { useSeasonMetrics } from '../../src/hooks/useSeasonMetrics';
 import { getZakatSummary } from '../../src/utils/zakat';
 import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOW } from '../../src/constants/theme';
@@ -39,6 +41,11 @@ import SeasonComparisonChart from '../../src/components/SeasonComparisonChart';
 import DonutChart from '../../src/components/DonutChart';
 import CategoryBarChart from '../../src/components/CategoryBarChart';
 import QuickFeed, { type FeedTransaction } from '../../src/components/QuickFeed';
+import BudgetCard from '../../src/components/BudgetCard';
+import BudgetEditModal from '../../src/components/BudgetEditModal';
+import BudgetLogModal from '../../src/components/BudgetLogModal';
+import CashPositionCard from '../../src/components/CashPositionCard';
+import { useDebts } from '../../src/hooks/useDebts';
 
 function formatDisplayPath(path: string): string {
   if (!path) return '';
@@ -73,25 +80,42 @@ function formatDisplayPath(path: string): string {
 export default function DashboardScreen() {
   const db = useSQLiteContext();
   const { selectedSeason, seasons, switchSeason, createNewSeason, updateLandSize, updateRefPrice, refreshSeasons } = useSeason();
-  const { expenses, totalExpenses, categoryTotals, refreshExpenses, isLoading: expensesLoading } = useExpenses();
+  const { expenses, totalExpenses, categoryTotals, unpaidAmount, refreshExpenses, isLoading: expensesLoading } = useExpenses();
   const {
     incomeRecords,
-    totalRevenue,
     totalGKG,
     totalGKP,
-    avgPricePerKg,
-    unsoldGKG,
-    totalRevenueSold,
-    gacongValueRp,
+    totalGacongWeight,
     refreshIncome,
     isLoading: incomeLoading,
   } = useIncome();
+  const {
+    sales,
+    totalRevenue,
+    totalGKGSold,
+    avgPricePerKg,
+    unpaidRevenue,
+    refreshSales,
+    isLoading: salesLoading,
+  } = useSales();
   const { metrics: seasonMetrics, refreshMetrics } = useSeasonMetrics();
-  const isDataLoading = expensesLoading || incomeLoading;
+  const {
+    budgetVsActual,
+    totalBudget,
+    overBudgetCount,
+    budgetLogs,
+    setBudget,
+    deleteBudget,
+    refreshBudgets,
+  } = useBudget();
+  const { totalLoanIn, totalLoanOut, refreshDebts } = useDebts();
+  const isDataLoading = expensesLoading || incomeLoading || salesLoading;
 
   const [showNewSeasonModal, setShowNewSeasonModal] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [lastExportPath, setLastExportPath] = useState<string>('');
+  const [editingBudgetCategory, setEditingBudgetCategory] = useState<string | null>(null);
+  const [showBudgetLog, setShowBudgetLog] = useState(false);
 
   useEffect(() => {
     const loadLastExportPath = async () => {
@@ -112,16 +136,21 @@ export default function DashboardScreen() {
   const currentSeasonObj = seasons.find((s) => s.season_code === selectedSeason);
   const landSizeM2 = currentSeasonObj?.land_size_m2 ?? 1400;
   const refPrice = currentSeasonObj?.ref_price_per_kg ?? avgPricePerKg;
-  const totalRevenueEstimate = totalRevenueSold + (unsoldGKG * (refPrice || 0));
+  const unsoldGKG = Math.max(0, totalGKG - totalGKGSold);
+  const totalRevenueEstimate = totalRevenue + (unsoldGKG * (refPrice || 0));
   const zakatSummary = getZakatSummary(totalGKG, avgPricePerKg);
+  const gacongValueRp = totalGacongWeight * avgPricePerKg;
 
+  const totalRevenuePaid = totalRevenue - unpaidRevenue;
+  const totalExpensesPaid = totalExpenses - unpaidAmount;
   const hpp = totalGKG > 0 ? totalExpenses / totalGKG : 0;
 
   const handleExportCSV = async () => {
     try {
       const allExpenses = await db.getAllAsync('SELECT * FROM expenses ORDER BY date DESC, id DESC');
       const allIncome = await db.getAllAsync('SELECT * FROM income ORDER BY date DESC, id DESC');
-      const csvStr = convertToCSV(allExpenses, allIncome);
+      const allSales = await db.getAllAsync('SELECT * FROM sales ORDER BY date DESC, id DESC');
+      const csvStr = convertToCSV(allExpenses, allIncome, allSales);
       const filePath = await exportToCSVFile(csvStr);
 
       const pathFile = `${FileSystem.documentDirectory}last_export_path.txt`;
@@ -192,8 +221,11 @@ export default function DashboardScreen() {
     useCallback(() => {
       refreshExpenses();
       refreshIncome();
+      refreshSales();
       refreshMetrics();
-    }, [refreshExpenses, refreshIncome, refreshMetrics])
+      refreshBudgets();
+      refreshDebts();
+    }, [refreshExpenses, refreshIncome, refreshSales, refreshMetrics, refreshBudgets, refreshDebts])
   );
 
   const combinedTransactions: FeedTransaction[] = useMemo(() => {
@@ -206,23 +238,23 @@ export default function DashboardScreen() {
         date: e.date,
         categoryOrMeta: e.category,
       })),
-      ...incomeRecords.map((i) => ({
-        id: `income-${i.id}`,
+      ...sales.map((s) => ({
+        id: `sale-${s.id}`,
         type: 'income' as const,
-        title: `Hasil Panen Gabah (GKP)`,
-        amount: i.total_revenue,
-        date: i.date,
-        categoryOrMeta: `${i.gkp_weight.toLocaleString('id-ID')} kg`,
+        title: 'Hasil Penjualan Gabah',
+        amount: s.total_revenue,
+        date: s.date,
+        categoryOrMeta: `${s.gkg_sold.toLocaleString('id-ID')} kg`,
       })),
     ];
     return list.sort((a, b) => b.date.localeCompare(a.date)).slice(0, 3);
-  }, [expenses, incomeRecords]);
+  }, [expenses, sales]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([refreshExpenses(), refreshIncome(), refreshMetrics()]);
+    await Promise.all([refreshExpenses(), refreshIncome(), refreshSales(), refreshMetrics(), refreshBudgets(), refreshDebts()]);
     setRefreshing(false);
-  }, [refreshExpenses, refreshIncome]);
+  }, [refreshExpenses, refreshIncome, refreshSales, refreshMetrics, refreshBudgets, refreshDebts]);
 
   const handleNewSeason = async (seasonCode: string, landSizeM2: number) => {
     try {
@@ -331,10 +363,33 @@ export default function DashboardScreen() {
               avgOrRefPrice={refPrice || avgPricePerKg}
             />
 
+            {/* Zona Anggaran */}
+            {totalBudget > 0 && (
+              <BudgetCard
+                budgetVsActual={budgetVsActual}
+                totalBudget={totalBudget}
+                totalActual={totalExpenses}
+                overBudgetCount={overBudgetCount}
+                onEditBudget={(cat) => setEditingBudgetCategory(cat)}
+                onOpenLog={() => setShowBudgetLog(true)}
+              />
+            )}
+
             {/* Summary Cards (Net Zakat) */}
             <SummaryCards
               totalExpenses={totalExpenses}
               totalRevenue={totalRevenueEstimate}
+              zakatRp={zakatSummary.zakatRp}
+            />
+
+            {/* Cash Position */}
+            <CashPositionCard
+              totalRevenuePaid={totalRevenuePaid}
+              totalRevenueUnpaid={unpaidRevenue}
+              totalExpensesPaid={totalExpensesPaid}
+              totalExpensesUnpaid={unpaidAmount}
+              loanIn={totalLoanIn}
+              loanOut={totalLoanOut}
               zakatRp={zakatSummary.zakatRp}
             />
 
@@ -357,7 +412,7 @@ export default function DashboardScreen() {
                   refPricePerKg={refPrice || 0}
                   onUpdateRefPrice={handleUpdateRefPrice}
                   totalExpenses={totalExpenses}
-                  totalRevenueSold={totalRevenueSold}
+                  totalRevenueSold={totalRevenue}
                   totalRevenueEstimate={totalRevenueEstimate}
                   zakatRp={zakatSummary.zakatRp}
                 />
@@ -365,7 +420,7 @@ export default function DashboardScreen() {
                 <PriceSimulatorCard
                   unsoldKgGKG={unsoldGKG}
                   totalExpenses={totalExpenses}
-                  totalRevenueSold={totalRevenueSold}
+                  totalRevenueSold={totalRevenue}
                   zakatRp={zakatSummary.zakatRp}
                   minPrice={hpp}
                   maxPrice={hpp * 2}
@@ -398,6 +453,30 @@ export default function DashboardScreen() {
         visible={showNewSeasonModal}
         onClose={() => setShowNewSeasonModal(false)}
         onSave={handleNewSeason}
+      />
+
+      <BudgetEditModal
+        visible={editingBudgetCategory !== null}
+        category={editingBudgetCategory}
+        currentAmount={
+          budgetVsActual.find((b) => b.category === editingBudgetCategory)?.budgetAmount ?? 0
+        }
+        actualSpent={
+          budgetVsActual.find((b) => b.category === editingBudgetCategory)?.actualAmount ?? 0
+        }
+        onSave={async (amount) => {
+          if (editingBudgetCategory) await setBudget(editingBudgetCategory, amount);
+        }}
+        onDelete={async () => {
+          if (editingBudgetCategory) await deleteBudget(editingBudgetCategory);
+        }}
+        onClose={() => setEditingBudgetCategory(null)}
+      />
+
+      <BudgetLogModal
+        visible={showBudgetLog}
+        logs={budgetLogs}
+        onClose={() => setShowBudgetLog(false)}
       />
     </View>
   );

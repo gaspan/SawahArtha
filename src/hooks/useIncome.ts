@@ -1,40 +1,27 @@
-/**
- * useIncome hook
- * Manages harvest income state with SQLite persistence, filtered by selected season
- * Includes price update functionality for deferred grain sales
- */
 import { useState, useEffect, useCallback } from 'react';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useSeason } from '../context/SeasonContext';
 import {
   getAllIncome,
   addIncome as addIncomeDB,
-  updateIncomePrice as updateIncomePriceDB,
   deleteIncome as deleteIncomeDB,
-  getTotalRevenue,
+  updateIncomeGKG as updateIncomeGKGDB,
   getTotalGKG,
   getTotalGKP,
-  getAveragePricePerKg,
-  getUnsoldGKG,
-  getTotalRevenueSold,
-  getGacongValueRp,
+  getTotalGacongWeight,
   type Income,
   type IncomeInput,
 } from '../database/incomeService';
 
 interface UseIncomeReturn {
   incomeRecords: Income[];
-  totalRevenue: number;
   totalGKG: number;
   totalGKP: number;
-  avgPricePerKg: number;
-  unsoldGKG: number;
-  totalRevenueSold: number;
-  gacongValueRp: number;
+  totalGacongWeight: number;
   isLoading: boolean;
   addIncome: (input: Omit<IncomeInput, 'season_code'>) => Promise<void>;
-  updatePrice: (id: number, pricePerKg: number) => Promise<void>;
   deleteIncome: (id: number) => Promise<void>;
+  updateIncomeGKG: (id: number, gkgWeight: number) => Promise<void>;
   refreshIncome: () => Promise<void>;
 }
 
@@ -42,35 +29,23 @@ export function useIncome(): UseIncomeReturn {
   const db = useSQLiteContext();
   const { selectedSeason } = useSeason();
   const [incomeRecords, setIncomeRecords] = useState<Income[]>([]);
-  const [totalRevenue, setTotalRevenue] = useState(0);
   const [totalGKG, setTotalGKG] = useState(0);
   const [totalGKP, setTotalGKP] = useState(0);
-  const [avgPricePerKg, setAvgPricePerKg] = useState(0);
-  const [unsoldGKG, setUnsoldGKG] = useState(0);
-  const [totalRevenueSold, setTotalRevenueSold] = useState(0);
-  const [gacongValueRp, setGacongValueRp] = useState(0);
+  const [totalGacongWeight, setTotalGacongWeight] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
   const refreshIncome = useCallback(async () => {
     try {
-      const [records, revenue, gkg, gkp, avgPrice, unsold, revSold, gacongVal] = await Promise.all([
+      const [records, gkg, gkp, gacong] = await Promise.all([
         getAllIncome(db, selectedSeason),
-        getTotalRevenue(db, selectedSeason),
         getTotalGKG(db, selectedSeason),
         getTotalGKP(db, selectedSeason),
-        getAveragePricePerKg(db, selectedSeason),
-        getUnsoldGKG(db, selectedSeason),
-        getTotalRevenueSold(db, selectedSeason),
-        getGacongValueRp(db, selectedSeason),
+        getTotalGacongWeight(db, selectedSeason),
       ]);
       setIncomeRecords(records);
-      setTotalRevenue(revenue);
       setTotalGKG(gkg);
       setTotalGKP(gkp);
-      setAvgPricePerKg(avgPrice);
-      setUnsoldGKG(unsold);
-      setTotalRevenueSold(revSold);
-      setGacongValueRp(gacongVal);
+      setTotalGacongWeight(gacong);
     } catch (error) {
       console.error('Error fetching income:', error);
     } finally {
@@ -95,19 +70,6 @@ export function useIncome(): UseIncomeReturn {
     [db, selectedSeason, refreshIncome]
   );
 
-  const updatePrice = useCallback(
-    async (id: number, pricePerKg: number) => {
-      try {
-        await updateIncomePriceDB(db, id, pricePerKg);
-        await refreshIncome();
-      } catch (error) {
-        console.error('Error updating price:', error);
-        throw error;
-      }
-    },
-    [db, refreshIncome]
-  );
-
   const deleteIncome = useCallback(
     async (id: number) => {
       try {
@@ -121,19 +83,28 @@ export function useIncome(): UseIncomeReturn {
     [db, refreshIncome]
   );
 
+  const updateIncomeGKG = useCallback(
+    async (id: number, gkgWeight: number) => {
+      try {
+        await updateIncomeGKGDB(db, id, gkgWeight);
+        await refreshIncome();
+      } catch (error) {
+        console.error('Error updating income GKG:', error);
+        throw error;
+      }
+    },
+    [db, refreshIncome]
+  );
+
   return {
     incomeRecords,
-    totalRevenue,
     totalGKG,
     totalGKP,
-    avgPricePerKg,
-    unsoldGKG,
-    totalRevenueSold,
-    gacongValueRp,
+    totalGacongWeight,
     isLoading,
     addIncome,
-    updatePrice,
     deleteIncome,
+    updateIncomeGKG,
     refreshIncome,
   };
 }

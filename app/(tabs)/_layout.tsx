@@ -6,16 +6,30 @@ import React from 'react';
 import { Tabs } from 'expo-router';
 import { Text, StyleSheet, View } from 'react-native';
 import { COLORS, FONT_SIZE, FONT_WEIGHT } from '../../src/constants/theme';
+import { useBudget } from '../../src/context/BudgetContext';
 
-function TabIcon({ emoji, focused }: { emoji: string; focused: boolean }) {
+function TabIcon({ emoji, focused, badgeCount }: {
+  emoji: string;
+  focused: boolean;
+  badgeCount?: number;
+}) {
   return (
     <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
       <Text style={styles.emoji}>{emoji}</Text>
+      {badgeCount != null && badgeCount > 0 && (
+        <View style={styles.badge}>
+          <Text style={styles.badgeText}>
+            {badgeCount > 9 ? '9+' : badgeCount}
+          </Text>
+        </View>
+      )}
     </View>
   );
 }
 
 export default function TabLayout() {
+  const { overBudgetCount } = useBudget();
+
   return (
     <Tabs
       screenOptions={{
@@ -38,7 +52,9 @@ export default function TabLayout() {
         name="expenses"
         options={{
           title: 'Pengeluaran',
-          tabBarIcon: ({ focused }) => <TabIcon emoji="💰" focused={focused} />,
+          tabBarIcon: ({ focused }) => (
+            <TabIcon emoji="💰" focused={focused} badgeCount={overBudgetCount} />
+          ),
         }}
       />
       <Tabs.Screen
@@ -46,6 +62,13 @@ export default function TabLayout() {
         options={{
           title: 'Penghasilan',
           tabBarIcon: ({ focused }) => <TabIcon emoji="🌾" focused={focused} />,
+        }}
+      />
+      <Tabs.Screen
+        name="debts"
+        options={{
+          title: 'Hutang',
+          tabBarIcon: ({ focused }) => <TabIcon emoji="💳" focused={focused} />,
         }}
       />
     </Tabs>
@@ -86,5 +109,24 @@ const styles = StyleSheet.create({
   },
   emoji: {
     fontSize: 20,
+  },
+  badge: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: COLORS.danger,
+    borderWidth: 2,
+    borderColor: COLORS.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+  },
+  badgeText: {
+    color: COLORS.textInverse,
+    fontSize: 10,
+    fontWeight: FONT_WEIGHT.bold,
   },
 });

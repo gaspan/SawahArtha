@@ -13,6 +13,7 @@ import {
   updateSeasonRefPrice as updateSeasonRefPriceDB,
   type Season,
 } from '../database/seasonService';
+import { seedDefaultBudgets } from '../database/budgetService';
 
 interface SeasonContextType {
   selectedSeason: string;
@@ -76,6 +77,7 @@ export function SeasonProvider({ children }: { children: ReactNode }) {
   const createNewSeason = useCallback(async (seasonCode: string, landSizeM2: number) => {
     try {
       await addSeasonDB(db, seasonCode, landSizeM2);
+      await seedDefaultBudgets(db, seasonCode, landSizeM2);
       setSelectedSeason(seasonCode);
       await refreshSeasons();
     } catch (error) {

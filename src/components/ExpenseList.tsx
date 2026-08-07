@@ -22,6 +22,7 @@ interface ExpenseListProps {
   expenses: Expense[];
   onEdit: (item: Expense) => void;
   onDelete: (id: number) => void;
+  onMarkPaid?: (id: number) => void;
 }
 
 function formatDate(dateStr: string): string {
@@ -53,10 +54,12 @@ function ExpenseItem({
   item,
   onEdit,
   onDelete,
+  onMarkPaid,
 }: {
   item: Expense;
   onEdit: (item: Expense) => void;
   onDelete: (id: number) => void;
+  onMarkPaid?: (id: number) => void;
 }) {
   const textColor = COLORS.categoryText[item.category] || COLORS.textSecondary;
 
@@ -82,6 +85,21 @@ function ExpenseItem({
         { borderLeftWidth: 3, borderLeftColor: COLORS.danger },
       ]}
     >
+      {!item.is_paid && (
+        <View style={styles.unpaidBadge}>
+          <Text style={styles.unpaidBadgeText}>⏳ Hutang</Text>
+          {onMarkPaid && (
+            <TouchableOpacity
+              style={styles.markPaidBtn}
+              onPress={() => onMarkPaid(item.id)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.markPaidBtnText}>Tandai Lunas</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
+
       {/* Header Row: Date + Actions */}
       <View style={styles.cardHeader}>
         <View style={styles.dateContainer}>
@@ -125,6 +143,13 @@ function ExpenseItem({
         <Text style={styles.cardAmount}>{formatIDR(item.amount)}</Text>
       </View>
 
+      {item.vendor_name ? (
+        <View style={styles.vendorRow}>
+          <Text style={styles.vendorLabel}>Supplier:</Text>
+          <Text style={styles.vendorName}>{item.vendor_name}</Text>
+        </View>
+      ) : null}
+
       {/* Category Badge */}
       <View style={styles.cardBottomRow}>
         <View style={styles.categoryBadge}>
@@ -137,7 +162,7 @@ function ExpenseItem({
   );
 }
 
-export default function ExpenseList({ expenses, onEdit, onDelete }: ExpenseListProps) {
+export default function ExpenseList({ expenses, onEdit, onDelete, onMarkPaid }: ExpenseListProps) {
   if (expenses.length === 0) {
     return <EmptyState />;
   }
@@ -147,7 +172,7 @@ export default function ExpenseList({ expenses, onEdit, onDelete }: ExpenseListP
       {expenses.map((item, index) => (
         <Fragment key={item.id.toString()}>
           {index > 0 && <View style={styles.separator} />}
-          <ExpenseItem item={item} onEdit={onEdit} onDelete={onDelete} />
+          <ExpenseItem item={item} onEdit={onEdit} onDelete={onDelete} onMarkPaid={onMarkPaid} />
         </Fragment>
       ))}
     </View>
@@ -293,6 +318,49 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   deleteIcon: {
-    fontSize: FONT_SIZE.sm,
+    fontSize: 14,
+  },
+
+  unpaidBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: COLORS.warningLight,
+    borderWidth: 1,
+    borderColor: COLORS.warning,
+    borderRadius: BORDER_RADIUS.sm,
+    paddingVertical: SPACING.xs,
+    paddingHorizontal: SPACING.sm,
+    marginBottom: SPACING.sm,
+  },
+  unpaidBadgeText: {
+    fontSize: FONT_SIZE.xs,
+    fontWeight: FONT_WEIGHT.semibold,
+    color: COLORS.warning,
+  },
+  markPaidBtn: {
+    backgroundColor: COLORS.success,
+    borderRadius: BORDER_RADIUS.sm,
+    paddingVertical: SPACING.xs,
+    paddingHorizontal: SPACING.sm,
+  },
+  markPaidBtnText: {
+    fontSize: 10,
+    fontWeight: FONT_WEIGHT.bold,
+    color: COLORS.textInverse,
+  },
+  vendorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.xs,
+  },
+  vendorLabel: {
+    fontSize: FONT_SIZE.xs,
+    color: COLORS.textSecondary,
+  },
+  vendorName: {
+    fontSize: FONT_SIZE.xs,
+    fontWeight: FONT_WEIGHT.medium,
+    color: COLORS.text,
   },
 });

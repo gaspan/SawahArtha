@@ -3,7 +3,7 @@ import * as Sharing from 'expo-sharing';
 import { Alert, Platform } from 'react-native';
 import { type SQLiteDatabase } from 'expo-sqlite';
 
-export function convertToCSV(expenses: any[], incomes: any[]): string {
+export function convertToCSV(expenses: any[], incomes: any[], sales?: any[]): string {
   const headers = [
     'Tipe',
     'ID',
@@ -32,23 +32,39 @@ export function convertToCSV(expenses: any[], incomes: any[]): string {
     rows.push(row.join(','));
   });
 
-  // Process Incomes
+  // Process Incomes (harvest data)
   incomes.forEach((i) => {
     const detailText = `GKP: ${i.gkp_weight || 0} kg | GKG: ${i.gkg_weight || 0} kg`;
-    const noteText = i.price_per_kg > 0 ? `Harga per kg: Rp ${i.price_per_kg}` : 'Belum dijual';
-    
     const row = [
-      'Penghasilan',
+      'Panen',
       i.id,
       `"${(i.season_code || '').replace(/"/g, '""')}"`,
       i.date || '',
       '"Hasil Panen Gabah"',
       `"${detailText.replace(/"/g, '""')}"`,
-      i.total_revenue || 0,
-      `"${noteText.replace(/"/g, '""')}"`,
+      '',  // no amount column for harvest
+      `"${detailText.replace(/"/g, '""')}"`,
     ];
     rows.push(row.join(','));
   });
+
+  // Process Sales
+  if (sales) {
+    sales.forEach((s) => {
+      const detailText = `Jual: ${s.gkg_sold || 0} kg × Rp ${s.price_per_kg || 0}/kg`;
+      const row = [
+        'Penjualan',
+        s.id,
+        `"${(s.season_code || '').replace(/"/g, '""')}"`,
+        s.date || '',
+        s.buyer_name ? `"${s.buyer_name.replace(/"/g, '""')}"` : '"Penjualan Gabah"',
+        `"${detailText.replace(/"/g, '""')}"`,
+        s.total_revenue || 0,
+        s.note ? `"${s.note.replace(/"/g, '""')}"` : '',
+      ];
+      rows.push(row.join(','));
+    });
+  }
 
   return rows.join('\n');
 }
@@ -248,7 +264,48 @@ export async function importFromCSV(
           );
           expensesAdded++;
         }
+      } else if (type === 'Panen') {
+        const detailText = cols[5] || '';
+        const gkpMatch = detailText.match(/GKP:\s*([0-9.,]+)/i);
+        const gkgMatch = detailText.match(/GKG:\s*([0-9.,]+)/i);
+        const gkpWeight = gkpMatch ? parseLocaleNumber(gkpMatch[1]) : 0;
+        const gkgWeight = gkgMatch ? parseLocaleNumber(gkgMatch[1]) : gkpWeight * 0.85;
+
+        const existing = await db.getFirstAsync<{ id: number }>(
+          'SELECT id FROM income WHERE season_code = ? AND date = ? AND gkp_weight = ? AND gkg_weight = ? LIMIT 1',
+          [seasonCode, date, gkpWeight, gkgWeight]
+        );
+
+        if (!existing) {
+          await db.runAsync(
+            'INSERT INTO income (gkp_weight, gkg_weight, net_gkp, season_code, date) VALUES (?, ?, ?, ?, ?)',
+            [gkpWeight, gkgWeight, gkpWeight, seasonCode, date]
+          );
+          incomesAdded++;
+        }
+      } else if (type === 'Penjualan') {
+        const detailText = cols[5] || '';
+        const gkgMatch = detailText.match(/Jual:\s*([0-9.,]+)\s*kg/i);
+        const priceMatch = detailText.match(/Rp\s*([0-9.,]+)/i);
+        const gkgSold = gkgMatch ? parseLocaleNumber(gkgMatch[1]) : 0;
+        const pricePerKg = priceMatch ? parseLocaleNumber(priceMatch[1]) : 0;
+
+        if (gkgSold > 0 && pricePerKg > 0) {
+          const existing = await db.getFirstAsync<{ id: number }>(
+            'SELECT id FROM sales WHERE season_code = ? AND date = ? AND gkg_sold = ? AND price_per_kg = ? AND total_revenue = ? LIMIT 1',
+            [seasonCode, date, gkgSold, pricePerKg, amountOrRevenue]
+          );
+
+          if (!existing) {
+            await db.runAsync(
+              'INSERT INTO sales (season_code, gkg_sold, price_per_kg, total_revenue, date) VALUES (?, ?, ?, ?, ?)',
+              [seasonCode, gkgSold, pricePerKg, amountOrRevenue, date]
+            );
+            incomesAdded++;
+          }
+        }
       } else if (type === 'Penghasilan') {
+        // Legacy: Penghasilan type — handle as harvest AND sale for backward compat
         const detailText = cols[5] || '';
         const noteText = cols[7] || '';
 
@@ -261,16 +318,29 @@ export async function importFromCSV(
         const pricePerKg = priceMatch ? parseLocaleNumber(priceMatch[1]) : 0;
 
         const existing = await db.getFirstAsync<{ id: number }>(
-          'SELECT id FROM income WHERE season_code = ? AND date = ? AND gkp_weight = ? AND gkg_weight = ? AND price_per_kg = ? AND total_revenue = ? LIMIT 1',
-          [seasonCode, date, gkpWeight, gkgWeight, pricePerKg, amountOrRevenue]
+          'SELECT id FROM income WHERE season_code = ? AND date = ? AND gkp_weight = ? AND gkg_weight = ? LIMIT 1',
+          [seasonCode, date, gkpWeight, gkgWeight]
         );
 
         if (!existing) {
           await db.runAsync(
-            'INSERT INTO income (gkp_weight, gkg_weight, price_per_kg, total_revenue, season_code, date) VALUES (?, ?, ?, ?, ?, ?)',
-            [gkpWeight, gkgWeight, pricePerKg, amountOrRevenue, seasonCode, date]
+            'INSERT INTO income (gkp_weight, gkg_weight, net_gkp, season_code, date) VALUES (?, ?, ?, ?, ?)',
+            [gkpWeight, gkgWeight, gkpWeight, seasonCode, date]
           );
           incomesAdded++;
+        }
+
+        if (pricePerKg > 0 && amountOrRevenue > 0) {
+          const saleExisting = await db.getFirstAsync<{ id: number }>(
+            'SELECT id FROM sales WHERE season_code = ? AND date = ? AND gkg_sold = ? AND price_per_kg = ? AND total_revenue = ? LIMIT 1',
+            [seasonCode, date, gkgWeight, pricePerKg, amountOrRevenue]
+          );
+          if (!saleExisting) {
+            await db.runAsync(
+              'INSERT INTO sales (season_code, gkg_sold, price_per_kg, total_revenue, date) VALUES (?, ?, ?, ?, ?)',
+              [seasonCode, gkgWeight, pricePerKg, amountOrRevenue, date]
+            );
+          }
         }
       }
     }

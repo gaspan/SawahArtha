@@ -24,6 +24,8 @@ interface ExpenseFormProps {
     description: string;
     amount: number;
     category: string;
+    is_paid: number;
+    vendor_name: string;
   }) => void;
 }
 
@@ -33,6 +35,8 @@ export default function ExpenseForm({ onSubmit }: ExpenseFormProps) {
   const [amountDisplay, setAmountDisplay] = useState('');
   const [amountValue, setAmountValue] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [vendorName, setVendorName] = useState('');
+  const [isPaid, setIsPaid] = useState(true);
 
   const isValid = title.trim().length > 0 && amountValue > 0 && selectedCategory !== null;
 
@@ -50,21 +54,24 @@ export default function ExpenseForm({ onSubmit }: ExpenseFormProps) {
       description: description.trim(),
       amount: amountValue,
       category: selectedCategory,
+      is_paid: isPaid ? 1 : 0,
+      vendor_name: vendorName.trim(),
     });
 
-    // Clear all fields
     setTitle('');
     setDescription('');
     setAmountDisplay('');
     setAmountValue(0);
     setSelectedCategory(null);
+    setVendorName('');
+    setIsPaid(true);
 
     Alert.alert(
       '✅ Berhasil!',
       'Pengeluaran berhasil disimpan.',
       [{ text: 'OK', style: 'default' }],
     );
-  }, [isValid, title, description, amountValue, selectedCategory, onSubmit]);
+  }, [isValid, title, description, amountValue, selectedCategory, isPaid, vendorName, onSubmit]);
 
   return (
     <View style={styles.container}>
@@ -101,6 +108,24 @@ export default function ExpenseForm({ onSubmit }: ExpenseFormProps) {
               numberOfLines={3}
               maxLength={500}
               textAlignVertical="top"
+            />
+          </View>
+        </View>
+
+        {/* Vendor Name */}
+        <View style={styles.fieldGroup}>
+          <View style={styles.labelRow}>
+            <Text style={styles.label}>Nama Toko / Supplier</Text>
+            <Text style={styles.optionalBadge}>opsional</Text>
+          </View>
+          <View style={styles.inputWrapper}>
+            <TextInput
+              style={styles.input}
+              placeholder="e.g., Toko Tani Makmur"
+              placeholderTextColor={COLORS.textLight}
+              value={vendorName}
+              onChangeText={setVendorName}
+              maxLength={100}
             />
           </View>
         </View>
@@ -164,6 +189,37 @@ export default function ExpenseForm({ onSubmit }: ExpenseFormProps) {
                 </TouchableOpacity>
               );
             })}
+          </View>
+        </View>
+
+        {/* Payment Status */}
+        <View style={styles.fieldGroup}>
+          <Text style={styles.label}>Status Pembayaran</Text>
+          <View style={styles.radioRow}>
+            <TouchableOpacity
+              style={[styles.radioOption, isPaid && styles.radioOptionActive]}
+              onPress={() => setIsPaid(true)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.radioCircle}>
+                {isPaid && <View style={styles.radioDot} />}
+              </View>
+              <Text style={[styles.radioLabel, isPaid && styles.radioLabelActive]}>
+                Sudah Dibayar
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.radioOption, !isPaid && styles.radioOptionActive]}
+              onPress={() => setIsPaid(false)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.radioCircle}>
+                {!isPaid && <View style={styles.radioDot} />}
+              </View>
+              <Text style={[styles.radioLabel, !isPaid && styles.radioLabelActive]}>
+                Belum Dibayar (Hutang)
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -310,5 +366,50 @@ const styles = StyleSheet.create({
     fontWeight: FONT_WEIGHT.bold,
     color: COLORS.textInverse,
     letterSpacing: 0.3,
+  },
+
+  radioRow: {
+    flexDirection: 'row',
+    gap: SPACING.sm,
+  },
+  radioOption: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    backgroundColor: COLORS.surface,
+    borderRadius: BORDER_RADIUS.md,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm + 2,
+  },
+  radioOptionActive: {
+    borderColor: COLORS.danger,
+    backgroundColor: COLORS.dangerLight,
+  },
+  radioCircle: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: COLORS.danger,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  radioDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: COLORS.danger,
+  },
+  radioLabel: {
+    fontSize: FONT_SIZE.sm,
+    fontWeight: FONT_WEIGHT.medium,
+    color: COLORS.textSecondary,
+  },
+  radioLabelActive: {
+    color: COLORS.danger,
+    fontWeight: FONT_WEIGHT.bold,
   },
 });

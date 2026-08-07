@@ -46,6 +46,32 @@ export function calculateGKG(netGkp: number): number {
 }
 
 /**
+ * Resolve effective GKG weight between user-entered actual weight
+ * and the automatic estimate (netGKP x 0.8).
+ * Returns isEstimated=true when falling back to the estimate.
+ */
+export function resolveGKG(
+  estimatedGKG: number,
+  userInput: string | number,
+): { value: number; isEstimated: boolean } {
+  const parsed = typeof userInput === 'string' ? parseFloat(userInput) : userInput;
+  const valid = !isNaN(parsed) && parsed > 0;
+  return valid
+    ? { value: parsed, isEstimated: false }
+    : { value: estimatedGKG, isEstimated: true };
+}
+
+/**
+ * Check if a stored gkg_weight is still the automatic estimate
+ * (netGKP × GKP_TO_GKG_RATIO) or was manually overwritten.
+ * Within tolerance=0.5kg for floating-point rounding.
+ */
+export function isEstimatedGKG(gkgWeight: number, netGkp: number, tolerance = 0.5): boolean {
+  const estimated = calculateGKG(netGkp);
+  return Math.abs(gkgWeight - estimated) <= tolerance;
+}
+
+/**
  * Check if zakat is obligatory based on total GKG
  */
 export function isZakatWajib(totalGKG: number): boolean {

@@ -15,89 +15,24 @@ import {
   FONT_WEIGHT,
   SHADOW,
 } from '../constants/theme';
-import { formatIDR, formatCurrencyInput } from '../utils/currency';
-import { calculateZakatKg } from '../utils/zakat';
-
-interface HarvestRecord {
-  id: number;
-  gkp_weight: number;
-  gkg_weight: number;
-  gacong_type: string;
-  gacong_input: number;
-  gacong_weight: number;
-  net_gkp: number;
-  price_per_kg: number;
-  total_revenue: number;
-  date: string;
-}
+import { isEstimatedGKG } from '../utils/zakat';
+import { isValidGKG } from '../database/incomeService';
+import type { Income } from '../database/incomeService';
 
 interface Props {
-  records: Array<HarvestRecord>;
-  onUpdatePrice: (id: number, price: number) => void;
+  records: Income[];
+  totalGKGSold: number;
   onDelete: (id: number) => void;
+  onUpdateGKG: (id: number, gkgWeight: number) => Promise<void>;
 }
 
-export default function IncomeList({ records, onUpdatePrice, onDelete }: Props) {
+export default function IncomeList({ records, totalGKGSold, onDelete, onUpdateGKG }: Props) {
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [editDisplay, setEditDisplay] = useState('');
-  const [editValue, setEditValue] = useState(0);
-
-  const handleEditStart = useCallback((record: HarvestRecord) => {
-    setEditingId(record.id);
-    if (record.price_per_kg > 0) {
-      const { display } = formatCurrencyInput(record.price_per_kg.toString());
-      setEditDisplay(display);
-      setEditValue(record.price_per_kg);
-    } else {
-      setEditDisplay('');
-      setEditValue(0);
-    }
-  }, []);
-
-  const handlePriceChange = useCallback((text: string) => {
-    const { display, value } = formatCurrencyInput(text);
-    setEditDisplay(display);
-    setEditValue(value);
-  }, []);
-
-  const handleSave = useCallback(
-    (id: number) => {
-      onUpdatePrice(id, editValue);
-      setEditingId(null);
-      setEditDisplay('');
-      setEditValue(0);
-    },
-    [editValue, onUpdatePrice],
-  );
-
-  const handleCancel = useCallback(() => {
-    setEditingId(null);
-    setEditDisplay('');
-    setEditValue(0);
-  }, []);
-
-  const handleDelete = useCallback(
-    (id: number) => {
-      Alert.alert(
-        'Hapus Data Panen',
-        'Apakah Anda yakin ingin menghapus data panen ini?',
-        [
-          { text: 'Batal', style: 'cancel' },
-          {
-            text: 'Hapus',
-            style: 'destructive',
-            onPress: () => onDelete(id),
-          },
-        ],
-      );
-    },
-    [onDelete],
-  );
+  const [editGkg, setEditGkg] = useState('');
 
   const formatDate = (dateStr: string): string => {
     try {
-      const date = new Date(dateStr);
-      return date.toLocaleDateString('id-ID', {
+      return new Date(dateStr).toLocaleDateString('id-ID', {
         day: 'numeric',
         month: 'short',
         year: 'numeric',
@@ -107,197 +42,181 @@ export default function IncomeList({ records, onUpdatePrice, onDelete }: Props) 
     }
   };
 
-  const renderItem = useCallback(
-    ({ item }: { item: HarvestRecord }) => {
-      const isEditing = editingId === item.id;
-      const zakatKg = calculateZakatKg(item.gkg_weight);
-      const estimasiRevenue =
-        item.price_per_kg > 0 && zakatKg > 0
-          ? (item.gkg_weight - zakatKg) * item.price_per_kg
-          : 0;
+  const handleEditStart = useCallback((item: Income) => {
+    setEditingId(item.id);
+    setEditGkg(item.gkg_weight.toString());
+  }, []);
 
-      return (
-        <View
-          style={[
-            styles.card,
-            item.price_per_kg > 0
-              ? { borderLeftWidth: 3, borderLeftColor: COLORS.primary }
-              : { borderLeftWidth: 3, borderLeftColor: COLORS.borderLight },
-          ]}
-        >
-          {/* Header Row: Date + Delete */}
-          <View style={styles.cardHeader}>
-            <View style={styles.dateContainer}>
-              <Text style={styles.dateIcon}>📅</Text>
-              <Text style={styles.dateText}>{formatDate(item.date)}</Text>
-            </View>
-            <TouchableOpacity
-              style={styles.deleteButton}
-              onPress={() => handleDelete(item.id)}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Text style={styles.deleteIcon}>🗑️</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Weight Info */}
-          <View style={styles.weightRow}>
-            <View style={styles.weightItem}>
-              <Text style={styles.weightLabel}>GKP</Text>
-              <Text style={styles.weightValue}>
-                {item.gkp_weight.toLocaleString('id-ID')} kg
-              </Text>
-            </View>
-            <View style={styles.weightDivider} />
-            <View style={styles.weightItem}>
-              <Text style={styles.weightLabel}>Gacong</Text>
-              <Text style={styles.weightValue}>
-                {item.gacong_weight > 0
-                  ? `${item.gacong_weight.toLocaleString('id-ID', { maximumFractionDigits: 1 })} kg`
-                  : '—'}
-              </Text>
-              {item.gacong_weight > 0 && (
-                <Text style={styles.weightSublabel}>
-                  {item.gacong_type === 'pembagian'
-                    ? `1/${item.gacong_input.toLocaleString('id-ID', { maximumFractionDigits: 1 })}`
-                    : 'berat'}
-                </Text>
-              )}
-            </View>
-            <View style={styles.weightDivider} />
-            <View style={styles.weightItem}>
-              <Text style={styles.weightLabel}>Bersih</Text>
-              <Text style={styles.weightValue}>
-                {item.net_gkp.toLocaleString('id-ID', { maximumFractionDigits: 1 })}
-              </Text>
-              <Text style={styles.weightSublabel}>kg</Text>
-            </View>
-            <View style={styles.weightDivider} />
-            <View style={styles.weightItem}>
-              <Text style={styles.weightLabel}>GKG</Text>
-              <Text style={styles.weightValue}>
-                {item.gkg_weight.toLocaleString('id-ID', { maximumFractionDigits: 1 })}
-              </Text>
-              <Text style={styles.weightSublabel}>kg</Text>
-            </View>
-          </View>
-
-          {/* Price Section */}
-          <View style={styles.priceSection}>
-            {isEditing ? (
-              <View style={styles.editContainer}>
-                <Text style={styles.editLabel}>Harga per kg:</Text>
-                <View style={styles.editInputRow}>
-                  <Text style={styles.inputPrefix}>Rp</Text>
-                  <TextInput
-                    style={styles.priceInput}
-                    value={editDisplay}
-                    onChangeText={handlePriceChange}
-                    keyboardType="numeric"
-                    placeholder="0"
-                    placeholderTextColor={COLORS.textLight}
-                    autoFocus
-                  />
-                </View>
-                <View style={styles.editActions}>
-                  <TouchableOpacity
-                    style={styles.saveButton}
-                    onPress={() => handleSave(item.id)}
-                  >
-                    <Text style={styles.saveButtonText}>Simpan</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.cancelButton}
-                    onPress={handleCancel}
-                  >
-                    <Text style={styles.cancelButtonText}>Batal</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ) : (
-              <View style={styles.priceDisplay}>
-                <View style={styles.priceRow}>
-                  <Text style={styles.priceLabel}>Harga/kg:</Text>
-                  {item.price_per_kg > 0 ? (
-                    <Text style={styles.priceValue}>
-                      {formatIDR(item.price_per_kg)}
-                    </Text>
-                  ) : (
-                    <View style={styles.unsoldBadge}>
-                      <Text style={styles.unsoldBadgeText}>Belum dijual</Text>
-                    </View>
-                  )}
-                </View>
-                <TouchableOpacity
-                  style={styles.editPriceButton}
-                  onPress={() => handleEditStart(item)}
-                >
-                  <Text style={styles.editPriceButtonText}>✏️ Edit Harga</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
-
-          {/* Revenue */}
-          <View style={styles.revenueSection}>
-            <View style={styles.revenueRow}>
-              <Text style={styles.revenueLabel}>Pendapatan</Text>
-              <Text
-                style={[
-                  styles.revenueValue,
-                  item.total_revenue === 0 && styles.revenueZero,
-                ]}
-              >
-                {formatIDR(item.total_revenue)}
-              </Text>
-            </View>
-            {estimasiRevenue > 0 && (
-              <View style={styles.revenueRow}>
-                <Text style={styles.estimasiLabel}>
-                  Estimasi (net setelah zakat)
-                </Text>
-                <Text style={styles.estimasiValue}>
-                  {formatIDR(estimasiRevenue)}
-                </Text>
-              </View>
-            )}
-          </View>
-        </View>
-      );
+  const handleSave = useCallback(
+    (id: number, gkgWeight: number) => {
+      const gkg = parseFloat(editGkg);
+      if (!isValidGKG(gkg)) return;
+      if (gkg < totalGKGSold) {
+        Alert.alert(
+          'Perhatian',
+          `Stok terjual (${totalGKGSold.toLocaleString('id-ID', { maximumFractionDigits: 1 })} kg) melebihi GKG baru. Stok sisa akan 0 kg. Tetap simpan?`,
+          [
+            { text: 'Batal', style: 'cancel', onPress: () => setEditingId(null) },
+            {
+              text: 'Simpan',
+              onPress: () => {
+                onUpdateGKG(id, gkg);
+                setEditingId(null);
+              },
+            },
+          ],
+        );
+        return;
+      }
+      onUpdateGKG(id, gkg);
+      setEditingId(null);
     },
-    [
-      editingId,
-      editDisplay,
-      handlePriceChange,
-      handleSave,
-      handleCancel,
-      handleEditStart,
-      handleDelete,
-    ],
+    [editGkg, totalGKGSold, onUpdateGKG],
   );
 
-  const renderEmpty = () => (
-    <View style={styles.emptyContainer}>
-      <Text style={styles.emptyIcon}>🌾</Text>
-      <Text style={styles.emptyTitle}>Belum ada data panen</Text>
-      <Text style={styles.emptySubtitle}>
-        Tambahkan data hasil panen Anda untuk mulai menghitung pendapatan
-      </Text>
-    </View>
+  const handleCancel = useCallback(() => {
+    setEditingId(null);
+  }, []);
+
+  const handleDelete = useCallback(
+    (id: number) => {
+      Alert.alert('Hapus Data Panen', 'Hapus data panen ini?', [
+        { text: 'Batal', style: 'cancel' },
+        { text: 'Hapus', style: 'destructive', onPress: () => onDelete(id) },
+      ]);
+    },
+    [onDelete],
   );
 
   if (records.length === 0) {
-    return renderEmpty();
+    return (
+      <View style={styles.emptyContainer}>
+        <Text style={styles.emptyIcon}>🌾</Text>
+        <Text style={styles.emptyTitle}>Belum ada data panen</Text>
+        <Text style={styles.emptySubtitle}>
+          Tambahkan data hasil panen Anda untuk mulai menghitung pendapatan
+        </Text>
+      </View>
+    );
   }
 
   return (
     <View style={styles.listContent}>
-      {records.map((item, index) => (
-        <React.Fragment key={item.id.toString()}>
-          {index > 0 && <View style={styles.separator} />}
-          {renderItem({ item })}
-        </React.Fragment>
-      ))}
+      {records.map((item, index) => {
+        const isEditing = editingId === item.id;
+        const estimated = isEstimatedGKG(item.gkg_weight, item.net_gkp);
+        return (
+          <React.Fragment key={item.id.toString()}>
+            {index > 0 && <View style={styles.separator} />}
+
+            <View style={styles.card}>
+              <View style={styles.cardHeader}>
+                <View style={styles.dateContainer}>
+                  <Text style={styles.dateIcon}>📅</Text>
+                  <Text style={styles.dateText}>{formatDate(item.date)}</Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.deleteButton}
+                  onPress={() => handleDelete(item.id)}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <Text style={styles.deleteIcon}>🗑️</Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.weightRow}>
+                <View style={styles.weightItem}>
+                  <Text style={styles.weightLabel}>GKP</Text>
+                  <Text style={styles.weightValue}>
+                    {item.gkp_weight.toLocaleString('id-ID')} kg
+                  </Text>
+                </View>
+                <View style={styles.weightDivider} />
+                <View style={styles.weightItem}>
+                  <Text style={styles.weightLabel}>Gacong</Text>
+                  <Text style={styles.weightValue}>
+                    {item.gacong_weight > 0
+                      ? `${item.gacong_weight.toLocaleString('id-ID', { maximumFractionDigits: 1 })} kg`
+                      : '—'}
+                  </Text>
+                  {item.gacong_weight > 0 && (
+                    <Text style={styles.weightSublabel}>
+                      {item.gacong_type === 'pembagian'
+                        ? `1/${item.gacong_input.toLocaleString('id-ID', { maximumFractionDigits: 1 })}`
+                        : 'berat'}
+                    </Text>
+                  )}
+                </View>
+                <View style={styles.weightDivider} />
+                <View style={styles.weightItem}>
+                  <Text style={styles.weightLabel}>Bersih</Text>
+                  <Text style={styles.weightValue}>
+                    {item.net_gkp.toLocaleString('id-ID', { maximumFractionDigits: 1 })}
+                  </Text>
+                  <Text style={styles.weightSublabel}>kg</Text>
+                </View>
+                <View style={styles.weightDivider} />
+                <View style={styles.weightItem}>
+                  <Text style={styles.weightLabel}>GKG</Text>
+                  {isEditing ? (
+                    <TextInput
+                      style={styles.editGkgInput}
+                      value={editGkg}
+                      onChangeText={setEditGkg}
+                      keyboardType="decimal-pad"
+                      maxLength={10}
+                      autoFocus
+                      selectTextOnFocus
+                    />
+                  ) : (
+                    <>
+                      <Text style={styles.weightValue}>
+                        {item.gkg_weight.toLocaleString('id-ID', { maximumFractionDigits: 1 })}
+                      </Text>
+                      <View style={styles.gkgBadgeRow}>
+                        <Text style={styles.weightSublabel}>kg</Text>
+                        {estimated ? (
+                          <View style={styles.estimatedBadge}>
+                            <Text style={styles.estimatedBadgeText}>~estimasi</Text>
+                          </View>
+                        ) : (
+                          <View style={styles.actualBadge}>
+                            <Text style={styles.actualBadgeText}>riil</Text>
+                          </View>
+                        )}
+                      </View>
+                    </>
+                  )}
+                </View>
+              </View>
+
+              {isEditing ? (
+                <View style={styles.editActions}>
+                  <TouchableOpacity
+                    style={styles.saveBtn}
+                    onPress={() => handleSave(item.id, parseFloat(editGkg))}
+                  >
+                    <Text style={styles.saveBtnText}>Simpan</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.cancelBtn} onPress={handleCancel}>
+                    <Text style={styles.cancelBtnText}>Batal</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <View style={styles.cardBottom}>
+                  <TouchableOpacity
+                    style={styles.editBtn}
+                    onPress={() => handleEditStart(item)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.editBtnText}>✏️ Edit GKG</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+          </React.Fragment>
+        );
+      })}
     </View>
   );
 }
@@ -307,17 +226,36 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.md,
     paddingBottom: SPACING.xl,
   },
-  listContentEmpty: {
-    flexGrow: 1,
-    justifyContent: 'center',
-  },
   separator: {
     height: SPACING.sm,
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    paddingVertical: SPACING.xxl,
+    paddingHorizontal: SPACING.lg,
+  },
+  emptyIcon: {
+    fontSize: 48,
+    marginBottom: SPACING.md,
+    opacity: 0.6,
+  },
+  emptyTitle: {
+    fontSize: FONT_SIZE.md,
+    fontWeight: FONT_WEIGHT.semibold,
+    color: COLORS.textSecondary,
+    marginBottom: SPACING.xs,
+  },
+  emptySubtitle: {
+    fontSize: FONT_SIZE.sm,
+    color: COLORS.textLight,
+    textAlign: 'center',
   },
   card: {
     backgroundColor: COLORS.surface,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.md,
+    borderLeftWidth: 3,
+    borderLeftColor: COLORS.primary,
     ...SHADOW.md,
   },
   cardHeader: {
@@ -350,14 +288,11 @@ const styles = StyleSheet.create({
   deleteIcon: {
     fontSize: FONT_SIZE.sm,
   },
-
-  // Weight Section
   weightRow: {
     flexDirection: 'row',
     backgroundColor: COLORS.background,
     borderRadius: BORDER_RADIUS.md,
     padding: SPACING.sm,
-    marginBottom: SPACING.sm,
   },
   weightItem: {
     flex: 1,
@@ -386,180 +321,96 @@ const styles = StyleSheet.create({
     color: COLORS.textLight,
     marginTop: 1,
   },
-
-  // Price Section
-  priceSection: {
-    borderTopWidth: 1,
-    borderTopColor: COLORS.borderLight,
-    paddingTop: SPACING.sm,
-    marginBottom: SPACING.sm,
-  },
-  priceDisplay: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  priceRow: {
+  gkgBadgeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING.xs,
+    gap: 4,
+    marginTop: 1,
   },
-  priceLabel: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textSecondary,
-  },
-  priceValue: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.text,
-  },
-  unsoldBadge: {
-    backgroundColor: COLORS.secondaryLight,
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: 3,
+  estimatedBadge: {
+    backgroundColor: COLORS.warningLight,
     borderRadius: BORDER_RADIUS.full,
+    paddingHorizontal: SPACING.xs + 1,
+    paddingVertical: 1,
+    borderWidth: 0.5,
+    borderColor: COLORS.warning,
   },
-  unsoldBadgeText: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.amberDark,
+  estimatedBadgeText: {
+    fontSize: 8,
+    fontWeight: FONT_WEIGHT.bold,
+    color: COLORS.warning,
   },
-  editPriceButton: {
+  actualBadge: {
+    backgroundColor: COLORS.primaryLight,
+    borderRadius: BORDER_RADIUS.full,
+    paddingHorizontal: SPACING.xs + 1,
+    paddingVertical: 1,
+    borderWidth: 0.5,
+    borderColor: COLORS.primary,
+  },
+  actualBadgeText: {
+    fontSize: 8,
+    fontWeight: FONT_WEIGHT.bold,
+    color: COLORS.primaryDark,
+  },
+  editGkgInput: {
+    height: 32,
+    width: 56,
+    borderWidth: 1,
+    borderColor: COLORS.secondary,
+    borderRadius: BORDER_RADIUS.sm,
+    paddingHorizontal: SPACING.xs,
+    fontSize: FONT_SIZE.md,
+    fontWeight: FONT_WEIGHT.bold,
+    color: COLORS.text,
+    backgroundColor: COLORS.surface,
+    textAlign: 'center',
+  },
+  cardBottom: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: SPACING.sm,
+  },
+  editBtn: {
     backgroundColor: COLORS.secondaryLight,
     paddingHorizontal: SPACING.sm,
     paddingVertical: SPACING.xs,
     borderRadius: BORDER_RADIUS.sm,
   },
-  editPriceButtonText: {
+  editBtnText: {
     fontSize: FONT_SIZE.xs,
     fontWeight: FONT_WEIGHT.semibold,
     color: COLORS.amberDark,
-  },
-
-  // Edit Mode
-  editContainer: {
-    backgroundColor: COLORS.background,
-    borderRadius: BORDER_RADIUS.md,
-    padding: SPACING.sm,
-    borderWidth: 1,
-    borderColor: COLORS.secondary,
-  },
-  editLabel: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.textSecondary,
-    marginBottom: SPACING.xs,
-  },
-  editInputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.surface,
-    borderRadius: BORDER_RADIUS.sm,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    paddingHorizontal: SPACING.sm,
-    marginBottom: SPACING.sm,
-  },
-  inputPrefix: {
-    fontSize: FONT_SIZE.md,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textSecondary,
-    marginRight: SPACING.xs,
-  },
-  priceInput: {
-    flex: 1,
-    fontSize: FONT_SIZE.lg,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.text,
-    paddingVertical: SPACING.sm,
   },
   editActions: {
     flexDirection: 'row',
     gap: SPACING.sm,
+    marginTop: SPACING.sm,
   },
-  saveButton: {
+  saveBtn: {
     flex: 1,
     backgroundColor: COLORS.primary,
-    paddingVertical: SPACING.sm,
+    paddingVertical: SPACING.xs + 2,
     borderRadius: BORDER_RADIUS.sm,
     alignItems: 'center',
   },
-  saveButtonText: {
-    fontSize: FONT_SIZE.sm,
+  saveBtnText: {
+    fontSize: FONT_SIZE.xs,
     fontWeight: FONT_WEIGHT.bold,
     color: COLORS.textInverse,
   },
-  cancelButton: {
+  cancelBtn: {
     flex: 1,
     backgroundColor: COLORS.surface,
-    paddingVertical: SPACING.sm,
+    paddingVertical: SPACING.xs + 2,
     borderRadius: BORDER_RADIUS.sm,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: COLORS.border,
   },
-  cancelButtonText: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.textSecondary,
-  },
-
-  // Revenue Section
-  revenueSection: {
-    borderTopWidth: 1,
-    borderTopColor: COLORS.borderLight,
-    paddingTop: SPACING.sm,
-    gap: SPACING.xs,
-  },
-  revenueRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  revenueLabel: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.textSecondary,
-  },
-  revenueValue: {
-    fontSize: FONT_SIZE.lg,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.primary,
-  },
-  revenueZero: {
-    color: COLORS.textLight,
-  },
-  estimasiLabel: {
+  cancelBtnText: {
     fontSize: FONT_SIZE.xs,
-    color: COLORS.secondary,
     fontWeight: FONT_WEIGHT.medium,
-  },
-  estimasiValue: {
-    fontSize: FONT_SIZE.md,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.amberDark,
-  },
-
-  // Empty State
-  emptyContainer: {
-    alignItems: 'center',
-    paddingVertical: SPACING.xxl,
-    paddingHorizontal: SPACING.lg,
-  },
-  emptyIcon: {
-    fontSize: 48,
-    marginBottom: SPACING.md,
-  },
-  emptyTitle: {
-    fontSize: FONT_SIZE.lg,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.text,
-    marginBottom: SPACING.xs,
-  },
-  emptySubtitle: {
-    fontSize: FONT_SIZE.sm,
     color: COLORS.textSecondary,
-    textAlign: 'center',
-    lineHeight: 20,
   },
 });

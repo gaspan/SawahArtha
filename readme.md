@@ -1,7 +1,7 @@
 # SawahArtha 🌾
 > **Aplikasi Manajemen Permodalan & Produktivitas Hasil Tani Padi**
 
-SawahArtha adalah aplikasi mobile berbasis Android yang dirancang khusus untuk membantu para petani padi mengelola siklus operasional, pencatatan keuangan (modal & pendapatan), analisis produktivitas lahan, hingga perhitungan kewajiban zakat hasil tani secara terstruktur per musim tanam.
+SawahArtha adalah aplikasi mobile berbasis Android yang dirancang khusus untuk membantu para petani padi mengelola siklus operasional, pencatatan keuangan (modal, pendapatan, piutang/hutang), anggaran per kategori, analisis produktivitas lahan, hingga perhitungan kewajiban zakat hasil tani secara terstruktur per musim tanam.
 
 ---
 
@@ -20,7 +20,7 @@ Aplikasi ini dibangun menggunakan tumpukan teknologi modern untuk memastikan sta
 ## ✨ Fitur Utama
 
 ### 1. Manajemen Musim Tanam Dinamis (Data Isolation)
-Semua pencatatan pengeluaran dan pendapatan dikelompokkan berdasarkan kode musim tanam (misalnya: `MT-2026-1`). Anda dapat membuat musim baru melalui tombol **"Mulai Musim Tanam Baru"**, yang secara otomatis menonaktifkan musim lama dan membuka lembaran baru tanpa menghapus riwayat data musim-musim sebelumnya di database SQLite.
+Semua pencatatan pengeluaran, pemasukan, penjualan, piutang/hutang, dan anggaran dikelompokkan berdasarkan kode musim tanam (misalnya: `MT-2026-1`). Anda dapat membuat musim baru melalui tombol **"Mulai Musim Tanam Baru"**, yang secara otomatis menonaktifkan musim lama dan membuka lembaran baru tanpa menghapus riwayat data musim-musim sebelumnya di database SQLite.
 
 *   **Edit Luas Lahan Inline**: Ukuran luas lahan dapat diedit langsung pada dashboard untuk memperbarui kalkulasi produktivitas secara instan.
 *   **Harga Referensi Jual (Rp/kg)**: Harga jual gabah per kilogram dapat diatur per musim, digunakan sebagai dasar estimasi pendapatan gabah yang belum dijual dan perhitungan kartu potensi harga jual (Break-Even & Simulasi Harga).
@@ -41,39 +41,69 @@ Semua pencatatan pengeluaran dan pendapatan dikelompokkan berdasarkan kode musim
 ### 4. Grafik Pengeluaran & Pendapatan Visual
 *   **Donut Chart**: Grafik perbandingan persentase total modal keluar dibandingkan total omzet pendapatan hasil panen, dengan tampilan responsif menyesuaikan lebar layar.
 *   **Bar Chart Kategori**: Visualisasi pengeluaran modal berdasarkan 8 kategori tani khusus: *Pupuk, Insektisida, Fungisida, Rodentisida, Herbisida, Moluksida, Jasa Pegawai,* dan *Item Barang*. Menampilkan informasi HPP per kg (total pengeluaran / total GKG) di bawah grafik.
+*   **Grafik Perbandingan Musim (Line Chart)**: Membandingkan metrik lintas musim (Laba Bersih, Total Panen, Total Pendapatan) dalam grafik garis responsif, dengan filter tab untuk setiap metrik.
 
 ### 5. Ekspor & Impor Backup Data (CSV)
 Aplikasi mendukung portabilitas data dengan menyediakan fitur ekspor dan impor data:
-*   **Ekspor Data**: Mengonversi seluruh rekaman pengeluaran dan pemasukan menjadi file format CSV standar secara lokal di direktori dokumen aplikasi, menampilkan letak path penyimpanan file tersebut di Dashboard secara interaktif (dapat ditekankan/salin), serta meniadakan alur share sheet eksternal.
+*   **Ekspor Data**: Mengonversi seluruh rekaman pengeluaran, pemasukan (panen), dan penjualan menjadi file format CSV standar secara lokal di direktori dokumen aplikasi, menampilkan letak path penyimpanan file tersebut di Dashboard secara interaktif (dapat ditekankan/salin), serta meniadakan alur share sheet eksternal.
 *   **Impor Data**: Memilih file backup CSV menggunakan *Native Document Picker*, mem-parsing isi file secara aman (termasuk deteksi desimal lokal), menghindari data duplikat secara otomatis, dan memperbarui database lokal seketika melalui transaksi SQLite atomic.
 
 ### 6. Pencatatan Data Panen & Biaya Gacong
-Tab **Penghasilan** menampilkan alur pencatatan hasil panen yang transparan dan berurutan:
+Tab **Penghasilan** memiliki dua sub-tab terpisah 🌾 **Panen** dan 💰 **Jual**.
+
+#### Sub-tab Panen
 *   **Input Berat GKP (Gabah Kering Panen)**: Berat kotor hasil panen dalam kilogram.
 *   **Biaya Gacong (Upah Panen)**: Mendukung dua metode pemotongan biaya panen:
     *   *Berat (kg)*: potongan langsung dalam kilogram.
     *   *Pembagian (1/n)*: potongan berbasis pecahan hasil panen, misal 1/6 dari total GKP.
-*   **Ringkasan Panen Terpadu**: Menampilkan alur GKP kotor → Gacong → Hasil Bersih → Estimasi GKG → Zakat → Estimasi Pendapatan dalam satu kartu ringkasan.
-*   **Riwayat Panen Detail**: Setiap record menampilkan GKP, Gacong (beserta metode), Hasil Bersih, dan GKG, dengan edit harga jual langsung di tempat.
+*   **Input Berat GKG Riil**: Berat GKG aktual hasil penimbangan dapat dimasukkan langsung (bukan hanya estimasi otomatis `netGKP × 0.8`). Badge menunjukkan apakah nilai masih estimasi atau berat riil. Zakat dihitung mengikuti angka stok riil.
+*   **Kartu Stok Gabah**: Menampilkan Total Panen → Terjual → Sisa (dengan progress bar).
+*   **Ringkasan Panen Terpadu**: Menampilkan alur GKP kotor → Gacong → Hasil Bersih → GKG → Zakat → Estimasi Pendapatan dalam satu kartu ringkasan.
+*   **Riwayat Panen Detail**: Setiap record menampilkan GKP, Gacong (beserta metode), Hasil Bersih, dan GKG — dengan **tombol Edit GKG inline** (input berat riil + badge estimasi/riil) dan **peringatan otomatis** jika GKG baru kurang dari total yang sudah terjual.
+
+#### Sub-tab Jual
+*   **Form Penjualan Baru**: Input jumlah GKG terjual (dengan tombol "Semua" untuk stok penuh), harga per kg, nama pembeli, status bayar, dan catatan.
+*   **Validasi Stok**: Sistem memvalidasi jumlah GKG terjual terhadap stok sisa agar tidak terjual berlebih.
+*   **Daftar Riwayat Penjualan**: Setiap record menampilkan jumlah, harga, total, dan badge "⏳ Piutang" jika belum dibayar, dengan tombol "Tandai Lunas" atau edit inline.
+*   **Harga Rata-rata Tertimbang**: Menghitung rata-rata harga jual berdasarkan berat terjual (weighted average).
 
 ### 7. Riwayat Pengeluaran dengan Pagination & Filter
 Tab **Pengeluaran** mendukung pengelolaan riwayat yang efisien:
 *   **Lazy-Load Pagination**: Data dimuat per-batch 10 record (LIMIT/OFFSET di level database), dimuat otomatis saat pengguna menggulir ke bawah (*infinite scroll*).
 *   **Filter Berdasarkan Kategori**: Chip filter horizontal "Semua" + 8 kategori tani memungkinkan penyaringan riwayat pengeluaran secara instan; jumlah record disesuaikan sesuai filter aktif.
+*   **Status Pembayaran**: Mendukung penandaan apakah pengeluaran sudah dibayar (lunas) atau belum, serta pencatatan nama vendor.
+*   **Kartu Anggaran (Budget vs Aktual)**: Setiap kategori memiliki anggaran RAB yang ditampilkan sebagai progress bar + banner peringatan otomatis jika realisasi > 80% anggaran.
 
-### 8. Kalkulator Zakat Hasil Tani Otomatis
+### 8. Anggaran RAB per Kategori
+Terintegrasi di Dashboard dan Pengeluaran:
+*   **Budget Card (8 kategori)**: Progress bar per kategori dengan status *safe* (<80%), *warning* (80-99%), atau *danger* (≥100%).
+*   **Anggaran Default**: Disiapkan otomatis saat musim baru dibuat berdasarkan luas lahan × Rp 25jt/ha, dengan rasio per kategori (Pupuk 30%, Insektisida 15%, dsb.).
+*   **Edit & Hapus Anggaran**: Tap kartu anggaran → modal edit/delete dengan validasi.
+*   **Log Audit**: Setiap perubahan anggaran (seed/create/update/delete) tercatat untuk audit.
+*   **Badge Merah**: Tab bar menampilkan badge merah jika ada kategori yang realisasi melebihi anggaran.
+
+### 9. Tab Bar Hutang & Piutang 💳
+Tab keempat untuk pengelolaan utang piutang:
+*   **3 Jenis Hutang**: Piutang gabah, hutang saprotan, dan pinjaman modal.
+*   **Bunga & Jatuh Tempo**: Mendukung input suku bunga per tahun dan tanggal jatuh tempo, dengan badge *overdue* otomatis.
+*   **Cicilan Bertahap**: Mencicil hutang dalam beberapa kali pembayaran, dengan progress bar (terbayar / total + bunga).
+*   **Kas Riil vs Akrual**: Menampilkan kartu Cash Position yang membandingkan kas riil (uang tunai masuk/keluar riil) vs kas akrual (seluruh transaksi tercatat).
+*   **Filter & Ringkasan**: Filter *All / Piutang / Hutang*, ringkasan total piutang masuk vs hutang keluar, banner overdue jika ada yang melewati jatuh tempo.
+
+### 10. Kalkulator Zakat Hasil Tani Otomatis
 Mengalkulasi kewajiban zakat pertanian secara otomatis:
-*   Mendukung konversi otomatis dari **Hasil Bersih GKP (setelah dikurangi biaya gacong)** ke Gabah Kering Giling (GKG) dengan rasio penyusutan standar 80%.
+*   Mendukung konversi otomatis dari **Hasil Bersih GKP (setelah dikurangi biaya gacong)** ke Gabah Kering Giling (GKG) dengan rasio penyusutan standar 80% (atau berat riil jika dimasukkan manual).
 *   Validasi otomatis terhadap batas minimal kewajiban zakat (Nisab pertanian sebesar $653 \text{ kg GKG}$).
 *   Penerapan kadar zakat sebesar 5% (untuk sistem pengairan berbayar/irigasi pompa).
 *   **Estimasi Zakat dalam Rupiah**: Perhitungan estimasi nilai zakat dalam mata uang Rupiah dengan mengalikan berat zakat (kg) terhadap harga rata-rata tertimbang berat GKG (apabila ada data harga jual yang tercatat).
 *   **Total Pendapatan Net Zakat**: Estimasi total pendapatan ditampilkan setelah dikurangi kewajiban zakat, baik pada banner ringkasan maupun pada setiap record riwayat panen.
+*   **Zakat Mengikuti Stok Riil**: Jika GKG diinput langsung (bukan estimasi), zakat dihitung berdasarkan berat tersebut.
 
 ---
 
 ## 🗄️ Arsitektur Database (SQLite Schema)
 
-Database SQLite lokal didefinisikan dengan tiga tabel utama:
+Database SQLite lokal didefinisikan dengan enam tabel utama dan satu tabel migrasi:
 
 ```sql
 -- 1. Tabel Musim Tanam
@@ -93,10 +123,13 @@ CREATE TABLE IF NOT EXISTS expenses (
   amount REAL NOT NULL,
   category TEXT NOT NULL,
   season_code TEXT NOT NULL,
-  date TEXT NOT NULL
+  date TEXT NOT NULL,
+  is_paid INTEGER DEFAULT 1,
+  vendor_name TEXT,
+  payment_date TEXT
 );
 
--- 3. Tabel Catatan Pendapatan Hasil Panen
+-- 3. Tabel Catatan Hasil Panen
 CREATE TABLE IF NOT EXISTS income (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   gkp_weight REAL NOT NULL,
@@ -105,28 +138,167 @@ CREATE TABLE IF NOT EXISTS income (
   gacong_input REAL DEFAULT 0,
   gacong_weight REAL DEFAULT 0,
   net_gkp REAL NOT NULL DEFAULT 0,
-  price_per_kg REAL DEFAULT 0,
-  total_revenue REAL DEFAULT 0,
   season_code TEXT NOT NULL,
   date TEXT NOT NULL
 );
+
+-- 4. Tabel Penjualan Gabah (dipisah dari income)
+CREATE TABLE IF NOT EXISTS sales (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  gkg_sold REAL NOT NULL,
+  price_per_kg REAL NOT NULL,
+  total_revenue REAL NOT NULL,
+  buyer_name TEXT,
+  is_paid INTEGER DEFAULT 1,
+  payment_date TEXT,
+  note TEXT,
+  season_code TEXT NOT NULL,
+  date TEXT NOT NULL
+);
+
+-- 5. Tabel Anggaran per Kategori
+CREATE TABLE IF NOT EXISTS budgets (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  season_code TEXT NOT NULL,
+  category TEXT NOT NULL,
+  amount REAL NOT NULL,
+  UNIQUE(season_code, category)
+);
+
+-- 6. Tabel Audit Log Anggaran
+CREATE TABLE IF NOT EXISTS budget_logs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  season_code TEXT NOT NULL,
+  category TEXT NOT NULL,
+  action TEXT NOT NULL,
+  old_amount REAL DEFAULT 0,
+  new_amount REAL DEFAULT 0,
+  note TEXT,
+  date TEXT NOT NULL
+);
+
+-- 7. Tabel Hutang & Piutang
+CREATE TABLE IF NOT EXISTS debts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  season_code TEXT NOT NULL,
+  type TEXT NOT NULL CHECK(type IN ('loan_in', 'loan_out')),
+  counterparty TEXT NOT NULL,
+  amount REAL NOT NULL,
+  paid_amount REAL DEFAULT 0,
+  interest_rate REAL DEFAULT 0,
+  due_date TEXT,
+  is_settled INTEGER DEFAULT 0,
+  note TEXT,
+  date TEXT NOT NULL
+);
+
+-- 8. Tabel Pembayaran Cicilan Hutang
+CREATE TABLE IF NOT EXISTS debt_payments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  debt_id INTEGER NOT NULL,
+  amount REAL NOT NULL,
+  payment_date TEXT NOT NULL,
+  note TEXT,
+  FOREIGN KEY (debt_id) REFERENCES debts(id) ON DELETE CASCADE
+);
+
+-- 9. Tabel Migrasi (marker satu-kali)
+CREATE TABLE IF NOT EXISTS _migrations (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT UNIQUE NOT NULL,
+  applied_at TEXT NOT NULL
+);
 ```
 
-> **Catatan kolom `seasons`:** `ref_price_per_kg` menyimpan harga referensi jual gabah per kilogram yang ditetapkan per musim, digunakan untuk estimasi pendapatan gabah yang belum dijual dan kartu analisis harga.
-
-> **Catatan kolom `income`:** `gkp_weight` menyimpan berat kotor GKP, `gacong_*` menyimpan detail biaya panen (metode, input, dan hasil potongan dalam kg), `net_gkp` adalah hasil bersih setelah gacong, sedangkan `gkg_weight` dihitung dari `net_gkp × 0.8` dan `total_revenue` dihitung dari `gkg_weight × price_per_kg`.
+> **Perubahan dari v1:** Tabel `income` tidak lagi memiliki kolom harga/pendapatan (dipisah ke `sales`). Kolom `is_paid`, `vendor_name`, `payment_date` ditambahkan ke `expenses` untuk pelacakan status pembayaran. Tabel `sales`, `budgets`, `budget_logs`, `debts`, `debt_payments`, `_migrations` adalah penambahan baru.
 
 ---
 
-## ✅ Pengujian (Unit Test)
+## 📁 Struktur File Utama
 
-Logika perhitungan inti (gacong, konversi GKP→GKG, nisab, kalkulasi zakat, laba bersih, ROI, simulasi harga, dan estimasi gabah belum dijual) diuji menggunakan **Node.js built-in test runner** (`node:test`) dengan `tsx`:
+```
+app/
+  _layout.tsx                # SQLiteProvider → SeasonProvider → BudgetProvider → Stack
+  (tabs)/
+    _layout.tsx              # Tab bar: 🌾 Panen | 💰 Keuangan | 💸 Pengeluaran | 💳 Hutang
+    index.tsx                # Dashboard (Ringkasan, Grafik, KPI)
+    income.tsx               # Sub-tab: 🌾 Panen & 💰 Jual (StockCard + Zakat)
+    expenses.tsx             # Pengeluaran + Anggaran banner
+    debts.tsx                # 💳 Hutang & Piutang (DebtCard list)
+src/
+  components/
+    StockCard.tsx            # Total Panen → Terjual → Sisa (progress bar)
+    SalesForm.tsx            # Form penjualan (stok validation)
+    SalesList.tsx            # Daftar penjualan + edit inline + badge piutang
+    DebtCard.tsx             # Kartu hutang (progress bar, bunga, overdue)
+    AddDebtModal.tsx         # Form tambah hutang
+    DebtPaymentModal.tsx     # Form cicilan (maks = sisa)
+    CashPositionCard.tsx     # Kas riil vs akrual
+    BudgetCard.tsx           # 8 kartu anggaran per kategori
+    BudgetEditModal.tsx      # Edit/hapus anggaran
+    BudgetLogModal.tsx       # Audit log perubahan anggaran
+    MarkPaidModal.tsx        # Modal tanda lunas (shared)
+    IncomeForm.tsx           # Form panen (GKP + Gacong + GKG riil)
+    IncomeList.tsx           # Riwayat panen + edit inline GKG + badge estimasi/riil
+    ExpenseForm.tsx          # Form pengeluaran (+vendor, status bayar)
+    ExpenseList.tsx          # Riwayat pengeluaran + badge piutang
+    ProfitWaterfallCard.tsx  # Waterfall: Modal → Panen → Gacong → Laba
+    BreakEvenCard.tsx        # HPP + titik impas
+    PriceSimulatorCard.tsx   # Slider simulasi harga jual
+    UnsoldGrainCard.tsx      # Stok gabah belum terjual
+    SeasonComparisonChart.tsx# Line chart perbandingan musim (3 tab)
+    DonutChart.tsx           # Pie chart gifted-charts
+    CategoryBarChart.tsx     # Bar chart per kategori + Rp/kg
+    ZakatSection.tsx         # Kalkulator zakat display
+  database/
+    init.ts                  # Schema + migrasi + seed anggaran
+    incomeService.ts         # CRUD panen + updateIncomeGKG
+    salesService.ts          # CRUD penjualan + rata-rata tertimbang
+    expenseService.ts        # CRUD pengeluaran + markPaid
+    budgetService.ts         # Anggaran + log audit
+    debtService.ts           # CRUD hutang + cicilan
+    analyticsService.ts      # Cross-season metrics (LEFT JOIN sales)
+    seasonService.ts         # CRUD musim + ref price
+    csv.ts                   # Ekspor/Impor CSV (Panen/Penjualan/Pengeluaran)
+  hooks/
+    useIncome.ts             # State panen (GKG, GKP, gacong, updateGKG)
+    useSales.ts              # State penjualan (revenue, avgPrice, unpaid)
+    useExpenses.ts           # State pengeluaran + unpaid
+    useDebts.ts              # State hutang + cicilan
+    useBudget.ts             # State anggaran + overBudgetCount
+    useSeasonMetrics.ts      # Cross-season metrics
+  context/
+    SeasonContext.tsx         # Season global + auto-seed budget
+    BudgetContext.tsx         # Budget global + badge driver
+  utils/
+    zakat.ts                 # Kalkulator zakat + resolveGKG + isEstimatedGKG
+    currency.ts              # FormatIDR + formatCurrencyInput
+    csv.ts                   # CSV parser + konverter
+  features/
+    dashboard.test.ts        # 40 tes (KPI, waterfall, break-even, simulasi, perbandingan musim)
+    budget.test.ts           # 37 tes (anggaran, seed, audit log)
+    sales.test.ts            # 30 tes (stok, weighted avg, revisi, piutang, alur lengkap)
+    income-form.test.ts      # 23 tes (resolveGKG, isEstimatedGKG, isValidGKG, alur form)
+```
+
+---
+
+## 🧪 Pengujian (Unit Test)
+
+Logika perhitungan inti diuji menggunakan **Node.js built-in test runner** (`node:test`) dengan `tsx`:
 
 ```bash
 npm test
 ```
 
-Berjalan pada `src/utils/zakat.test.ts` dan `src/features/dashboard.test.ts`, mencakup skenario uji batas nisab (653 kg GKG), alur lengkap panen dengan biaya gacong, serta kalkulasi laba bersih dan simulasi harga jual.
+**Total: 130 tes, 31 suite, 0 fail.**
+
+| File Tes | Jumlah | Cakupan |
+|---|---|---|
+| `dashboard.test.ts` | 40 | KPI, waterfall, break-even, simulasi harga, perbandingan musim, per-hektar, edge cases |
+| `budget.test.ts` | 37 | Hitung anggaran, seed default, realisasi vs anggaran, audit log, edge cases |
+| `sales.test.ts` | 30 | Stok gabah, weighted average, revisi penjualan, piutang, gacong rupiah, migrasi legacy, alur lengkap |
+| `income-form.test.ts` | 23 | resolveGKG, isEstimatedGKG, isValidGKG, alur form estimasi vs riil |
 
 ---
 
