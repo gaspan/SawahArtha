@@ -136,6 +136,69 @@ Mengalkulasi kewajiban zakat pertanian secara otomatis:
 
 ---
 
+### 📋 Tier 4 — Pengaturan & Tema (Rencana Detail)
+
+> Dokumen perencanaan untuk implementasi di masa depan. Masih **belum dikerjakan**.
+
+#### 4A. Layar Settings
+
+*   **Lokasi**: Ikon ⚙️ di header dashboard yang membuka layar stack `app/settings.tsx` (bukan tab kelima — tab bar saat ini sudah berisi 4 tab dan cukup padat).
+*   **Struktur layar** (Section list):
+    *   **Tampilan** — pilihan tema, ukuran font.
+    *   **Data & Backup** — ekspor/impor CSV (dipindah dari dashboard), cadangan/restore Google Drive, riwayat backup.
+    *   **Preferensi** — format angka (ribuan titik/koma), default luas lahan & harga referensi untuk musim baru, reset anggaran default.
+    *   **Tentang** — versi aplikasi, lisensi, tautan repositori.
+
+#### 4B. Tema Gelap — Keputusan Arsitektur Penting
+
+**Kendala yang ditemukan saat riset:**
+*   `COLORS` adalah objek statis di `src/constants/theme.ts`, dibaca oleh **37 blok `StyleSheet.create`** yang dievaluasi saat module-load (`_layout.tsx:78`, `IncomeList.tsx:224`, dst.).
+*   `StyleSheet.create` hanya dievaluasi **sekali saat import** → mengubah nilai `COLORS` saat runtime **tidak me-re-render komponen apa pun**.
+
+**Opsi pendekatan (belum diputuskan):**
+
+| Opsi | Effort | Hasil | Catatan |
+|---|---|---|---|
+| **A. Refactor penuh ke hook** | Tinggi (~37 file) | Tema instan, arsitektur benar | Ganti `StyleSheet.create` → `useMemo(() => StyleSheet.create(...), [colors])` + `ThemeContext` (terang/gelap/system) |
+| **B. Restart-required** | Rendah (~3 file) | Tema aktif setelah app restart | Simpan preferensi di storage, mutate `COLORS` saat boot |
+| **C. Tunda tema** | 0 | — | Kerjakan 4C & 4D dulu, tema menyusul |
+
+**Rekomendasi**: **A** jika dark mode dipakai serius; **C** jika prioritas adalah backup Drive terlebih dahulu.
+
+#### 4C. Preferensi Lain (Effort Rendah, Tanpa Kendala Arsitektur)
+
+*   **Ukuran font** (kecil/sedang/besar) — aksesibilitas untuk petani usia lanjut.
+*   **Format angka** — preferensi pemisah ribuan (titik/koma) untuk tampilan Rupiah.
+*   **Default musim baru** — luas lahan & harga referensi isi otomatis dari pengaturan.
+*   **Reset anggaran default** — mengembalikan nilai anggaran per kategori ke rasio standar (`DEFAULT_BUDGET_RATIO`).
+
+#### 4D. Backup & Restore Google Drive (lihat Tier 6 di bawah)
+
+*   Ekspor/Impor CSV dipindah dari dashboard ke Settings → section **Data & Backup**.
+*   **Backup JSON penuh** (bukan hanya CSV) karena CSV saat ini **kehilangan data**: anggaran, hutang, cicilan, status bayar, vendor, buyer tidak ikut terekspor → ini bug backup yang harus diperbaiki sebelum integrasi Drive.
+*   **Google Drive Sync** via `expo-auth-session` + scope `drive.file`:
+    *   Upload `SawahArtha_Backup_YYYY-MM-DD.json` ke folder aplikasi.
+    *   Restore: list backup dari Drive → pilih → konfirmasi → impor transaksional.
+    *   Simpan refresh token di `expo-secure-store`.
+    *   Indikator "Terakhir dicadangkan: ..." di Settings.
+    *   **Prasyarat**: Google Cloud project + OAuth client Android + SHA-1 fingerprint dari EAS credentials (tidak berfungsi di Expo Go untuk build produksi).
+*   **Auto-backup (opsional)**: toggle cadangkan otomatis saat app dibuka & >7 hari sejak backup terakhir; rotasi simpan 5 backup terakhir.
+
+#### ❓ Pertanyaan Terbuka — Wajib Dijawab Sebelum Build
+
+> Pertanyaan-pertanyaan ini diajukan saat perencanaan Tier 4 dan **belum dijawab**. Jawablah di sesi build nanti sebelum mulai implementasi.
+
+1.  **Tema gelap** — pilih pendekatan mana?
+    *   **A. Refactor penuh ke hook** (tema instan, ~37 file diubah, arsitektur benar)
+    *   **B. Restart-required** (murah ~3 file, tapi tema baru aktif setelah app restart)
+    *   **C. Tunda tema** (kerjakan 4C & 4D dulu)
+    *   Rekomendasi saat ini: **A** jika dark mode dipakai serius, atau **C** jika prioritas backup Drive.
+2.  **Backup JSON penuh** — setuju menjadikan ini prasyarat sebelum integrasi Google Drive? (Tanpa ini, backup ke Drive tetap kehilangan data anggaran/hutang/status bayar.)
+3.  **Letak Settings** — tab kelima ⚙️ di tab bar (bar jadi 5, agak sempit) atau ikon gear di header dashboard yang membuka layar stack? Rekomendasi saat ini: **ikon di header** supaya tab bar tidak sesak.
+4.  **Cakupan implementasi** — setelah roadmap disetujui, kerjakan seluruh Tier 4 sekaligus atau bertahap (4A → 4C → 4B → 4D)?
+
+---
+
 ## 🗄️ Arsitektur Database (SQLite Schema)
 
 Database SQLite lokal didefinisikan dengan enam tabel utama dan satu tabel migrasi:
