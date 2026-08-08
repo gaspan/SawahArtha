@@ -5,14 +5,16 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { Text, StyleSheet, View } from 'react-native';
-import { COLORS, FONT_SIZE, FONT_WEIGHT } from '../../src/constants/theme';
+import { FONT_WEIGHT, type ThemeColors } from '../../src/constants/theme';
 import { useBudget } from '../../src/context/BudgetContext';
+import { useTheme, useThemedStyles } from '../../src/context/ThemeContext';
 
 function TabIcon({ emoji, focused, badgeCount }: {
   emoji: string;
   focused: boolean;
   badgeCount?: number;
 }) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
       <Text style={styles.emoji}>{emoji}</Text>
@@ -29,13 +31,15 @@ function TabIcon({ emoji, focused, badgeCount }: {
 
 export default function TabLayout() {
   const { overBudgetCount } = useBudget();
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
 
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: COLORS.primary,
-        tabBarInactiveTintColor: COLORS.textLight,
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textLight,
         tabBarStyle: styles.tabBar,
         tabBarLabelStyle: styles.tabLabel,
         tabBarItemStyle: styles.tabItem,
@@ -71,15 +75,23 @@ export default function TabLayout() {
           tabBarIcon: ({ focused }) => <TabIcon emoji="💳" focused={focused} />,
         }}
       />
+      <Tabs.Screen
+        name="journal"
+        options={{
+          title: 'Jurnal',
+          tabBarIcon: ({ focused }) => <TabIcon emoji="📔" focused={focused} />,
+        }}
+      />
     </Tabs>
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors, fs: typeof import('../../src/constants/theme').FONT_SIZE) =>
+  StyleSheet.create({
   tabBar: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderTopWidth: 1,
-    borderTopColor: COLORS.borderLight,
+    borderTopColor: colors.borderLight,
     height: 70,
     paddingBottom: 8,
     paddingTop: 8,
@@ -90,7 +102,7 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   tabLabel: {
-    fontSize: FONT_SIZE.xs,
+    fontSize: fs.xs,
     fontWeight: FONT_WEIGHT.semibold,
     marginTop: 2,
   },
@@ -105,7 +117,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   iconContainerActive: {
-    backgroundColor: COLORS.primaryLight,
+    backgroundColor: colors.primaryLight,
   },
   emoji: {
     fontSize: 20,
@@ -117,15 +129,15 @@ const styles = StyleSheet.create({
     minWidth: 18,
     height: 18,
     borderRadius: 9,
-    backgroundColor: COLORS.danger,
+    backgroundColor: colors.danger,
     borderWidth: 2,
-    borderColor: COLORS.surface,
+    borderColor: colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 3,
   },
   badgeText: {
-    color: COLORS.textInverse,
+    color: colors.textInverse,
     fontSize: 10,
     fontWeight: FONT_WEIGHT.bold,
   },

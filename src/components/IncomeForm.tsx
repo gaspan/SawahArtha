@@ -8,13 +8,13 @@ import {
   Alert,
 } from 'react-native';
 import {
-  COLORS,
   SPACING,
   BORDER_RADIUS,
-  FONT_SIZE,
   FONT_WEIGHT,
   SHADOW,
+  type ThemeColors,
 } from '../constants/theme';
+import { useTheme, useThemedStyles } from '../context/ThemeContext';
 import {
   calculateGKG,
   calculateGacongWeight,
@@ -27,6 +27,8 @@ import {
   type GacongType,
   NISAB_KG,
 } from '../utils/zakat';
+import { usePlots } from '../hooks/usePlots';
+import PlotPicker from './PlotPicker';
 
 interface IncomeFormProps {
   onSubmit: (data: {
@@ -36,14 +38,20 @@ interface IncomeFormProps {
     gacong_input: number;
     gacong_weight: number;
     net_gkp: number;
+    plot_id?: number | null;
   }) => void;
 }
 
 export default function IncomeForm({ onSubmit }: IncomeFormProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+  const { plots } = usePlots();
+
   const [gkpInput, setGkpInput] = useState('');
   const [gacongType, setGacongType] = useState<GacongType>(GACONG_BERAT);
   const [gacongInput, setGacongInput] = useState('');
   const [gkgInput, setGkgInput] = useState('');
+  const [selectedPlotId, setSelectedPlotId] = useState<number | null>(null);
 
   const gkpWeight = useMemo(() => {
     const parsed = parseFloat(gkpInput);
@@ -117,18 +125,20 @@ export default function IncomeForm({ onSubmit }: IncomeFormProps) {
       gacong_input: gacongValue,
       gacong_weight: gacongWeight,
       net_gkp: netGKP,
+      plot_id: selectedPlotId,
     });
 
     setGkpInput('');
     setGacongInput('');
     setGkgInput('');
+    setSelectedPlotId(null);
 
     Alert.alert(
       '✅ Berhasil!',
       'Data panen berhasil disimpan.',
       [{ text: 'OK', style: 'default' }],
     );
-  }, [isValid, gkpWeight, effectiveGKG, gacongType, gacongValue, gacongWeight, netGKP, onSubmit]);
+  }, [isValid, gkpWeight, effectiveGKG, gacongType, gacongValue, gacongWeight, netGKP, selectedPlotId, onSubmit]);
 
   return (
     <View style={styles.container}>
@@ -138,7 +148,7 @@ export default function IncomeForm({ onSubmit }: IncomeFormProps) {
           <TextInput
             style={[styles.input, styles.unitInput]}
             placeholder="0"
-            placeholderTextColor={COLORS.textLight}
+            placeholderTextColor={colors.textLight}
             value={gkpInput}
             onChangeText={handleGkpChange}
             keyboardType="decimal-pad"
@@ -188,7 +198,7 @@ export default function IncomeForm({ onSubmit }: IncomeFormProps) {
           <TextInput
             style={[styles.input, styles.unitInput]}
             placeholder="0"
-            placeholderTextColor={COLORS.textLight}
+            placeholderTextColor={colors.textLight}
             value={gacongInput}
             onChangeText={handleGacongInputChange}
             keyboardType="decimal-pad"
@@ -221,7 +231,7 @@ export default function IncomeForm({ onSubmit }: IncomeFormProps) {
           <TextInput
             style={[styles.input, styles.unitInput]}
             placeholder="0"
-            placeholderTextColor={COLORS.textLight}
+            placeholderTextColor={colors.textLight}
             value={gkgInput}
             onChangeText={handleGkgChange}
             keyboardType="decimal-pad"
@@ -319,6 +329,10 @@ export default function IncomeForm({ onSubmit }: IncomeFormProps) {
         </View>
       )}
 
+      <View style={styles.fieldGroup}>
+        <PlotPicker plots={plots} selectedPlotId={selectedPlotId} onChange={setSelectedPlotId} />
+      </View>
+
       <TouchableOpacity
         style={[styles.submitButton, !isValid && styles.submitButtonDisabled]}
         onPress={handleSubmit}
@@ -331,7 +345,8 @@ export default function IncomeForm({ onSubmit }: IncomeFormProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors, fs: typeof import('../constants/theme').FONT_SIZE) =>
+  StyleSheet.create({
   container: {
     padding: SPACING.lg,
     paddingBottom: SPACING.xxl,
@@ -340,21 +355,21 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.lg,
   },
   label: {
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.text,
+    color: colors.text,
     marginBottom: SPACING.sm,
   },
   inputWrapper: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: BORDER_RADIUS.md,
     borderWidth: 1.5,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
     ...SHADOW.sm,
   },
   input: {
-    fontSize: FONT_SIZE.lg,
-    color: COLORS.text,
+    fontSize: fs.lg,
+    color: colors.text,
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.md,
     minHeight: 56,
@@ -368,7 +383,7 @@ const styles = StyleSheet.create({
     fontWeight: FONT_WEIGHT.semibold,
   },
   unitSuffix: {
-    backgroundColor: COLORS.primaryLight,
+    backgroundColor: colors.primaryLight,
     paddingHorizontal: SPACING.md,
     justifyContent: 'center',
     alignItems: 'center',
@@ -378,9 +393,9 @@ const styles = StyleSheet.create({
     minWidth: 48,
   },
   unitSuffixText: {
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.primaryDark,
+    color: colors.primaryDark,
   },
   radioRow: {
     flexDirection: 'row',
@@ -392,23 +407,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.sm,
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: BORDER_RADIUS.md,
     borderWidth: 1.5,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.sm + 2,
   },
   radioOptionActive: {
-    borderColor: COLORS.primary,
-    backgroundColor: COLORS.primaryLight,
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryLight,
   },
   radioCircle: {
     width: 20,
     height: 20,
     borderRadius: 10,
     borderWidth: 2,
-    borderColor: COLORS.primary,
+    borderColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -416,19 +431,19 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
   },
   radioLabel: {
-    fontSize: FONT_SIZE.sm,
+    fontSize: fs.sm,
     fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   radioLabelActive: {
-    color: COLORS.primaryDark,
+    color: colors.primaryDark,
     fontWeight: FONT_WEIGHT.bold,
   },
   fractionPrefix: {
-    backgroundColor: COLORS.primaryLight,
+    backgroundColor: colors.primaryLight,
     paddingHorizontal: SPACING.md,
     justifyContent: 'center',
     alignItems: 'center',
@@ -438,13 +453,13 @@ const styles = StyleSheet.create({
     minWidth: 44,
   },
   fractionPrefixText: {
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.primaryDark,
+    color: colors.primaryDark,
   },
   gacongHint: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textLight,
+    fontSize: fs.xs,
+    color: colors.textLight,
     marginTop: SPACING.xs,
   },
   labelRow: {
@@ -455,20 +470,20 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   actualBadge: {
-    backgroundColor: COLORS.primaryLight,
+    backgroundColor: colors.primaryLight,
     borderRadius: BORDER_RADIUS.full,
     paddingHorizontal: SPACING.sm,
     paddingVertical: 2,
     borderWidth: 1,
-    borderColor: COLORS.primary,
+    borderColor: colors.primary,
   },
   actualBadgeText: {
-    fontSize: FONT_SIZE.xs,
+    fontSize: fs.xs,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.primaryDark,
+    color: colors.primaryDark,
   },
   resetGkgBtn: {
-    backgroundColor: COLORS.secondaryLight,
+    backgroundColor: colors.secondaryLight,
     borderRadius: BORDER_RADIUS.sm,
     marginRight: SPACING.sm,
     width: 36,
@@ -476,24 +491,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: COLORS.secondary,
+    borderColor: colors.secondary,
   },
   resetGkgBtnText: {
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.amberDark,
+    color: colors.amberDark,
   },
   gkgHint: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textLight,
+    fontSize: fs.xs,
+    color: colors.textLight,
     marginTop: SPACING.xs,
   },
   summaryCard: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: BORDER_RADIUS.lg,
     marginBottom: SPACING.lg,
     borderWidth: 1,
-    borderColor: COLORS.borderLight,
+    borderColor: colors.borderLight,
     overflow: 'hidden',
     ...SHADOW.md,
   },
@@ -504,9 +519,9 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
   },
   summaryTitle: {
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.text,
+    color: colors.text,
   },
   summaryRow: {
     flexDirection: 'row',
@@ -515,40 +530,40 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.xs + 1,
   },
   summaryLabel: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textSecondary,
+    fontSize: fs.sm,
+    color: colors.textSecondary,
   },
   summaryValue: {
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.text,
+    color: colors.text,
   },
   summaryValueNegative: {
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.danger,
+    color: colors.danger,
   },
   summaryValueBold: {
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.primaryDark,
+    color: colors.primaryDark,
   },
   summaryFormula: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textLight,
+    fontSize: fs.xs,
+    color: colors.textLight,
     fontWeight: FONT_WEIGHT.medium,
   },
   summaryDivider: {
     height: 1,
-    backgroundColor: COLORS.borderLight,
+    backgroundColor: colors.borderLight,
   },
   nisabSummaryText: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.info,
+    fontSize: fs.sm,
+    color: colors.info,
     lineHeight: 20,
   },
   submitButton: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     paddingVertical: SPACING.md + 4,
     borderRadius: BORDER_RADIUS.lg,
     alignItems: 'center',
@@ -557,14 +572,14 @@ const styles = StyleSheet.create({
     ...SHADOW.md,
   },
   submitButtonDisabled: {
-    backgroundColor: COLORS.primaryMuted,
+    backgroundColor: colors.primaryMuted,
     opacity: 0.6,
     ...SHADOW.sm,
   },
   submitButtonText: {
-    fontSize: FONT_SIZE.lg,
+    fontSize: fs.lg,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.textInverse,
+    color: colors.textInverse,
     letterSpacing: 0.3,
   },
 });

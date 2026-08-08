@@ -10,13 +10,13 @@ import {
   Modal,
 } from 'react-native';
 import {
-  COLORS,
   SPACING,
   BORDER_RADIUS,
-  FONT_SIZE,
   FONT_WEIGHT,
   SHADOW,
+  type ThemeColors,
 } from '../constants/theme';
+import { useTheme, useThemedStyles } from '../context/ThemeContext';
 
 interface Props {
   visible: boolean;
@@ -31,6 +31,9 @@ export default function MarkPaidModal({
   onConfirm,
   onClose,
 }: Props) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+
   const [paymentDate, setPaymentDate] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
@@ -82,7 +85,7 @@ export default function MarkPaidModal({
               value={paymentDate}
               onChangeText={setPaymentDate}
               placeholder="YYYY-MM-DD"
-              placeholderTextColor={COLORS.textLight}
+              placeholderTextColor={colors.textLight}
               autoFocus
               maxLength={10}
             />
@@ -114,7 +117,8 @@ export default function MarkPaidModal({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors, fs: typeof import('../constants/theme').FONT_SIZE) =>
+  StyleSheet.create({
   overlay: {
     flex: 1,
     justifyContent: 'center',
@@ -131,21 +135,21 @@ const styles = StyleSheet.create({
   card: {
     width: '85%',
     maxWidth: 340,
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: BORDER_RADIUS.xl,
     padding: SPACING.lg,
     ...SHADOW.lg,
   },
   title: {
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.text,
+    color: colors.text,
     textAlign: 'center',
     marginBottom: 2,
   },
   subtitle: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textSecondary,
+    fontSize: fs.sm,
+    color: colors.textSecondary,
     textAlign: 'center',
     marginBottom: SPACING.md,
   },
@@ -153,21 +157,21 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.md,
   },
   label: {
-    fontSize: FONT_SIZE.xs,
+    fontSize: fs.xs,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     marginBottom: SPACING.xs,
   },
   input: {
     height: 48,
     borderWidth: 1.5,
-    borderColor: COLORS.primary,
+    borderColor: colors.primary,
     borderRadius: BORDER_RADIUS.md,
     paddingHorizontal: SPACING.md,
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.text,
-    backgroundColor: COLORS.background,
+    color: colors.text,
+    backgroundColor: colors.background,
     textAlign: 'center',
   },
   buttonRow: {
@@ -179,21 +183,21 @@ const styles = StyleSheet.create({
     height: 44,
     borderRadius: BORDER_RADIUS.md,
     borderWidth: 1.5,
-    borderColor: COLORS.border,
-    backgroundColor: COLORS.surface,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
   cancelButtonText: {
-    fontSize: FONT_SIZE.sm,
+    fontSize: fs.sm,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   saveButton: {
     flex: 1,
     height: 44,
     borderRadius: BORDER_RADIUS.md,
-    backgroundColor: COLORS.success,
+    backgroundColor: colors.success,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -201,8 +205,8 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   saveButtonText: {
-    fontSize: FONT_SIZE.sm,
+    fontSize: fs.sm,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.textInverse,
+    color: colors.textInverse,
   },
 });

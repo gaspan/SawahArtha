@@ -8,15 +8,17 @@ import {
   Alert,
 } from 'react-native';
 import {
-  COLORS,
   SPACING,
   BORDER_RADIUS,
-  FONT_SIZE,
   FONT_WEIGHT,
   SHADOW,
   CATEGORIES,
+  type ThemeColors,
 } from '../constants/theme';
+import { useTheme, useThemedStyles } from '../context/ThemeContext';
 import { formatCurrencyInput } from '../utils/currency';
+import { usePlots } from '../hooks/usePlots';
+import PlotPicker from './PlotPicker';
 
 interface ExpenseFormProps {
   onSubmit: (data: {
@@ -26,10 +28,15 @@ interface ExpenseFormProps {
     category: string;
     is_paid: number;
     vendor_name: string;
+    plot_id?: number | null;
   }) => void;
 }
 
 export default function ExpenseForm({ onSubmit }: ExpenseFormProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+  const { plots } = usePlots();
+
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [amountDisplay, setAmountDisplay] = useState('');
@@ -37,6 +44,7 @@ export default function ExpenseForm({ onSubmit }: ExpenseFormProps) {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [vendorName, setVendorName] = useState('');
   const [isPaid, setIsPaid] = useState(true);
+  const [selectedPlotId, setSelectedPlotId] = useState<number | null>(null);
 
   const isValid = title.trim().length > 0 && amountValue > 0 && selectedCategory !== null;
 
@@ -56,6 +64,7 @@ export default function ExpenseForm({ onSubmit }: ExpenseFormProps) {
       category: selectedCategory,
       is_paid: isPaid ? 1 : 0,
       vendor_name: vendorName.trim(),
+      plot_id: selectedPlotId,
     });
 
     setTitle('');
@@ -65,13 +74,14 @@ export default function ExpenseForm({ onSubmit }: ExpenseFormProps) {
     setSelectedCategory(null);
     setVendorName('');
     setIsPaid(true);
+    setSelectedPlotId(null);
 
     Alert.alert(
       '✅ Berhasil!',
       'Pengeluaran berhasil disimpan.',
       [{ text: 'OK', style: 'default' }],
     );
-  }, [isValid, title, description, amountValue, selectedCategory, isPaid, vendorName, onSubmit]);
+  }, [isValid, title, description, amountValue, selectedCategory, isPaid, vendorName, selectedPlotId, onSubmit]);
 
   return (
     <View style={styles.container}>
@@ -82,7 +92,7 @@ export default function ExpenseForm({ onSubmit }: ExpenseFormProps) {
             <TextInput
               style={styles.input}
               placeholder="e.g., Beli Pupuk Urea"
-              placeholderTextColor={COLORS.textLight}
+              placeholderTextColor={colors.textLight}
               value={title}
               onChangeText={setTitle}
               maxLength={100}
@@ -101,7 +111,7 @@ export default function ExpenseForm({ onSubmit }: ExpenseFormProps) {
             <TextInput
               style={[styles.input, styles.textArea]}
               placeholder="Tambahkan catatan jika perlu..."
-              placeholderTextColor={COLORS.textLight}
+              placeholderTextColor={colors.textLight}
               value={description}
               onChangeText={setDescription}
               multiline
@@ -122,7 +132,7 @@ export default function ExpenseForm({ onSubmit }: ExpenseFormProps) {
             <TextInput
               style={styles.input}
               placeholder="e.g., Toko Tani Makmur"
-              placeholderTextColor={COLORS.textLight}
+              placeholderTextColor={colors.textLight}
               value={vendorName}
               onChangeText={setVendorName}
               maxLength={100}
@@ -140,7 +150,7 @@ export default function ExpenseForm({ onSubmit }: ExpenseFormProps) {
             <TextInput
               style={[styles.input, styles.amountInput]}
               placeholder="0"
-              placeholderTextColor={COLORS.textLight}
+              placeholderTextColor={colors.textLight}
               value={amountDisplay}
               onChangeText={handleAmountChange}
               keyboardType="numeric"
@@ -156,8 +166,8 @@ export default function ExpenseForm({ onSubmit }: ExpenseFormProps) {
           <View style={styles.categoryContainer}>
             {CATEGORIES.map((category) => {
               const isSelected = selectedCategory === category;
-              const bgColor = COLORS.categoryBg[category] || COLORS.primaryLight;
-              const textColor = COLORS.categoryText[category] || COLORS.primaryDark;
+              const bgColor = colors.categoryBg[category] || colors.primaryLight;
+              const textColor = colors.categoryText[category] || colors.primaryDark;
 
               return (
                 <TouchableOpacity
@@ -166,7 +176,7 @@ export default function ExpenseForm({ onSubmit }: ExpenseFormProps) {
                     styles.categoryPill,
                     isSelected
                       ? { backgroundColor: bgColor, borderColor: textColor, borderWidth: 2 }
-                      : { backgroundColor: COLORS.surface, borderColor: COLORS.border, borderWidth: 1.5 },
+                      : { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1.5 },
                   ]}
                   onPress={() => setSelectedCategory(category)}
                   activeOpacity={0.7}
@@ -176,7 +186,7 @@ export default function ExpenseForm({ onSubmit }: ExpenseFormProps) {
                       styles.categoryPillText,
                       isSelected
                         ? { color: textColor, fontWeight: FONT_WEIGHT.semibold }
-                        : { color: COLORS.textSecondary },
+                        : { color: colors.textSecondary },
                     ]}
                   >
                     {category}
@@ -203,8 +213,7 @@ export default function ExpenseForm({ onSubmit }: ExpenseFormProps) {
             >
               <View style={styles.radioCircle}>
                 {isPaid && <View style={styles.radioDot} />}
-              </View>
-              <Text style={[styles.radioLabel, isPaid && styles.radioLabelActive]}>
+              </View>              <Text style={[styles.radioLabel, isPaid && styles.radioLabelActive]}>
                 Sudah Dibayar
               </Text>
             </TouchableOpacity>
@@ -223,6 +232,11 @@ export default function ExpenseForm({ onSubmit }: ExpenseFormProps) {
           </View>
         </View>
 
+        {/* Plot (multi-lahan) */}
+        <View style={styles.fieldGroup}>
+          <PlotPicker plots={plots} selectedPlotId={selectedPlotId} onChange={setSelectedPlotId} />
+        </View>
+
         {/* Submit Button */}
         <TouchableOpacity
           style={[styles.submitButton, !isValid && styles.submitButtonDisabled]}
@@ -236,7 +250,8 @@ export default function ExpenseForm({ onSubmit }: ExpenseFormProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors, fs: typeof import('../constants/theme').FONT_SIZE) =>
+  StyleSheet.create({
   container: {
     padding: SPACING.lg,
     paddingBottom: SPACING.xxl,
@@ -247,9 +262,9 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.lg,
   },
   label: {
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.text,
+    color: colors.text,
     marginBottom: SPACING.sm,
   },
   labelRow: {
@@ -259,24 +274,24 @@ const styles = StyleSheet.create({
     gap: SPACING.sm,
   },
   optionalBadge: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textLight,
-    backgroundColor: COLORS.borderLight,
+    fontSize: fs.xs,
+    color: colors.textLight,
+    backgroundColor: colors.borderLight,
     paddingHorizontal: SPACING.sm,
     paddingVertical: 2,
     borderRadius: BORDER_RADIUS.full,
     overflow: 'hidden',
   },
   inputWrapper: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: BORDER_RADIUS.md,
     borderWidth: 1.5,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
     ...SHADOW.sm,
   },
   input: {
-    fontSize: FONT_SIZE.lg,
-    color: COLORS.text,
+    fontSize: fs.lg,
+    color: colors.text,
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.md,
     minHeight: 56,
@@ -294,7 +309,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   currencyPrefix: {
-    backgroundColor: COLORS.primaryLight,
+    backgroundColor: colors.primaryLight,
     paddingHorizontal: SPACING.md,
     justifyContent: 'center',
     alignItems: 'center',
@@ -304,13 +319,13 @@ const styles = StyleSheet.create({
     minWidth: 50,
   },
   currencyPrefixText: {
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.primaryDark,
+    color: colors.primaryDark,
   },
   amountInput: {
     flex: 1,
-    fontSize: FONT_SIZE.lg,
+    fontSize: fs.lg,
     fontWeight: FONT_WEIGHT.semibold,
     letterSpacing: 0.5,
   },
@@ -330,7 +345,7 @@ const styles = StyleSheet.create({
     gap: SPACING.xs,
   },
   categoryPillText: {
-    fontSize: FONT_SIZE.sm,
+    fontSize: fs.sm,
     fontWeight: FONT_WEIGHT.medium,
   },
   checkDot: {
@@ -341,14 +356,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   checkMark: {
-    color: COLORS.textInverse,
+    color: colors.textInverse,
     fontSize: 11,
     fontWeight: FONT_WEIGHT.bold,
   },
 
   // Submit
   submitButton: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     paddingVertical: SPACING.md + 2,
     borderRadius: BORDER_RADIUS.lg,
     alignItems: 'center',
@@ -357,14 +372,14 @@ const styles = StyleSheet.create({
     ...SHADOW.md,
   },
   submitButtonDisabled: {
-    backgroundColor: COLORS.primaryMuted,
+    backgroundColor: colors.primaryMuted,
     opacity: 0.6,
     ...SHADOW.sm,
   },
   submitButtonText: {
-    fontSize: FONT_SIZE.lg,
+    fontSize: fs.lg,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.textInverse,
+    color: colors.textInverse,
     letterSpacing: 0.3,
   },
 
@@ -377,23 +392,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.sm,
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: BORDER_RADIUS.md,
     borderWidth: 1.5,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.sm + 2,
   },
   radioOptionActive: {
-    borderColor: COLORS.danger,
-    backgroundColor: COLORS.dangerLight,
+    borderColor: colors.danger,
+    backgroundColor: colors.dangerLight,
   },
   radioCircle: {
     width: 20,
     height: 20,
     borderRadius: 10,
     borderWidth: 2,
-    borderColor: COLORS.danger,
+    borderColor: colors.danger,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -401,15 +416,15 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: COLORS.danger,
+    backgroundColor: colors.danger,
   },
   radioLabel: {
-    fontSize: FONT_SIZE.sm,
+    fontSize: fs.sm,
     fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   radioLabelActive: {
-    color: COLORS.danger,
+    color: colors.danger,
     fontWeight: FONT_WEIGHT.bold,
   },
 });

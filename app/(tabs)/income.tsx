@@ -15,7 +15,8 @@ import { useIncome } from '../../src/hooks/useIncome';
 import { useSales } from '../../src/hooks/useSales';
 import { formatIDR } from '../../src/utils/currency';
 import { getZakatSummary } from '../../src/utils/zakat';
-import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOW } from '../../src/constants/theme';
+import { SPACING, BORDER_RADIUS, FONT_WEIGHT, SHADOW, type ThemeColors } from '../../src/constants/theme';
+import { useTheme, useThemedStyles } from '../../src/context/ThemeContext';
 
 import IncomeForm from '../../src/components/IncomeForm';
 import IncomeList from '../../src/components/IncomeList';
@@ -28,6 +29,8 @@ import MarkPaidModal from '../../src/components/MarkPaidModal';
 type SubTab = 'panen' | 'jual';
 
 export default function IncomeScreen() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const {
     incomeRecords,
     totalGKG,
@@ -187,7 +190,7 @@ export default function IncomeScreen() {
 
         {isLoading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={COLORS.primary} />
+            <ActivityIndicator size="large" color={colors.primary} />
             <Text style={styles.loadingText}>Memuat data...</Text>
           </View>
         ) : subTab === 'panen' ? (
@@ -233,13 +236,14 @@ export default function IncomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors, fs: typeof import('../../src/constants/theme').FONT_SIZE) =>
+  StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
   },
   header: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     paddingTop: 56,
     paddingBottom: SPACING.lg,
     paddingHorizontal: SPACING.lg,
@@ -254,13 +258,13 @@ const styles = StyleSheet.create({
     fontSize: 32,
   },
   headerTitle: {
-    fontSize: FONT_SIZE.xl,
+    fontSize: fs.xl,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.textInverse,
+    color: colors.textInverse,
   },
   headerSubtitle: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.primaryMuted,
+    fontSize: fs.sm,
+    color: colors.primaryMuted,
     marginTop: 2,
   },
   scrollView: {
@@ -271,7 +275,7 @@ const styles = StyleSheet.create({
     paddingTop: SPACING.sm,
   },
   totalBanner: {
-    backgroundColor: COLORS.primaryLight,
+    backgroundColor: colors.primaryLight,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.lg,
     alignItems: 'center',
@@ -280,50 +284,50 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(5, 150, 105, 0.2)',
   },
   totalLabel: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.primary,
+    fontSize: fs.sm,
+    color: colors.primary,
     fontWeight: FONT_WEIGHT.medium,
     marginBottom: SPACING.xs,
   },
   totalValue: {
-    fontSize: FONT_SIZE.xxl,
+    fontSize: fs.xxl,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.primaryDark,
+    color: colors.primaryDark,
   },
   totalSubtext: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.secondary,
+    fontSize: fs.xs,
+    color: colors.secondary,
     fontWeight: FONT_WEIGHT.medium,
     marginTop: SPACING.xs,
   },
   unpaidSummary: {
-    backgroundColor: COLORS.warningLight,
+    backgroundColor: colors.warningLight,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.md + 4,
     alignItems: 'center',
     marginBottom: SPACING.md,
     borderWidth: 1,
-    borderColor: COLORS.warning,
+    borderColor: colors.warning,
   },
   unpaidLabel: {
-    fontSize: FONT_SIZE.xs,
+    fontSize: fs.xs,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.warning,
+    color: colors.warning,
     marginBottom: SPACING.xs,
   },
   unpaidValue: {
-    fontSize: FONT_SIZE.xl,
+    fontSize: fs.xl,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.warning,
+    color: colors.warning,
   },
   unpaidHint: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textSecondary,
+    fontSize: fs.xs,
+    color: colors.textSecondary,
     marginTop: SPACING.xs,
   },
   subTabRow: {
     flexDirection: 'row',
-    backgroundColor: COLORS.borderLight,
+    backgroundColor: colors.borderLight,
     borderRadius: BORDER_RADIUS.md,
     padding: 3,
     marginBottom: SPACING.md,
@@ -335,25 +339,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   subTabActive: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     ...SHADOW.sm,
   },
   subTabText: {
-    fontSize: FONT_SIZE.sm,
+    fontSize: fs.sm,
     fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   subTabTextActive: {
-    color: COLORS.primary,
+    color: colors.primary,
     fontWeight: FONT_WEIGHT.bold,
   },
   listSection: {
     marginTop: SPACING.lg,
   },
   sectionTitle: {
-    fontSize: FONT_SIZE.lg,
+    fontSize: fs.lg,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.text,
+    color: colors.text,
     marginBottom: SPACING.md,
   },
   loadingContainer: {
@@ -363,8 +367,8 @@ const styles = StyleSheet.create({
     gap: SPACING.sm,
   },
   loadingText: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textSecondary,
+    fontSize: fs.sm,
+    color: colors.textSecondary,
     fontWeight: FONT_WEIGHT.medium,
   },
 });

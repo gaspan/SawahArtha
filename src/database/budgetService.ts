@@ -84,6 +84,45 @@ export async function getBudgets(
   );
 }
 
+/**
+ * Reset all budgets of a season to the default ratio (Tier 4C).
+ * Logs an 'update' action per changed category.
+ */
+export async function resetBudgetsToDefault(
+  db: SQLiteDatabase,
+  seasonCode: string,
+  landSizeM2: number,
+): Promise<void> {
+  if (landSizeM2 <= 0) return;
+  const ha = landSizeM2 / 10000;
+  const totalBudget = DEFAULT_BUDGET_PER_HA * ha;
+  const now = new Date().toISOString();
+
+  await db.withTransactionAsync(async () => {
+    for (const cat of CATEGORIES) {
+      const ratio = DEFAULT_BUDGET_RATIO[cat as ExpenseCategory] ?? 0;
+      const amount = Math.round(totalBudget * ratio);
+      const existing = await db.getFirstAsync<Budget>(
+        'SELECT * FROM budgets WHERE season_code = ? AND category = ?',
+        [seasonCode, cat],
+      );
+      const oldAmount = existing?.amount ?? 0;
+
+      await db.runAsync(
+        'INSERT INTO budgets (season_code, category, amount) VALUES (?, ?, ?) ON CONFLICT(season_code, category) DO UPDATE SET amount = excluded.amount',
+        [seasonCode, cat, amount],
+      );
+
+      if (oldAmount !== amount) {
+        await db.runAsync(
+          'INSERT INTO budget_logs (season_code, category, old_amount, new_amount, action, changed_at) VALUES (?, ?, ?, ?, ?, ?)',
+          [seasonCode, cat, oldAmount, amount, 'update', now],
+        );
+      }
+    }
+  });
+}
+
 export async function setBudget(
   db: SQLiteDatabase,
   seasonCode: string,

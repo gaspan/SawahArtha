@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert } from 'react-native';
 import {
-  COLORS,
   SPACING,
   BORDER_RADIUS,
-  FONT_SIZE,
   FONT_WEIGHT,
   SHADOW,
+  type ThemeColors,
 } from '../constants/theme';
+import { useTheme, useThemedStyles } from '../context/ThemeContext';
 import { formatIDR } from '../utils/currency';
 
 interface Props {
@@ -29,6 +29,9 @@ export default function UnsoldGrainCard({
   totalRevenueEstimate,
   zakatRp,
 }: Props) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+
   const [isEditing, setIsEditing] = useState(false);
   const [priceInput, setPriceInput] = useState(
     refPricePerKg > 0 ? refPricePerKg.toString() : ''
@@ -137,7 +140,7 @@ export default function UnsoldGrainCard({
           <Text
             style={[
               styles.projValue,
-              { color: isProjectedProfit ? COLORS.success : COLORS.danger },
+              { color: isProjectedProfit ? colors.success : colors.danger },
             ]}
           >
             {isProjectedProfit ? '+' : ''}
@@ -152,21 +155,22 @@ export default function UnsoldGrainCard({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors, fs: typeof import('../constants/theme').FONT_SIZE) =>
+  StyleSheet.create({
   card: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.md + 4,
     marginHorizontal: SPACING.md,
     marginBottom: SPACING.md,
     borderWidth: 1.5,
-    borderColor: COLORS.warningLight,
+    borderColor: colors.warningLight,
     ...SHADOW.md,
   },
   title: {
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.text,
+    color: colors.text,
     marginBottom: SPACING.sm,
   },
   stockRow: {
@@ -174,29 +178,29 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.md,
   },
   stockBox: {
-    backgroundColor: COLORS.warningLight,
+    backgroundColor: colors.warningLight,
     borderRadius: BORDER_RADIUS.md,
     padding: SPACING.sm + 2,
     alignItems: 'center',
     width: '100%',
   },
   stockValue: {
-    fontSize: FONT_SIZE.xl,
+    fontSize: fs.xl,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.warning,
+    color: colors.warning,
   },
   stockLabel: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textSecondary,
+    fontSize: fs.xs,
+    color: colors.textSecondary,
     marginTop: 2,
   },
   priceSection: {
     marginBottom: SPACING.sm,
   },
   sectionLabel: {
-    fontSize: FONT_SIZE.xs,
+    fontSize: fs.xs,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     marginBottom: SPACING.xs,
   },
   editRow: {
@@ -208,73 +212,73 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
     borderWidth: 1.5,
-    borderColor: COLORS.primary,
+    borderColor: colors.primary,
     borderRadius: BORDER_RADIUS.sm,
     paddingHorizontal: SPACING.sm,
   },
   inputPrefix: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textSecondary,
+    fontSize: fs.xs,
+    color: colors.textSecondary,
     fontWeight: FONT_WEIGHT.medium,
   },
   editInput: {
     flex: 1,
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.text,
+    fontSize: fs.sm,
+    color: colors.text,
     paddingVertical: SPACING.xs + 2,
     textAlign: 'center',
   },
   inputSuffix: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textSecondary,
+    fontSize: fs.xs,
+    color: colors.textSecondary,
   },
   saveBtn: {
-    backgroundColor: COLORS.success,
+    backgroundColor: colors.success,
     borderRadius: BORDER_RADIUS.sm,
     paddingHorizontal: SPACING.sm + 2,
     paddingVertical: SPACING.xs + 4,
   },
   saveBtnText: {
-    color: COLORS.textInverse,
-    fontSize: FONT_SIZE.xs,
+    color: colors.textInverse,
+    fontSize: fs.xs,
     fontWeight: FONT_WEIGHT.bold,
   },
   cancelBtn: {
-    backgroundColor: COLORS.borderLight,
+    backgroundColor: colors.borderLight,
     borderRadius: BORDER_RADIUS.sm,
     paddingHorizontal: SPACING.sm,
     paddingVertical: SPACING.xs + 4,
   },
   cancelBtnText: {
-    color: COLORS.textSecondary,
-    fontSize: FONT_SIZE.sm,
+    color: colors.textSecondary,
+    fontSize: fs.sm,
   },
   priceBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.primaryLight,
+    backgroundColor: colors.primaryLight,
     borderWidth: 1,
-    borderColor: COLORS.primaryMuted,
+    borderColor: colors.primaryMuted,
     borderRadius: BORDER_RADIUS.md,
     paddingVertical: SPACING.sm + 2,
     paddingHorizontal: SPACING.md,
   },
   priceBadgeText: {
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.primaryDark,
+    color: colors.primaryDark,
   },
   priceBadgeUnit: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.primary,
+    fontSize: fs.xs,
+    color: colors.primary,
     marginLeft: SPACING.xs,
   },
   divider: {
     height: 1,
-    backgroundColor: COLORS.borderLight,
+    backgroundColor: colors.borderLight,
     marginVertical: SPACING.sm,
   },
   estRow: {
@@ -283,35 +287,35 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   estLabel: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textSecondary,
+    fontSize: fs.sm,
+    color: colors.textSecondary,
   },
   estValue: {
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.primaryDark,
+    color: colors.primaryDark,
   },
   projFormula: {
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
     borderRadius: BORDER_RADIUS.sm,
     padding: SPACING.sm,
     marginBottom: SPACING.sm,
   },
   formulaText: {
-    fontSize: FONT_SIZE.xs - 1,
-    color: COLORS.textSecondary,
+    fontSize: fs.xs - 1,
+    color: colors.textSecondary,
     fontFamily: 'Courier',
     textAlign: 'center',
   },
   projValue: {
-    fontSize: FONT_SIZE.xl,
+    fontSize: fs.xl,
     fontWeight: FONT_WEIGHT.bold,
     textAlign: 'center',
     marginBottom: 2,
   },
   projHint: {
-    fontSize: FONT_SIZE.xs - 1,
-    color: COLORS.textLight,
+    fontSize: fs.xs - 1,
+    color: colors.textLight,
     textAlign: 'center',
   },
 });

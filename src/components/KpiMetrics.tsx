@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert } from 'react-native';
 import {
-  COLORS,
   SPACING,
   BORDER_RADIUS,
-  FONT_SIZE,
   FONT_WEIGHT,
   SHADOW,
+  type ThemeColors,
 } from '../constants/theme';
+import { useTheme, useThemedStyles } from '../context/ThemeContext';
 import { formatIDR } from '../utils/currency';
 
 interface Props {
@@ -29,6 +29,9 @@ export default function KpiMetrics({
   landSizeM2,
   onUpdateLandSize,
 }: Props) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+
   const safeLandSize = landSizeM2 ?? 1400;
   const [isEditing, setIsEditing] = useState(false);
   const [landSizeInput, setLandSizeInput] = useState(safeLandSize.toString());
@@ -98,7 +101,7 @@ export default function KpiMetrics({
           <Text
             style={[
               styles.value,
-              { color: isPositive ? COLORS.success : COLORS.danger },
+              { color: isPositive ? colors.success : colors.danger },
             ]}
           >
             {isPositive ? '+' : ''}
@@ -113,9 +116,9 @@ export default function KpiMetrics({
               styles.badge,
               {
                 backgroundColor: isPositive
-                  ? COLORS.successLight
-                  : COLORS.dangerLight,
-                color: isPositive ? COLORS.success : COLORS.danger,
+                  ? colors.successLight
+                  : colors.dangerLight,
+                color: isPositive ? colors.success : colors.danger,
               },
             ]}
           >
@@ -126,7 +129,7 @@ export default function KpiMetrics({
           <Text
             style={[
               styles.subValue,
-              { color: isPositive ? COLORS.success : COLORS.danger },
+              { color: isPositive ? colors.success : colors.danger },
             ]}
           >
             {isPositive ? '+' : ''}
@@ -238,7 +241,7 @@ export default function KpiMetrics({
             </View>
             <View style={styles.perHaBox}>
               <Text style={styles.perHaLabel}>Laba</Text>
-              <Text style={[styles.perHaValue, { color: isProfitPerHa ? COLORS.success : COLORS.danger }]} numberOfLines={1} adjustsFontSizeToFit>
+              <Text style={[styles.perHaValue, { color: isProfitPerHa ? colors.success : colors.danger }]} numberOfLines={1} adjustsFontSizeToFit>
                 {isProfitPerHa ? '+' : ''}{formatIDR(profitPerHa)}
               </Text>
             </View>
@@ -249,9 +252,10 @@ export default function KpiMetrics({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors, fs: typeof import('../constants/theme').FONT_SIZE) =>
+  StyleSheet.create({
   card: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.md + 4,
     marginHorizontal: SPACING.md,
@@ -259,9 +263,9 @@ const styles = StyleSheet.create({
     ...SHADOW.md,
   },
   cardTitle: {
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.text,
+    color: colors.text,
     marginBottom: SPACING.md,
   },
   topRow: {
@@ -276,28 +280,28 @@ const styles = StyleSheet.create({
   verticalDivider: {
     width: 1.5,
     height: '75%',
-    backgroundColor: COLORS.borderLight,
+    backgroundColor: colors.borderLight,
     marginHorizontal: SPACING.xs,
   },
   horizontalDivider: {
     height: 1.5,
-    backgroundColor: COLORS.borderLight,
+    backgroundColor: colors.borderLight,
     marginVertical: SPACING.md,
   },
   label: {
-    fontSize: FONT_SIZE.xs - 1,
+    fontSize: fs.xs - 1,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     textAlign: 'center',
     marginBottom: 4,
   },
   value: {
-    fontSize: FONT_SIZE.lg + 2,
+    fontSize: fs.lg + 2,
     fontWeight: FONT_WEIGHT.bold,
     marginBottom: 4,
   },
   hppValue: {
-    color: COLORS.text,
+    color: colors.text,
   },
   badge: {
     fontSize: 9,
@@ -308,42 +312,42 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   subtext: {
-    fontSize: FONT_SIZE.xs - 1,
+    fontSize: fs.xs - 1,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     marginBottom: 2,
   },
   helperText: {
     fontSize: 9,
-    color: COLORS.textLight,
+    color: colors.textLight,
     textAlign: 'center',
   },
   miniDivider: {
     height: 1,
-    backgroundColor: COLORS.borderLight,
+    backgroundColor: colors.borderLight,
     width: '60%',
     marginVertical: 6,
     alignSelf: 'center',
   },
   subLabel: {
-    fontSize: FONT_SIZE.xs - 1,
+    fontSize: fs.xs - 1,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     textAlign: 'center',
     marginBottom: 2,
   },
   subValue: {
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
     fontWeight: FONT_WEIGHT.bold,
   },
 
   // Productivity
   productivitySection: {
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
     borderRadius: BORDER_RADIUS.md,
     padding: SPACING.md,
     borderWidth: 1,
-    borderColor: COLORS.borderLight,
+    borderColor: colors.borderLight,
   },
   prodHeader: {
     flexDirection: 'row',
@@ -357,37 +361,37 @@ const styles = StyleSheet.create({
     gap: SPACING.xs,
   },
   prodIcon: {
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
   },
   prodTitle: {
-    fontSize: FONT_SIZE.sm,
+    fontSize: fs.sm,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.text,
+    color: colors.text,
   },
   landSizeBadge: {
     fontSize: 10,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.primaryDark,
-    backgroundColor: COLORS.primaryLight,
+    color: colors.primaryDark,
+    backgroundColor: colors.primaryLight,
     paddingHorizontal: SPACING.sm,
     paddingVertical: 2,
     borderRadius: BORDER_RADIUS.md,
     overflow: 'hidden',
   },
   landSizeBadgeButton: {
-    backgroundColor: COLORS.primaryLight,
+    backgroundColor: colors.primaryLight,
     paddingHorizontal: SPACING.sm,
     paddingVertical: 4,
     borderRadius: BORDER_RADIUS.md,
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: COLORS.primaryMuted,
+    borderColor: colors.primaryMuted,
   },
   landSizeBadgeText: {
     fontSize: 10,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.primaryDark,
+    color: colors.primaryDark,
   },
   editRow: {
     flexDirection: 'row',
@@ -395,19 +399,19 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   editInput: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderWidth: 1.5,
-    borderColor: COLORS.primary,
+    borderColor: colors.primary,
     borderRadius: BORDER_RADIUS.sm,
     paddingHorizontal: 8,
     paddingVertical: 2,
     fontSize: 12,
-    color: COLORS.text,
+    color: colors.text,
     minWidth: 75,
     textAlign: 'center',
   },
   saveButton: {
-    backgroundColor: COLORS.success,
+    backgroundColor: colors.success,
     borderRadius: BORDER_RADIUS.sm,
     paddingHorizontal: 8,
     paddingVertical: 4,
@@ -415,12 +419,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   saveButtonText: {
-    color: COLORS.textInverse,
+    color: colors.textInverse,
     fontSize: 12,
     fontWeight: FONT_WEIGHT.bold,
   },
   cancelButton: {
-    backgroundColor: COLORS.danger,
+    backgroundColor: colors.danger,
     borderRadius: BORDER_RADIUS.sm,
     paddingHorizontal: 8,
     paddingVertical: 4,
@@ -428,7 +432,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cancelButtonText: {
-    color: COLORS.textInverse,
+    color: colors.textInverse,
     fontSize: 12,
     fontWeight: FONT_WEIGHT.bold,
   },
@@ -437,29 +441,29 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.xs,
   },
   prodValue: {
-    fontSize: FONT_SIZE.xl + 2,
+    fontSize: fs.xl + 2,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.primaryDark,
+    color: colors.primaryDark,
     marginBottom: 2,
   },
   prodUnit: {
-    fontSize: FONT_SIZE.sm,
+    fontSize: fs.sm,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.primary,
+    color: colors.primary,
   },
   prodSecondaryValue: {
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.primaryDark,
+    color: colors.primaryDark,
   },
   prodSubtext: {
     fontSize: 10,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     marginTop: 2,
   },
   perHaDivider: {
     height: 1,
-    backgroundColor: COLORS.borderLight,
+    backgroundColor: colors.borderLight,
     marginTop: SPACING.sm,
     marginBottom: SPACING.xs,
   },
@@ -467,9 +471,9 @@ const styles = StyleSheet.create({
     paddingTop: SPACING.xs,
   },
   perHaTitle: {
-    fontSize: FONT_SIZE.xs - 1,
+    fontSize: fs.xs - 1,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     textAlign: 'center',
     marginBottom: SPACING.xs,
   },
@@ -483,13 +487,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   perHaLabel: {
-    fontSize: FONT_SIZE.xs - 1,
-    color: COLORS.textLight,
+    fontSize: fs.xs - 1,
+    color: colors.textLight,
     marginBottom: 2,
   },
   perHaValue: {
-    fontSize: FONT_SIZE.xs + 1,
+    fontSize: fs.xs + 1,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.text,
+    color: colors.text,
   },
 });

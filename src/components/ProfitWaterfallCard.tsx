@@ -1,13 +1,13 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import {
-  COLORS,
   SPACING,
   BORDER_RADIUS,
-  FONT_SIZE,
   FONT_WEIGHT,
   SHADOW,
+  type ThemeColors,
 } from '../constants/theme';
+import { useTheme, useThemedStyles } from '../context/ThemeContext';
 import { formatIDR } from '../utils/currency';
 
 interface Props {
@@ -23,6 +23,9 @@ export default function ProfitWaterfallCard({
   gacongValueRp,
   totalExpenses,
 }: Props) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+
   const netProfit = totalRevenue - zakatRp - totalExpenses;
   const isProfit = netProfit >= 0;
 
@@ -45,49 +48,54 @@ export default function ProfitWaterfallCard({
         <WaterfallRow
           label="Pendapatan Kotor"
           value={totalRevenue}
-          color={COLORS.chartRevenue}
-          bar={renderBar(COLORS.chartRevenue, totalRevenue)}
+          color={colors.chartRevenue}
+          bar={renderBar(colors.chartRevenue, totalRevenue)}
           isPositive={true}
+          styles={styles}
         />
 
         <WaterfallRow
           label="Zakat (5%)"
           value={zakatRp}
-          color={COLORS.secondary}
-          bar={renderBar(COLORS.secondary, zakatRp)}
+          color={colors.secondary}
+          bar={renderBar(colors.secondary, zakatRp)}
           isPositive={false}
           dimmed={zakatRp === 0}
+          styles={styles}
         />
 
         {gacongValueRp > 0 && (
           <WaterfallRow
             label="Nilai Gacong"
             value={gacongValueRp}
-            color={COLORS.textLight}
-            bar={renderBar(COLORS.borderLight, gacongValueRp)}
+            color={colors.textLight}
+            bar={renderBar(colors.borderLight, gacongValueRp)}
             isPositive={false}
             info
+            styles={styles}
           />
         )}
 
         <WaterfallRow
           label="Total Modal"
           value={totalExpenses}
-          color={COLORS.danger}
-          bar={renderBar(COLORS.danger, totalExpenses)}
+          color={colors.danger}
+          bar={renderBar(colors.danger, totalExpenses)}
           isPositive={false}
+          styles={styles}
         />
       </View>
 
-      <View style={[styles.divider, { backgroundColor: isProfit ? COLORS.successLight : COLORS.dangerLight }]} />
+      <View style={[styles.divider, { backgroundColor: isProfit ? colors.successLight : colors.dangerLight }]} />
 
       <WaterfallRow
         label="Laba Bersih Riil"
         value={netProfit}
-        color={isProfit ? COLORS.success : COLORS.danger}
-        bar={renderBar(isProfit ? COLORS.success : COLORS.danger, netProfit)}
+        color={isProfit ? colors.success : colors.danger}
+        bar={renderBar(isProfit ? colors.success : colors.danger, netProfit)}
         isPositive={isProfit}
         isBold
+        styles={styles}
       />
     </View>
   );
@@ -102,6 +110,7 @@ function WaterfallRow({
   isBold,
   dimmed,
   info,
+  styles,
 }: {
   label: string;
   value: number;
@@ -111,18 +120,19 @@ function WaterfallRow({
   isBold?: boolean;
   dimmed?: boolean;
   info?: boolean;
+  styles: ReturnType<typeof makeStyles>;
 }) {
   return (
-    <View style={[wfStyles.row, dimmed && wfStyles.dimmed]}>
-      <Text style={[wfStyles.label, isBold && wfStyles.labelBold, info && wfStyles.infoLabel]}>{label}</Text>
+    <View style={[styles.row, dimmed && styles.dimmed]}>
+      <Text style={[styles.label, isBold && styles.labelBold, info && styles.infoLabel]}>{label}</Text>
       {bar}
       <Text
         style={[
-          wfStyles.value,
+          styles.value,
           { color },
-          isBold && wfStyles.valueBold,
-          dimmed && wfStyles.dimmedText,
-          info && wfStyles.infoText,
+          isBold && styles.valueBold,
+          dimmed && styles.dimmedText,
+          info && styles.infoText,
         ]}
         numberOfLines={1}
         adjustsFontSizeToFit
@@ -134,7 +144,8 @@ function WaterfallRow({
   );
 }
 
-const wfStyles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors, fs: typeof import('../constants/theme').FONT_SIZE) =>
+  StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -148,40 +159,37 @@ const wfStyles = StyleSheet.create({
     textDecorationLine: 'line-through',
   },
   infoLabel: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textLight,
+    fontSize: fs.xs,
+    color: colors.textLight,
   },
   infoText: {
     fontWeight: FONT_WEIGHT.normal,
-    color: COLORS.textLight,
-    fontSize: FONT_SIZE.xs,
+    color: colors.textLight,
+    fontSize: fs.xs,
   },
   label: {
-    fontSize: FONT_SIZE.xs + 1,
+    fontSize: fs.xs + 1,
     fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     width: 95,
   },
   labelBold: {
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.text,
-    fontSize: FONT_SIZE.sm,
+    color: colors.text,
+    fontSize: fs.sm,
   },
   value: {
-    fontSize: FONT_SIZE.xs + 1,
+    fontSize: fs.xs + 1,
     fontWeight: FONT_WEIGHT.semibold,
     width: 110,
     textAlign: 'right',
   },
   valueBold: {
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
     fontWeight: FONT_WEIGHT.bold,
   },
-});
-
-const styles = StyleSheet.create({
   card: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.md + 4,
     marginHorizontal: SPACING.md,
@@ -189,9 +197,9 @@ const styles = StyleSheet.create({
     ...SHADOW.md,
   },
   title: {
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.text,
+    color: colors.text,
     marginBottom: SPACING.md,
   },
   rows: {
@@ -204,7 +212,7 @@ const styles = StyleSheet.create({
   barTrack: {
     flex: 1,
     height: 6,
-    backgroundColor: COLORS.borderLight,
+    backgroundColor: colors.borderLight,
     borderRadius: BORDER_RADIUS.full,
     overflow: 'hidden',
   },

@@ -2,13 +2,13 @@ import React from 'react';
 import { View, Text, StyleSheet, useWindowDimensions } from 'react-native';
 import { PieChart } from 'react-native-gifted-charts';
 import {
-  COLORS,
   SPACING,
   BORDER_RADIUS,
-  FONT_SIZE,
   FONT_WEIGHT,
   SHADOW,
+  type ThemeColors,
 } from '../constants/theme';
+import { useTheme, useThemedStyles } from '../context/ThemeContext';
 import { formatIDR } from '../utils/currency';
 
 interface Props {
@@ -18,6 +18,9 @@ interface Props {
 }
 
 const DonutChartComponent: React.FC<Props> = ({ totalExpenses, totalRevenue, zakatRp }) => {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+
   const { width: screenWidth } = useWindowDimensions();
   const netProfit = totalRevenue - zakatRp - totalExpenses;
   const isEmpty = totalExpenses === 0 && totalRevenue === 0;
@@ -25,35 +28,35 @@ const DonutChartComponent: React.FC<Props> = ({ totalExpenses, totalRevenue, zak
   const segments: { value: number; color: string }[] = [];
 
   if (totalExpenses > 0) {
-    segments.push({ value: totalExpenses, color: COLORS.chartExpense });
+    segments.push({ value: totalExpenses, color: colors.chartExpense });
   }
   if (zakatRp > 0) {
-    segments.push({ value: zakatRp, color: COLORS.secondary });
+    segments.push({ value: zakatRp, color: colors.secondary });
   }
   if (netProfit > 0) {
-    segments.push({ value: netProfit, color: COLORS.chartRevenue });
+    segments.push({ value: netProfit, color: colors.chartRevenue });
   } else if (netProfit < 0) {
-    segments.push({ value: Math.abs(netProfit), color: COLORS.chartDeficit });
+    segments.push({ value: Math.abs(netProfit), color: colors.chartDeficit });
   }
 
   if (segments.length === 0) {
-    segments.push({ value: 1, color: COLORS.borderLight });
+    segments.push({ value: 1, color: colors.borderLight });
   }
 
   const legendItems: { color: string; label: string; value: number }[] = [];
   if (totalExpenses > 0) {
-    legendItems.push({ color: COLORS.chartExpense, label: 'Modal', value: totalExpenses });
+    legendItems.push({ color: colors.chartExpense, label: 'Modal', value: totalExpenses });
   }
   if (zakatRp > 0) {
-    legendItems.push({ color: COLORS.secondary, label: 'Zakat', value: zakatRp });
+    legendItems.push({ color: colors.secondary, label: 'Zakat', value: zakatRp });
   }
   if (netProfit >= 0 && netProfit !== 0) {
-    legendItems.push({ color: COLORS.chartRevenue, label: 'Laba Bersih', value: netProfit });
+    legendItems.push({ color: colors.chartRevenue, label: 'Laba Bersih', value: netProfit });
   } else if (netProfit < 0) {
-    legendItems.push({ color: COLORS.chartDeficit, label: 'Defisit', value: Math.abs(netProfit) });
+    legendItems.push({ color: colors.chartDeficit, label: 'Defisit', value: Math.abs(netProfit) });
   }
   if (legendItems.length === 0 && isEmpty) {
-    legendItems.push({ color: COLORS.borderLight, label: 'Belum ada data', value: 0 });
+    legendItems.push({ color: colors.borderLight, label: 'Belum ada data', value: 0 });
   }
 
   const chartWidth = Math.min(screenWidth - 64, 320);
@@ -78,7 +81,7 @@ const DonutChartComponent: React.FC<Props> = ({ totalExpenses, totalRevenue, zak
               donut
               radius={chartWidth / 2 - 20}
               innerRadius={chartWidth / 2 - 55}
-              innerCircleColor={COLORS.surface}
+              innerCircleColor={colors.surface}
               centerLabelComponent={() => (
                 <View style={styles.centerLabel}>
                   <Text style={styles.netLabel}>
@@ -87,7 +90,7 @@ const DonutChartComponent: React.FC<Props> = ({ totalExpenses, totalRevenue, zak
                   <Text
                     style={[
                       styles.netValue,
-                      { color: netProfit >= 0 ? COLORS.chartRevenue : COLORS.chartExpense },
+                      { color: netProfit >= 0 ? colors.chartRevenue : colors.chartExpense },
                     ]}
                     numberOfLines={1}
                     adjustsFontSizeToFit
@@ -116,9 +119,10 @@ const DonutChartComponent: React.FC<Props> = ({ totalExpenses, totalRevenue, zak
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors, fs: typeof import('../constants/theme').FONT_SIZE) =>
+  StyleSheet.create({
   card: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.lg,
     marginHorizontal: SPACING.md,
@@ -126,9 +130,9 @@ const styles = StyleSheet.create({
     ...SHADOW.md,
   },
   title: {
-    fontSize: FONT_SIZE.lg,
+    fontSize: fs.lg,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.text,
+    color: colors.text,
     marginBottom: SPACING.md,
   },
   chartWrapper: {
@@ -140,13 +144,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   netLabel: {
-    fontSize: FONT_SIZE.xs,
+    fontSize: fs.xs,
     fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     marginBottom: 2,
   },
   netValue: {
-    fontSize: FONT_SIZE.sm,
+    fontSize: fs.sm,
     fontWeight: FONT_WEIGHT.bold,
     textAlign: 'center',
   },
@@ -158,7 +162,7 @@ const styles = StyleSheet.create({
     marginTop: SPACING.lg,
     paddingTop: SPACING.md,
     borderTopWidth: 1,
-    borderTopColor: COLORS.borderLight,
+    borderTopColor: colors.borderLight,
   },
   legendItem: {
     flexDirection: 'row',
@@ -174,14 +178,14 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
   },
   legendLabel: {
-    fontSize: FONT_SIZE.sm,
+    fontSize: fs.sm,
     fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   legendValue: {
-    fontSize: FONT_SIZE.sm,
+    fontSize: fs.sm,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.text,
+    color: colors.text,
     marginTop: 2,
   },
   emptyContainer: {
@@ -194,14 +198,14 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
   },
   emptyText: {
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     marginBottom: SPACING.xs,
   },
   emptySubtext: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textLight,
+    fontSize: fs.sm,
+    color: colors.textLight,
   },
 });
 

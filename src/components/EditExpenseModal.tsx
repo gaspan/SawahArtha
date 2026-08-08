@@ -15,14 +15,14 @@ import {
   Modal,
 } from 'react-native';
 import {
-  COLORS,
   SPACING,
   BORDER_RADIUS,
-  FONT_SIZE,
   FONT_WEIGHT,
   SHADOW,
   CATEGORIES,
+  type ThemeColors,
 } from '../constants/theme';
+import { useTheme, useThemedStyles } from '../context/ThemeContext';
 import { formatCurrencyInput, formatIDR } from '../utils/currency';
 
 interface Expense {
@@ -54,6 +54,9 @@ export default function EditExpenseModal({
   onClose,
   onSave,
 }: EditExpenseModalProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [amountDisplay, setAmountDisplay] = useState('');
@@ -147,7 +150,7 @@ export default function EditExpenseModal({
                 <TextInput
                   style={styles.input}
                   placeholder="e.g., Beli Pupuk Urea"
-                  placeholderTextColor={COLORS.textLight}
+                  placeholderTextColor={colors.textLight}
                   value={title}
                   onChangeText={setTitle}
                   maxLength={100}
@@ -165,7 +168,7 @@ export default function EditExpenseModal({
                 <TextInput
                   style={[styles.input, styles.textArea]}
                   placeholder="Tambahkan catatan jika perlu..."
-                  placeholderTextColor={COLORS.textLight}
+                  placeholderTextColor={colors.textLight}
                   value={description}
                   onChangeText={setDescription}
                   multiline
@@ -186,7 +189,7 @@ export default function EditExpenseModal({
                 <TextInput
                   style={[styles.input, styles.amountInput]}
                   placeholder="0"
-                  placeholderTextColor={COLORS.textLight}
+                  placeholderTextColor={colors.textLight}
                   value={amountDisplay}
                   onChangeText={handleAmountChange}
                   keyboardType="numeric"
@@ -201,8 +204,8 @@ export default function EditExpenseModal({
               <View style={styles.categoryContainer}>
                 {CATEGORIES.map((category) => {
                   const isSelected = selectedCategory === category;
-                  const bgColor = COLORS.categoryBg[category] || COLORS.primaryLight;
-                  const textColor = COLORS.categoryText[category] || COLORS.primaryDark;
+                  const bgColor = colors.categoryBg[category] || colors.primaryLight;
+                  const textColor = colors.categoryText[category] || colors.primaryDark;
 
                   return (
                     <TouchableOpacity
@@ -211,7 +214,7 @@ export default function EditExpenseModal({
                         styles.categoryPill,
                         isSelected
                           ? { backgroundColor: bgColor, borderColor: textColor, borderWidth: 2 }
-                          : { backgroundColor: COLORS.surface, borderColor: COLORS.border, borderWidth: 1.5 },
+                          : { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1.5 },
                       ]}
                       onPress={() => setSelectedCategory(category)}
                       activeOpacity={0.7}
@@ -221,7 +224,7 @@ export default function EditExpenseModal({
                           styles.categoryPillText,
                           isSelected
                             ? { color: textColor, fontWeight: FONT_WEIGHT.semibold }
-                            : { color: COLORS.textSecondary },
+                            : { color: colors.textSecondary },
                         ]}
                       >
                         {category}
@@ -269,7 +272,8 @@ export default function EditExpenseModal({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors, fs: typeof import('../constants/theme').FONT_SIZE) =>
+  StyleSheet.create({
   overlay: {
     flex: 1,
     justifyContent: 'flex-end',
@@ -283,7 +287,7 @@ const styles = StyleSheet.create({
     right: 0,
   },
   card: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderTopLeftRadius: BORDER_RADIUS.xl,
     borderTopRightRadius: BORDER_RADIUS.xl,
     maxHeight: '85%',
@@ -296,14 +300,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    fontSize: FONT_SIZE.lg,
+    fontSize: fs.lg,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.text,
+    color: colors.text,
     marginBottom: 4,
   },
   subtitle: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textSecondary,
+    fontSize: fs.sm,
+    color: colors.textSecondary,
   },
   formScroll: {
     marginBottom: SPACING.md,
@@ -315,9 +319,9 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.md,
   },
   label: {
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.text,
+    color: colors.text,
     marginBottom: SPACING.xs,
   },
   labelRow: {
@@ -327,24 +331,24 @@ const styles = StyleSheet.create({
     gap: SPACING.sm,
   },
   optionalBadge: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textLight,
-    backgroundColor: COLORS.borderLight,
+    fontSize: fs.xs,
+    color: colors.textLight,
+    backgroundColor: colors.borderLight,
     paddingHorizontal: SPACING.sm,
     paddingVertical: 2,
     borderRadius: BORDER_RADIUS.full,
     overflow: 'hidden',
   },
   inputWrapper: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: BORDER_RADIUS.md,
     borderWidth: 1.5,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
     ...SHADOW.sm,
   },
   input: {
-    fontSize: FONT_SIZE.md,
-    color: COLORS.text,
+    fontSize: fs.md,
+    color: colors.text,
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.sm + 2,
     minHeight: 48,
@@ -358,7 +362,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   currencyPrefix: {
-    backgroundColor: COLORS.primaryLight,
+    backgroundColor: colors.primaryLight,
     paddingHorizontal: SPACING.md,
     justifyContent: 'center',
     alignItems: 'center',
@@ -368,13 +372,13 @@ const styles = StyleSheet.create({
     minWidth: 45,
   },
   currencyPrefixText: {
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.primaryDark,
+    color: colors.primaryDark,
   },
   amountInput: {
     flex: 1,
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
     fontWeight: FONT_WEIGHT.semibold,
   },
   categoryContainer: {
@@ -391,7 +395,7 @@ const styles = StyleSheet.create({
     gap: SPACING.xs,
   },
   categoryPillText: {
-    fontSize: FONT_SIZE.xs + 1,
+    fontSize: fs.xs + 1,
     fontWeight: FONT_WEIGHT.medium,
   },
   checkDot: {
@@ -402,7 +406,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   checkMark: {
-    color: COLORS.textInverse,
+    color: colors.textInverse,
     fontSize: 9,
     fontWeight: FONT_WEIGHT.bold,
   },
@@ -415,31 +419,31 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: BORDER_RADIUS.md,
     borderWidth: 1.5,
-    borderColor: COLORS.border,
-    backgroundColor: COLORS.surface,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
   cancelButtonText: {
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   saveButton: {
     flex: 1,
     height: 48,
     borderRadius: BORDER_RADIUS.md,
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
   saveButtonDisabled: {
-    backgroundColor: COLORS.primaryMuted,
+    backgroundColor: colors.primaryMuted,
     opacity: 0.7,
   },
   saveButtonText: {
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.textInverse,
+    color: colors.textInverse,
   },
 });

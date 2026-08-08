@@ -2,13 +2,13 @@ import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { BarChart } from 'react-native-gifted-charts';
 import {
-  COLORS,
   SPACING,
   BORDER_RADIUS,
-  FONT_SIZE,
   FONT_WEIGHT,
   SHADOW,
+  type ThemeColors,
 } from '../constants/theme';
+import { useTheme, useThemedStyles } from '../context/ThemeContext';
 import { formatIDR, formatCompact } from '../utils/currency';
 
 interface Props {
@@ -27,18 +27,24 @@ const LABEL_MAP: Record<string, string> = {
   Moluksida: 'Moluk.',
 };
 
-const COLOR_MAP: Record<string, string> = {
-  Pupuk: COLORS.chartPupuk,
-  Insektisida: COLORS.chartInsektisida,
-  Fungisida: COLORS.chartFungisida,
-  Rodentisida: COLORS.chartRodentisida,
-  'Jasa Pegawai': COLORS.chartJasaPegawai,
-  'Item Barang': COLORS.chartItemBarang,
-  Herbisida: COLORS.chartHerbisida,
-  Moluksida: COLORS.chartMoluksida,
-};
+function getColorMap(colors: ThemeColors): Record<string, string> {
+  return {
+    Pupuk: colors.chartPupuk,
+    Insektisida: colors.chartInsektisida,
+    Fungisida: colors.chartFungisida,
+    Rodentisida: colors.chartRodentisida,
+    'Jasa Pegawai': colors.chartJasaPegawai,
+    'Item Barang': colors.chartItemBarang,
+    Herbisida: colors.chartHerbisida,
+    Moluksida: colors.chartMoluksida,
+  };
+}
 
 const CategoryBarChart: React.FC<Props> = ({ categoryTotals, totalGKG }) => {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+
+  const colorMap = getColorMap(colors);
   const totalAll = categoryTotals.reduce((s, c) => s + c.total, 0);
   const hasData = totalAll > 0;
 
@@ -47,9 +53,9 @@ const CategoryBarChart: React.FC<Props> = ({ categoryTotals, totalGKG }) => {
       const pct = totalAll > 0 ? (item.total / totalAll) * 100 : 0;
       return {
         value: item.total,
-        frontColor: COLOR_MAP[item.category] || COLORS.primary,
+        frontColor: colorMap[item.category] || colors.primary,
         label: LABEL_MAP[item.category] || item.category.slice(0, 5),
-        labelTextStyle: { color: COLORS.textLight, fontSize: 9 },
+        labelTextStyle: { color: colors.textLight, fontSize: 9 },
         topLabelComponent: () => (
           <View style={styles.topLabel}>
             <Text style={styles.topLabelText}>
@@ -59,7 +65,7 @@ const CategoryBarChart: React.FC<Props> = ({ categoryTotals, totalGKG }) => {
         ),
       };
     }),
-    [categoryTotals, totalAll],
+    [categoryTotals, totalAll, colors],
   );
 
   const largest = useMemo(() =>
@@ -93,7 +99,7 @@ const CategoryBarChart: React.FC<Props> = ({ categoryTotals, totalGKG }) => {
               initialSpacing={10}
               endSpacing={10}
               noOfSections={4}
-              yAxisTextStyle={{ color: COLORS.textLight, fontSize: 9 }}
+              yAxisTextStyle={{ color: colors.textLight, fontSize: 9 }}
               yAxisLabelPrefix=""
               yAxisLabelSuffix=""
               formatYLabel={(v) => formatCompact(Number(v))}
@@ -108,7 +114,7 @@ const CategoryBarChart: React.FC<Props> = ({ categoryTotals, totalGKG }) => {
               const pricePerKg = showPricePerKg ? item.total / totalGKG : 0;
               return (
                 <View key={item.category} style={styles.legendItem}>
-                  <View style={[styles.legendDot, { backgroundColor: COLOR_MAP[item.category] || COLORS.primary }]} />
+                  <View style={[styles.legendDot, { backgroundColor: colorMap[item.category] || colors.primary }]} />
                   <View style={styles.legendTextCol}>
                     <View style={styles.legendTopRow}>
                       <Text style={styles.legendLabel}>
@@ -143,9 +149,10 @@ const CategoryBarChart: React.FC<Props> = ({ categoryTotals, totalGKG }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors, fs: typeof import('../constants/theme').FONT_SIZE) =>
+  StyleSheet.create({
   card: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.lg,
     marginHorizontal: SPACING.md,
@@ -153,9 +160,9 @@ const styles = StyleSheet.create({
     ...SHADOW.md,
   },
   title: {
-    fontSize: FONT_SIZE.lg,
+    fontSize: fs.lg,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.text,
+    color: colors.text,
     marginBottom: SPACING.md,
   },
   chartContainer: {
@@ -167,14 +174,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   topLabelText: {
-    fontSize: FONT_SIZE.xs - 1,
+    fontSize: fs.xs - 1,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   legendContainer: {
     paddingTop: SPACING.sm,
     borderTopWidth: 1,
-    borderTopColor: COLORS.borderLight,
+    borderTopColor: colors.borderLight,
     gap: SPACING.xs + 2,
   },
   legendItem: {
@@ -199,34 +206,34 @@ const styles = StyleSheet.create({
     gap: SPACING.xs,
   },
   legendLabel: {
-    fontSize: FONT_SIZE.xs,
+    fontSize: fs.xs,
     fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.text,
+    color: colors.text,
   },
   legendPct: {
-    fontSize: FONT_SIZE.xs - 1,
+    fontSize: fs.xs - 1,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   legendValue: {
-    fontSize: FONT_SIZE.xs,
+    fontSize: fs.xs,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   legendSub: {
-    fontSize: FONT_SIZE.xs - 1,
+    fontSize: fs.xs - 1,
     fontWeight: FONT_WEIGHT.normal,
-    color: COLORS.textLight,
+    color: colors.textLight,
   },
   insightRow: {
     marginTop: SPACING.sm,
-    backgroundColor: COLORS.warningLight,
+    backgroundColor: colors.warningLight,
     borderRadius: BORDER_RADIUS.md,
     padding: SPACING.sm,
   },
   insightText: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.text,
+    fontSize: fs.xs,
+    color: colors.text,
     textAlign: 'center',
   },
   emptyContainer: {
@@ -239,14 +246,14 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
   },
   emptyText: {
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     marginBottom: SPACING.xs,
   },
   emptySubtext: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textLight,
+    fontSize: fs.sm,
+    color: colors.textLight,
   },
 });
 

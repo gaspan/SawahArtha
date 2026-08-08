@@ -1,13 +1,13 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import {
-  COLORS,
   SPACING,
   BORDER_RADIUS,
-  FONT_SIZE,
   FONT_WEIGHT,
   SHADOW,
+  type ThemeColors,
 } from '../constants/theme';
+import { useTheme, useThemedStyles } from '../context/ThemeContext';
 
 interface Props {
   totalGKG: number;
@@ -15,6 +15,9 @@ interface Props {
 }
 
 export default function StockCard({ totalGKG, totalGKPSold }: Props) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+
   const remaining = Math.max(0, totalGKG - totalGKPSold);
   const pctSold = totalGKG > 0 ? (totalGKPSold / totalGKG) * 100 : 0;
   const safePct = Math.min(pctSold, 100);
@@ -32,13 +35,13 @@ export default function StockCard({ totalGKG, totalGKPSold }: Props) {
         </View>
         <View style={styles.metric}>
           <Text style={styles.metricLabel}>Terjual</Text>
-          <Text style={[styles.metricValue, { color: COLORS.primary }]}>
+          <Text style={[styles.metricValue, { color: colors.primary }]}>
             {totalGKPSold.toLocaleString('id-ID', { maximumFractionDigits: 1 })} kg
           </Text>
         </View>
         <View style={styles.metric}>
           <Text style={styles.metricLabel}>Sisa</Text>
-          <Text style={[styles.metricValue, { color: remaining > 0 ? COLORS.warning : COLORS.textLight }]}>
+          <Text style={[styles.metricValue, { color: remaining > 0 ? colors.warning : colors.textLight }]}>
             {remaining.toLocaleString('id-ID', { maximumFractionDigits: 1 })} kg
           </Text>
         </View>
@@ -60,18 +63,19 @@ export default function StockCard({ totalGKG, totalGKPSold }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors, fs: typeof import('../constants/theme').FONT_SIZE) =>
+  StyleSheet.create({
   card: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.md + 4,
     marginBottom: SPACING.md,
     ...SHADOW.md,
   },
   title: {
-    fontSize: FONT_SIZE.sm,
+    fontSize: fs.sm,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     marginBottom: SPACING.sm,
   },
   metricsRow: {
@@ -84,18 +88,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   metricLabel: {
-    fontSize: FONT_SIZE.xs - 1,
-    color: COLORS.textLight,
+    fontSize: fs.xs - 1,
+    color: colors.textLight,
     marginBottom: 2,
   },
   metricValue: {
-    fontSize: FONT_SIZE.sm,
+    fontSize: fs.sm,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.text,
+    color: colors.text,
   },
   progressBarBg: {
     height: 8,
-    backgroundColor: COLORS.borderLight,
+    backgroundColor: colors.borderLight,
     borderRadius: BORDER_RADIUS.full,
     overflow: 'hidden',
     marginBottom: 4,
@@ -103,11 +107,11 @@ const styles = StyleSheet.create({
   progressBarFill: {
     height: '100%',
     borderRadius: BORDER_RADIUS.full,
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
   },
   pctText: {
     fontSize: 10,
-    color: COLORS.textLight,
+    color: colors.textLight,
     textAlign: 'right',
   },
 });

@@ -5,8 +5,11 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "sawahartha",
-    "userInterfaceStyle": "light",
+    "scheme": [
+      "sawahartha",
+      "com.gentur.ariya.SawahArtha"
+    ],
+    "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true
     },
@@ -24,15 +27,39 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 400,
+          "resizeMode": "cover",
+          "backgroundColor": "#E6F4FE"
+        }
+      ],
       "expo-router",
       "expo-sqlite",
       "expo-status-bar",
-      "expo-sharing"
+      "expo-sharing",
+      "expo-secure-store",
+      "expo-web-browser",
+      [
+        "expo-notifications",
+        {
+          "color": "#059669",
+          "defaultChannel": "reminders"
+        }
+      ],
+      "expo-splash-screen"
     ],
     "extra": {
       "router": {},
       "eas": {
         "projectId": "f24ebb2f-7efc-4558-b8da-40e19ccf8102"
+      },
+      "googleDriveClientIds": {
+        "android": "887102570827-5nt3ig29rf7i854lq4adouhqp3lggeti.apps.googleusercontent.com",
+        "ios": "",
+        "web": ""
       }
     }
   }

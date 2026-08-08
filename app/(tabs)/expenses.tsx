@@ -20,7 +20,8 @@ import { useFocusEffect } from 'expo-router';
 import { useExpenses } from '../../src/hooks/useExpenses';
 import { useBudget } from '../../src/context/BudgetContext';
 import { formatIDR } from '../../src/utils/currency';
-import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOW, CATEGORIES } from '../../src/constants/theme';
+import { SPACING, BORDER_RADIUS, FONT_WEIGHT, SHADOW, CATEGORIES, type ThemeColors } from '../../src/constants/theme';
+import { useTheme, useThemedStyles } from '../../src/context/ThemeContext';
 import { type Expense } from '../../src/database/expenseService';
 
 import ExpenseForm from '../../src/components/ExpenseForm';
@@ -31,6 +32,8 @@ import MarkPaidModal from '../../src/components/MarkPaidModal';
 const LOAD_MORE_THRESHOLD = 120;
 
 export default function ExpensesScreen() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const {
     expenses,
     totalExpenses,
@@ -231,7 +234,7 @@ export default function ExpensesScreen() {
 
           {isLoading ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color={COLORS.primary} />
+              <ActivityIndicator size="large" color={colors.primary} />
               <Text style={styles.loadingText}>Memuat riwayat...</Text>
             </View>
           ) : (
@@ -246,7 +249,7 @@ export default function ExpensesScreen() {
           {!isLoading && (isLoadingMore || hasMore) && (
             <View style={styles.listFooter}>
               {isLoadingMore ? (
-                <ActivityIndicator size="small" color={COLORS.primary} />
+                <ActivityIndicator size="small" color={colors.primary} />
               ) : (
                 <Text style={styles.footerText}>Geser ke bawah untuk memuat lebih banyak</Text>
               )}
@@ -277,13 +280,14 @@ export default function ExpensesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors, fs: typeof import('../../src/constants/theme').FONT_SIZE) =>
+  StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
   },
   header: {
-    backgroundColor: COLORS.danger,
+    backgroundColor: colors.danger,
     paddingTop: 56,
     paddingBottom: SPACING.lg,
     paddingHorizontal: SPACING.lg,
@@ -298,12 +302,12 @@ const styles = StyleSheet.create({
     fontSize: 32,
   },
   headerTitle: {
-    fontSize: FONT_SIZE.xl,
+    fontSize: fs.xl,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.textInverse,
+    color: colors.textInverse,
   },
   headerSubtitle: {
-    fontSize: FONT_SIZE.sm,
+    fontSize: fs.sm,
     color: 'rgba(255,255,255,0.8)',
     marginTop: 2,
   },
@@ -315,7 +319,7 @@ const styles = StyleSheet.create({
     paddingTop: SPACING.sm,
   },
   totalBanner: {
-    backgroundColor: COLORS.dangerLight,
+    backgroundColor: colors.dangerLight,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.lg,
     alignItems: 'center',
@@ -324,20 +328,20 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(239, 68, 68, 0.2)',
   },
   totalLabel: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.danger,
+    fontSize: fs.sm,
+    color: colors.danger,
     fontWeight: FONT_WEIGHT.medium,
     marginBottom: SPACING.xs,
   },
   totalValue: {
-    fontSize: FONT_SIZE.xxl,
+    fontSize: fs.xxl,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.danger,
+    color: colors.danger,
   },
   budgetWarning: {
-    backgroundColor: COLORS.dangerLight,
+    backgroundColor: colors.dangerLight,
     borderWidth: 1,
-    borderColor: COLORS.danger,
+    borderColor: colors.danger,
     borderRadius: BORDER_RADIUS.md,
     paddingVertical: SPACING.sm,
     paddingHorizontal: SPACING.md,
@@ -346,43 +350,43 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   budgetWarningText: {
-    fontSize: FONT_SIZE.xs + 1,
+    fontSize: fs.xs + 1,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.danger,
+    color: colors.danger,
   },
   unpaidSummary: {
-    backgroundColor: COLORS.warningLight,
+    backgroundColor: colors.warningLight,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.md + 4,
     alignItems: 'center',
     marginBottom: SPACING.md,
     marginHorizontal: SPACING.md,
     borderWidth: 1,
-    borderColor: COLORS.warning,
+    borderColor: colors.warning,
   },
   unpaidLabel: {
-    fontSize: FONT_SIZE.xs,
+    fontSize: fs.xs,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.warning,
+    color: colors.warning,
     marginBottom: SPACING.xs,
   },
   unpaidValue: {
-    fontSize: FONT_SIZE.xl,
+    fontSize: fs.xl,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.warning,
+    color: colors.warning,
   },
   unpaidHint: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textSecondary,
+    fontSize: fs.xs,
+    color: colors.textSecondary,
     marginTop: SPACING.xs,
   },
   listSection: {
     marginTop: SPACING.lg,
   },
   sectionTitle: {
-    fontSize: FONT_SIZE.lg,
+    fontSize: fs.lg,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.text,
+    color: colors.text,
     marginBottom: SPACING.md,
   },
   filterRow: {
@@ -391,24 +395,24 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.md,
   },
   filterChip: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderWidth: 1.5,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
     borderRadius: BORDER_RADIUS.full,
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.sm,
   },
   filterChipActive: {
-    backgroundColor: COLORS.danger,
-    borderColor: COLORS.danger,
+    backgroundColor: colors.danger,
+    borderColor: colors.danger,
   },
   filterChipText: {
-    fontSize: FONT_SIZE.sm,
+    fontSize: fs.sm,
     fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   filterChipTextActive: {
-    color: COLORS.textInverse,
+    color: colors.textInverse,
     fontWeight: FONT_WEIGHT.semibold,
   },
   listFooter: {
@@ -416,8 +420,8 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.md,
   },
   footerText: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textLight,
+    fontSize: fs.xs,
+    color: colors.textLight,
   },
   loadingContainer: {
     paddingVertical: SPACING.xl,
@@ -426,8 +430,8 @@ const styles = StyleSheet.create({
     gap: SPACING.sm,
   },
   loadingText: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textSecondary,
+    fontSize: fs.sm,
+    color: colors.textSecondary,
     fontWeight: FONT_WEIGHT.medium,
   },
 });

@@ -15,6 +15,7 @@ export interface Expense {
   is_paid: number;
   vendor_name: string | null;
   payment_date: string | null;
+  plot_id: number | null;
 }
 
 export interface ExpenseInput {
@@ -25,6 +26,7 @@ export interface ExpenseInput {
   season_code: string;
   is_paid?: number;
   vendor_name?: string;
+  plot_id?: number | null;
 }
 
 export interface CategoryTotal {
@@ -85,7 +87,7 @@ export async function addExpense(
   expense: ExpenseInput
 ): Promise<number> {
   const result = await db.runAsync(
-    'INSERT INTO expenses (title, description, amount, category, season_code, date, is_paid, vendor_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    'INSERT INTO expenses (title, description, amount, category, season_code, date, is_paid, vendor_name, plot_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
     [
       expense.title,
       expense.description || '',
@@ -95,6 +97,7 @@ export async function addExpense(
       new Date().toISOString().split('T')[0],
       expense.is_paid ?? 1,
       expense.vendor_name || null,
+      expense.plot_id ?? null,
     ]
   );
   return result.lastInsertRowId;

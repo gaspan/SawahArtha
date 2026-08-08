@@ -1,7 +1,8 @@
 /**
  * Indonesian Rupiah (IDR) currency formatting utilities
- * Uses dot (.) as thousands separator per Indonesian convention
+ * Thousands separator follows the number-format preference (dot or comma)
  */
+import { applyThousandsSeparator } from './formatConfig';
 
 /**
  * Format a numeric value to IDR string: "Rp 150.000"
@@ -12,7 +13,7 @@ export function formatIDR(amount: number | null | undefined): string {
   }
 
   const absAmount = Math.abs(Math.round(amount));
-  const formatted = absAmount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  const formatted = applyThousandsSeparator(absAmount.toString());
   const prefix = amount < 0 ? '-' : '';
 
   return `${prefix}Rp ${formatted}`;
@@ -27,7 +28,7 @@ export function formatNumber(amount: number | null | undefined): string {
   }
 
   const absAmount = Math.abs(Math.round(amount));
-  return absAmount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  return applyThousandsSeparator(absAmount.toString());
 }
 
 /**
@@ -37,10 +38,10 @@ export function formatNumber(amount: number | null | undefined): string {
 export function parseIDR(formatted: string): number {
   if (!formatted) return 0;
 
-  // Remove "Rp", spaces, and dot separators
+  // Remove "Rp", spaces, and separator characters
   const cleaned = formatted
     .replace(/[Rr][Pp]\s*/g, '')
-    .replace(/\./g, '')
+    .replace(/[.,]/g, '')
     .replace(/\s/g, '')
     .trim();
 
@@ -61,7 +62,7 @@ export function formatCurrencyInput(text: string): { display: string; value: num
   }
 
   const numericValue = parseInt(digitsOnly, 10);
-  const display = numericValue.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  const display = applyThousandsSeparator(numericValue.toString());
 
   return { display, value: numericValue };
 }

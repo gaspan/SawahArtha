@@ -1,13 +1,13 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import {
-  COLORS,
   SPACING,
   BORDER_RADIUS,
-  FONT_SIZE,
   FONT_WEIGHT,
   SHADOW,
+  type ThemeColors,
 } from '../constants/theme';
+import { useTheme, useThemedStyles } from '../context/ThemeContext';
 import { formatIDR } from '../utils/currency';
 
 interface Props {
@@ -29,6 +29,9 @@ export default function CashPositionCard({
   loanOut,
   zakatRp,
 }: Props) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+
   const kasMasuk = totalRevenuePaid + loanIn;
   const kasKeluar = totalExpensesPaid + zakatRp;
   const kasBersih = kasMasuk - kasKeluar;
@@ -53,7 +56,7 @@ export default function CashPositionCard({
       <View style={styles.divider} />
       <View style={styles.resultRow}>
         <Text style={styles.resultLabel}>Kas Bersih</Text>
-        <Text style={[styles.resultValue, { color: kasBersih >= 0 ? COLORS.success : COLORS.danger }]}>
+        <Text style={[styles.resultValue, { color: kasBersih >= 0 ? colors.success : colors.danger }]}>
           {kasBersih >= 0 ? '+' : ''}{formatIDR(kasBersih)}
         </Text>
       </View>
@@ -68,7 +71,7 @@ export default function CashPositionCard({
       <View style={styles.divider} />
       <View style={styles.resultRow}>
         <Text style={styles.resultLabel}>Total Aset Akrual</Text>
-        <Text style={[styles.resultValue, { color: totalAsetAkrual >= 0 ? COLORS.primary : COLORS.danger }]}>
+        <Text style={[styles.resultValue, { color: totalAsetAkrual >= 0 ? colors.primary : colors.danger }]}>
           {totalAsetAkrual >= 0 ? '+' : ''}{formatIDR(totalAsetAkrual)}
         </Text>
       </View>
@@ -81,19 +84,23 @@ export default function CashPositionCard({
 }
 
 function Row({ label, value, positive }: { label: string; value: number; positive: boolean }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+
   return (
     <View style={styles.row}>
       <Text style={styles.rowLabel}>{label}</Text>
-      <Text style={[styles.rowValue, { color: value >= 0 ? COLORS.success : COLORS.danger }]}>
+      <Text style={[styles.rowValue, { color: value >= 0 ? colors.success : colors.danger }]}>
         {formatIDR(value)}
       </Text>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors, fs: typeof import('../constants/theme').FONT_SIZE) =>
+  StyleSheet.create({
   card: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.md + 4,
     marginHorizontal: SPACING.md,
@@ -101,18 +108,18 @@ const styles = StyleSheet.create({
     ...SHADOW.md,
   },
   title: {
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.text,
+    color: colors.text,
     marginBottom: SPACING.md,
   },
   section: {
     marginBottom: SPACING.sm,
   },
   sectionTitle: {
-    fontSize: FONT_SIZE.xs,
+    fontSize: fs.xs,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     marginBottom: SPACING.xs,
     marginTop: SPACING.sm,
   },
@@ -123,16 +130,16 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.xs,
   },
   rowLabel: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textSecondary,
+    fontSize: fs.sm,
+    color: colors.textSecondary,
   },
   rowValue: {
-    fontSize: FONT_SIZE.sm,
+    fontSize: fs.sm,
     fontWeight: FONT_WEIGHT.semibold,
   },
   divider: {
     height: 1,
-    backgroundColor: COLORS.borderLight,
+    backgroundColor: colors.borderLight,
     marginVertical: SPACING.sm,
   },
   resultRow: {
@@ -142,23 +149,23 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
   },
   resultLabel: {
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.text,
+    color: colors.text,
   },
   resultValue: {
-    fontSize: FONT_SIZE.lg,
+    fontSize: fs.lg,
     fontWeight: FONT_WEIGHT.bold,
   },
   hint: {
     fontSize: 9,
-    color: COLORS.textLight,
+    color: colors.textLight,
     fontStyle: 'italic',
     marginTop: 2,
   },
   footerHint: {
     fontSize: 9,
-    color: COLORS.textLight,
+    color: colors.textLight,
     marginTop: SPACING.sm,
     lineHeight: 14,
   },

@@ -226,4 +226,56 @@ export async function initializeDatabase(db: SQLiteDatabase): Promise<void> {
       [DEFAULT_SEASON]
     );
   }
+
+  // Migrate: settings table (Tier 4 - preferensi & tema)
+  await db.execAsync(`
+    CREATE TABLE IF NOT EXISTS settings (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    );
+  `);
+
+  // Migrate: multi-lahan (plots) — Tier: Multi-lahan
+  await db.execAsync(`
+    CREATE TABLE IF NOT EXISTS plots (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      season_code TEXT NOT NULL,
+      name TEXT NOT NULL,
+      land_size_m2 REAL NOT NULL DEFAULT 0,
+      note TEXT,
+      date TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_plots_season ON plots(season_code);
+  `);
+
+  // Migrate: plot_id on expenses/income/sales
+  try {
+    await db.execAsync('ALTER TABLE expenses ADD COLUMN plot_id INTEGER');
+  } catch (error) {
+    // Column already exists
+  }
+  try {
+    await db.execAsync('ALTER TABLE income ADD COLUMN plot_id INTEGER');
+  } catch (error) {
+    // Column already exists
+  }
+  try {
+    await db.execAsync('ALTER TABLE sales ADD COLUMN plot_id INTEGER');
+  } catch (error) {
+    // Column already exists
+  }
+
+  // Migrate: jurnal kegiatan tani (farming_activities)
+  await db.execAsync(`
+    CREATE TABLE IF NOT EXISTS farming_activities (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      season_code TEXT NOT NULL,
+      activity_type TEXT NOT NULL,
+      title TEXT NOT NULL,
+      date TEXT NOT NULL,
+      plot_id INTEGER,
+      note TEXT
+    );
+    CREATE INDEX IF NOT EXISTS idx_activities_season ON farming_activities(season_code, date DESC);
+  `);
 }

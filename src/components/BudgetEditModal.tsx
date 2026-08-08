@@ -11,13 +11,13 @@ import {
   Modal,
 } from 'react-native';
 import {
-  COLORS,
   SPACING,
   BORDER_RADIUS,
-  FONT_SIZE,
   FONT_WEIGHT,
   SHADOW,
+  type ThemeColors,
 } from '../constants/theme';
+import { useTheme, useThemedStyles } from '../context/ThemeContext';
 import { formatCurrencyInput, formatIDR } from '../utils/currency';
 
 interface Props {
@@ -39,6 +39,9 @@ export default function BudgetEditModal({
   onDelete,
   onClose,
 }: Props) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+
   const [amountDisplay, setAmountDisplay] = useState('');
   const [amountValue, setAmountValue] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
@@ -128,8 +131,8 @@ export default function BudgetEditModal({
   }, [category, onDelete, onClose]);
 
   const hasChanged = amountValue !== currentAmount;
-  const categoryBg = COLORS.categoryBg[category ?? ''] || COLORS.primaryLight;
-  const categoryText = COLORS.categoryText[category ?? ''] || COLORS.primaryDark;
+  const categoryBg = colors.categoryBg[category ?? ''] || colors.primaryLight;
+  const categoryText = colors.categoryText[category ?? ''] || colors.primaryDark;
 
   return (
     <Modal
@@ -180,7 +183,7 @@ export default function BudgetEditModal({
               <TextInput
                 style={styles.input}
                 placeholder="0"
-                placeholderTextColor={COLORS.textLight}
+                placeholderTextColor={colors.textLight}
                 value={amountDisplay}
                 onChangeText={handleAmountChange}
                 keyboardType="numeric"
@@ -228,7 +231,8 @@ export default function BudgetEditModal({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors, fs: typeof import('../constants/theme').FONT_SIZE) =>
+  StyleSheet.create({
   overlay: {
     flex: 1,
     justifyContent: 'flex-end',
@@ -242,7 +246,7 @@ const styles = StyleSheet.create({
     right: 0,
   },
   card: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderTopLeftRadius: BORDER_RADIUS.xl,
     borderTopRightRadius: BORDER_RADIUS.xl,
     padding: SPACING.lg,
@@ -260,13 +264,13 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
   },
   catBadgeText: {
-    fontSize: FONT_SIZE.xs + 1,
+    fontSize: fs.xs + 1,
     fontWeight: FONT_WEIGHT.bold,
   },
   title: {
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.text,
+    color: colors.text,
   },
   infoRow: {
     flexDirection: 'row',
@@ -274,39 +278,39 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: SPACING.xs,
     paddingHorizontal: SPACING.sm,
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
     borderRadius: BORDER_RADIUS.sm,
     marginBottom: SPACING.xs,
   },
   infoLabel: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textSecondary,
+    fontSize: fs.xs,
+    color: colors.textSecondary,
   },
   infoValue: {
-    fontSize: FONT_SIZE.sm,
+    fontSize: fs.sm,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.text,
+    color: colors.text,
   },
   fieldGroup: {
     marginBottom: SPACING.md,
   },
   label: {
-    fontSize: FONT_SIZE.sm,
+    fontSize: fs.sm,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.text,
+    color: colors.text,
     marginBottom: SPACING.xs,
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: BORDER_RADIUS.md,
     borderWidth: 1.5,
-    borderColor: COLORS.primary,
+    borderColor: colors.primary,
     ...SHADOW.sm,
   },
   currencyPrefix: {
-    backgroundColor: COLORS.primaryLight,
+    backgroundColor: colors.primaryLight,
     paddingHorizontal: SPACING.md,
     justifyContent: 'center',
     alignItems: 'center',
@@ -316,15 +320,15 @@ const styles = StyleSheet.create({
     minWidth: 45,
   },
   currencyPrefixText: {
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.primaryDark,
+    color: colors.primaryDark,
   },
   input: {
     flex: 1,
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.text,
+    color: colors.text,
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.sm + 2,
     minHeight: 48,
@@ -337,47 +341,47 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: BORDER_RADIUS.md,
     borderWidth: 1.5,
-    borderColor: COLORS.danger,
-    backgroundColor: COLORS.surface,
+    borderColor: colors.danger,
+    backgroundColor: colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: SPACING.md,
   },
   deleteButtonText: {
-    fontSize: FONT_SIZE.sm,
+    fontSize: fs.sm,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.danger,
+    color: colors.danger,
   },
   cancelButton: {
     flex: 1,
     height: 48,
     borderRadius: BORDER_RADIUS.md,
     borderWidth: 1.5,
-    borderColor: COLORS.border,
-    backgroundColor: COLORS.surface,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
   cancelButtonText: {
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   saveButton: {
     flex: 1,
     height: 48,
     borderRadius: BORDER_RADIUS.md,
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
   saveButtonDisabled: {
-    backgroundColor: COLORS.primaryMuted,
+    backgroundColor: colors.primaryMuted,
     opacity: 0.7,
   },
   saveButtonText: {
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.textInverse,
+    color: colors.textInverse,
   },
 });

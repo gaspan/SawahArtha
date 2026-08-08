@@ -2,13 +2,13 @@ import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { LineChart } from 'react-native-gifted-charts';
 import {
-  COLORS,
   SPACING,
   BORDER_RADIUS,
-  FONT_SIZE,
   FONT_WEIGHT,
   SHADOW,
+  type ThemeColors,
 } from '../constants/theme';
+import { useTheme, useThemedStyles } from '../context/ThemeContext';
 import { formatIDR, formatCompact } from '../utils/currency';
 import type { SeasonMetrics } from '../database/analyticsService';
 
@@ -20,6 +20,9 @@ interface Props {
 type Tab = 'profit' | 'hpp' | 'productivity';
 
 export default function SeasonComparisonChart({ metrics, currentSeasonCode }: Props) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+
   const [tab, setTab] = useState<Tab>('profit');
 
   if (metrics.length < 2) {
@@ -52,11 +55,11 @@ export default function SeasonComparisonChart({ metrics, currentSeasonCode }: Pr
       }
       return {
         value: Math.round(value),
-        dataPointColor: i === currentIdx ? COLORS.secondary : COLORS.primary,
+        dataPointColor: i === currentIdx ? colors.secondary : colors.primary,
         labelComponent: () => null as any,
       };
     });
-  }, [metrics, tab, currentIdx]);
+  }, [metrics, tab, currentIdx, colors]);
 
   const prevIdx = metrics.length > 1 ? metrics.length - 2 : -1;
   const currMetrics = metrics[metrics.length - 1];
@@ -105,15 +108,15 @@ export default function SeasonComparisonChart({ metrics, currentSeasonCode }: Pr
           spacing={metrics.length <= 3 ? 80 : 50}
           initialSpacing={20}
           endSpacing={20}
-          color={COLORS.primary}
+          color={colors.primary}
           thickness={2}
-          startFillColor={`${COLORS.primary}20`}
-          endFillColor={`${COLORS.primary}02`}
+          startFillColor={`${colors.primary}20`}
+          endFillColor={`${colors.primary}02`}
           startOpacity={0.4}
           endOpacity={0.1}
           hideDataPoints={false}
           dataPointsRadius={4}
-          dataPointsColor={COLORS.primary}
+          dataPointsColor={colors.primary}
           xAxisLabelTexts={labels}
           xAxisLabelTextStyle={styles.axisLabel}
           noOfSections={4}
@@ -125,7 +128,7 @@ export default function SeasonComparisonChart({ metrics, currentSeasonCode }: Pr
           curved
           showReferenceLine1={tab === 'profit'}
           referenceLine1Position={0}
-          referenceLine1Config={{ color: COLORS.borderLight, thickness: 1, dashWidth: 4, dashGap: 4 }}
+          referenceLine1Config={{ color: colors.borderLight, thickness: 1, dashWidth: 4, dashGap: 4 }}
         />
       </View>
 
@@ -139,44 +142,45 @@ export default function SeasonComparisonChart({ metrics, currentSeasonCode }: Pr
 }
 
 function TabButton({ active, label, onPress }: { active: boolean; label: string; onPress: () => void }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+
   return (
     <TouchableOpacity
-      style={[tabStyles.button, active && tabStyles.buttonActive]}
+      style={[styles.button, active && styles.buttonActive]}
       onPress={onPress}
       activeOpacity={0.7}
     >
-      <Text style={[tabStyles.text, active && tabStyles.textActive]}>{label}</Text>
+      <Text style={[styles.text, active && styles.textActive]}>{label}</Text>
     </TouchableOpacity>
   );
 }
 
-const tabStyles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors, fs: typeof import('../constants/theme').FONT_SIZE) =>
+  StyleSheet.create({
   button: {
     paddingHorizontal: SPACING.sm + 2,
     paddingVertical: SPACING.xs + 2,
     borderRadius: BORDER_RADIUS.full,
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
     borderWidth: 1,
-    borderColor: COLORS.borderLight,
+    borderColor: colors.borderLight,
   },
   buttonActive: {
-    backgroundColor: COLORS.primaryLight,
-    borderColor: COLORS.primary,
+    backgroundColor: colors.primaryLight,
+    borderColor: colors.primary,
   },
   text: {
-    fontSize: FONT_SIZE.xs - 1,
+    fontSize: fs.xs - 1,
     fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   textActive: {
-    color: COLORS.primary,
+    color: colors.primary,
     fontWeight: FONT_WEIGHT.bold,
   },
-});
-
-const styles = StyleSheet.create({
   card: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.lg,
     marginHorizontal: SPACING.md,
@@ -184,9 +188,9 @@ const styles = StyleSheet.create({
     ...SHADOW.md,
   },
   title: {
-    fontSize: FONT_SIZE.lg,
+    fontSize: fs.lg,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.text,
+    color: colors.text,
     marginBottom: SPACING.md,
   },
   tabRow: {
@@ -200,19 +204,19 @@ const styles = StyleSheet.create({
   },
   axisLabel: {
     fontSize: 9,
-    color: COLORS.textLight,
+    color: colors.textLight,
   },
   deltaRow: {
     marginTop: SPACING.sm,
     paddingTop: SPACING.sm,
     borderTopWidth: 1,
-    borderTopColor: COLORS.borderLight,
+    borderTopColor: colors.borderLight,
     alignItems: 'center',
   },
   deltaText: {
-    fontSize: FONT_SIZE.xs,
+    fontSize: fs.xs,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   emptyContainer: {
     alignItems: 'center',
@@ -224,14 +228,14 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
   },
   emptyText: {
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     marginBottom: SPACING.xs,
   },
   emptySubtext: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textLight,
+    fontSize: fs.sm,
+    color: colors.textLight,
     textAlign: 'center',
   },
 });

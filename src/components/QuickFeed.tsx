@@ -1,13 +1,13 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import {
-  COLORS,
   SPACING,
   BORDER_RADIUS,
-  FONT_SIZE,
   FONT_WEIGHT,
   SHADOW,
+  type ThemeColors,
 } from '../constants/theme';
+import { useTheme, useThemedStyles } from '../context/ThemeContext';
 import { formatIDR } from '../utils/currency';
 
 export interface FeedTransaction {
@@ -36,6 +36,9 @@ function formatDate(dateStr: string): string {
 }
 
 export default function QuickFeed({ transactions }: Props) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+
   return (
     <View style={styles.card}>
       <Text style={styles.cardTitle}>⏱️ Transaksi Terbaru</Text>
@@ -57,8 +60,8 @@ export default function QuickFeed({ transactions }: Props) {
                     styles.iconBadge,
                     {
                       backgroundColor: isIncome
-                        ? COLORS.successLight
-                        : COLORS.dangerLight,
+                        ? colors.successLight
+                        : colors.dangerLight,
                     },
                   ]}
                 >
@@ -85,7 +88,7 @@ export default function QuickFeed({ transactions }: Props) {
                 <Text
                   style={[
                     styles.amount,
-                    { color: isIncome ? COLORS.success : COLORS.danger },
+                    { color: isIncome ? colors.success : colors.danger },
                   ]}
                   numberOfLines={1}
                 >
@@ -101,9 +104,10 @@ export default function QuickFeed({ transactions }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors, fs: typeof import('../constants/theme').FONT_SIZE) =>
+  StyleSheet.create({
   card: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.md + 4,
     marginHorizontal: SPACING.md,
@@ -111,9 +115,9 @@ const styles = StyleSheet.create({
     ...SHADOW.md,
   },
   cardTitle: {
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.text,
+    color: colors.text,
     marginBottom: SPACING.sm + 2,
   },
   list: {
@@ -124,7 +128,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: SPACING.xs,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.borderLight,
+    borderBottomColor: colors.borderLight,
     paddingBottom: SPACING.sm,
   },
   iconBadge: {
@@ -136,16 +140,16 @@ const styles = StyleSheet.create({
     marginRight: SPACING.sm,
   },
   iconEmoji: {
-    fontSize: FONT_SIZE.md + 2,
+    fontSize: fs.md + 2,
   },
   centerBlock: {
     flex: 1,
     marginRight: SPACING.sm,
   },
   title: {
-    fontSize: FONT_SIZE.sm + 1,
+    fontSize: fs.sm + 1,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.text,
+    color: colors.text,
     marginBottom: 2,
   },
   metaRow: {
@@ -154,20 +158,20 @@ const styles = StyleSheet.create({
     gap: SPACING.xs,
   },
   date: {
-    fontSize: FONT_SIZE.xs - 1,
-    color: COLORS.textLight,
+    fontSize: fs.xs - 1,
+    color: colors.textLight,
   },
   bullet: {
-    fontSize: FONT_SIZE.xs - 1,
-    color: COLORS.textLight,
+    fontSize: fs.xs - 1,
+    color: colors.textLight,
   },
   meta: {
-    fontSize: FONT_SIZE.xs - 1,
-    color: COLORS.textSecondary,
+    fontSize: fs.xs - 1,
+    color: colors.textSecondary,
     fontWeight: FONT_WEIGHT.medium,
   },
   amount: {
-    fontSize: FONT_SIZE.sm + 1,
+    fontSize: fs.sm + 1,
     fontWeight: FONT_WEIGHT.bold,
   },
   emptyContainer: {
@@ -175,7 +179,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   emptyText: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textLight,
+    fontSize: fs.sm,
+    color: colors.textLight,
   },
 });

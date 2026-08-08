@@ -16,13 +16,13 @@ import {
   Pressable,
 } from 'react-native';
 import {
-  COLORS,
   SPACING,
   BORDER_RADIUS,
-  FONT_SIZE,
   FONT_WEIGHT,
   SHADOW,
+  type ThemeColors,
 } from '../constants/theme';
+import { useTheme, useThemedStyles } from '../context/ThemeContext';
 
 interface Props {
   selectedSeason: string;
@@ -37,6 +37,9 @@ const SeasonPicker: React.FC<Props> = ({
   onSelectSeason,
   onNewSeason,
 }) => {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+
   const [isOpen, setIsOpen] = useState(false);
 
   const toggleDropdown = useCallback(() => {
@@ -137,7 +140,8 @@ const SeasonPicker: React.FC<Props> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors, fs: typeof import('../constants/theme').FONT_SIZE) =>
+  StyleSheet.create({
   container: {
     position: 'relative',
     zIndex: 1000,
@@ -148,7 +152,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: BORDER_RADIUS.lg,
     paddingVertical: SPACING.md,
     paddingHorizontal: SPACING.lg,
@@ -162,26 +166,26 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: BORDER_RADIUS.full,
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     marginRight: SPACING.sm,
   },
   triggerTextContainer: {
     flexDirection: 'column',
   },
   triggerLabel: {
-    fontSize: FONT_SIZE.xs,
+    fontSize: fs.xs,
     fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     marginBottom: 2,
   },
   triggerValue: {
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.text,
+    color: colors.text,
   },
   chevron: {
-    fontSize: FONT_SIZE.lg,
-    color: COLORS.textSecondary,
+    fontSize: fs.lg,
+    color: colors.textSecondary,
   },
   backdrop: {
     position: 'absolute',
@@ -197,13 +201,13 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     marginTop: SPACING.xs,
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: BORDER_RADIUS.lg,
     paddingVertical: SPACING.sm,
     zIndex: 999,
     ...SHADOW.lg,
     borderWidth: 1,
-    borderColor: COLORS.borderLight,
+    borderColor: colors.borderLight,
   },
   dropdownItem: {
     flexDirection: 'row',
@@ -215,7 +219,7 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.md,
   },
   dropdownItemSelected: {
-    backgroundColor: COLORS.primaryLight,
+    backgroundColor: colors.primaryLight,
   },
   dropdownItemContent: {
     flexDirection: 'row',
@@ -223,35 +227,35 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   dropdownItemText: {
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
     fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.text,
+    color: colors.text,
   },
   dropdownItemTextSelected: {
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.primaryDark,
+    color: colors.primaryDark,
   },
   activeBadge: {
-    backgroundColor: COLORS.primaryMuted,
+    backgroundColor: colors.primaryMuted,
     paddingHorizontal: SPACING.sm,
     paddingVertical: 2,
     borderRadius: BORDER_RADIUS.full,
     marginLeft: SPACING.sm,
   },
   activeBadgeText: {
-    fontSize: FONT_SIZE.xs,
+    fontSize: fs.xs,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.primaryDark,
+    color: colors.primaryDark,
   },
   checkmark: {
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.primary,
+    color: colors.primary,
     marginLeft: SPACING.sm,
   },
   divider: {
     height: 1,
-    backgroundColor: COLORS.borderLight,
+    backgroundColor: colors.borderLight,
     marginHorizontal: SPACING.lg,
     marginVertical: SPACING.sm,
   },
@@ -262,18 +266,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg,
     marginHorizontal: SPACING.sm,
     borderRadius: BORDER_RADIUS.md,
-    backgroundColor: COLORS.secondaryLight,
+    backgroundColor: colors.secondaryLight,
   },
   newSeasonIcon: {
-    fontSize: FONT_SIZE.lg,
+    fontSize: fs.lg,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.secondary,
+    color: colors.secondary,
     marginRight: SPACING.sm,
   },
   newSeasonText: {
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.secondary,
+    color: colors.secondary,
   },
 });
 

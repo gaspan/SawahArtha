@@ -3,7 +3,80 @@
  * Farming-inspired color palette with emerald/forest green tones
  */
 
-export const COLORS = {
+export type ThemeMode = 'light' | 'dark' | 'system';
+export type FontScaleLevel = 'small' | 'medium' | 'large';
+
+const categoryBgLight = {
+  Insektisida: '#DBEAFE',
+  Fungisida: '#EDE9FE',
+  Rodentisida: '#FEF3C7',
+  Pupuk: '#D1FAE5',
+  'Jasa Pegawai': '#FCE7F3',
+  'Item Barang': '#FFEDD5',
+  Herbisida: '#CCFBF1',
+  Moluksida: '#E0E7FF',
+} as const;
+
+const categoryTextLight = {
+  Insektisida: '#1D4ED8',
+  Fungisida: '#6D28D9',
+  Rodentisida: '#D97706',
+  Pupuk: '#047857',
+  'Jasa Pegawai': '#BE185D',
+  'Item Barang': '#EA580C',
+  Herbisida: '#0F766E',
+  Moluksida: '#4338CA',
+} as const;
+
+export interface ThemeColors {
+  primary: string;
+  primaryDark: string;
+  primaryLight: string;
+  primaryMuted: string;
+  secondary: string;
+  secondaryLight: string;
+  blue: string;
+  blueDark: string;
+  blueLight: string;
+  amberDark: string;
+  amberDeep: string;
+  amberLight: string;
+  amberBg: string;
+  background: string;
+  surface: string;
+  surfaceElevated: string;
+  text: string;
+  textSecondary: string;
+  textLight: string;
+  textInverse: string;
+  danger: string;
+  dangerLight: string;
+  success: string;
+  successLight: string;
+  info: string;
+  infoLight: string;
+  warning: string;
+  warningLight: string;
+  chartExpense: string;
+  chartRevenue: string;
+  chartPupuk: string;
+  chartInsektisida: string;
+  chartFungisida: string;
+  chartRodentisida: string;
+  chartJasaPegawai: string;
+  chartItemBarang: string;
+  chartHerbisida: string;
+  chartMoluksida: string;
+  chartGacong: string;
+  chartDeficit: string;
+  border: string;
+  borderLight: string;
+  cardShadow: string;
+  categoryBg: Record<string, string>;
+  categoryText: Record<string, string>;
+}
+
+export const LIGHT_COLORS: ThemeColors = {
   // Primary - Emerald Green
   primary: '#059669',
   primaryDark: '#047857',
@@ -66,27 +139,86 @@ export const COLORS = {
   cardShadow: 'rgba(0, 0, 0, 0.08)',
 
   // Category badge colors
+  categoryBg: { ...categoryBgLight } as Record<string, string>,
+  categoryText: { ...categoryTextLight } as Record<string, string>,
+};
+
+export const DARK_COLORS: ThemeColors = {
+  primary: '#34D399',
+  primaryDark: '#10B981',
+  primaryLight: '#064E3B',
+  primaryMuted: '#065F46',
+
+  secondary: '#FBBF24',
+  secondaryLight: '#451A03',
+
+  blue: '#60A5FA',
+  blueDark: '#93C5FD',
+  blueLight: '#1E3A5F',
+
+  amberDark: '#FBBF24',
+  amberDeep: '#F59E0B',
+  amberLight: '#78350F',
+  amberBg: '#1C1917',
+
+  background: '#0F172A',
+  surface: '#1E293B',
+  surfaceElevated: '#273449',
+
+  text: '#F1F5F9',
+  textSecondary: '#CBD5E1',
+  textLight: '#94A3B8',
+  textInverse: '#0F172A',
+
+  danger: '#F87171',
+  dangerLight: '#450A0A',
+  success: '#34D399',
+  successLight: '#064E3B',
+  info: '#60A5FA',
+  infoLight: '#172554',
+  warning: '#FBBF24',
+  warningLight: '#451A03',
+
+  chartExpense: '#F87171',
+  chartRevenue: '#34D399',
+  chartPupuk: '#34D399',
+  chartInsektisida: '#60A5FA',
+  chartFungisida: '#A78BFA',
+  chartRodentisida: '#FBBF24',
+  chartJasaPegawai: '#F472B6',
+  chartItemBarang: '#FB923C',
+  chartHerbisida: '#2DD4BF',
+  chartMoluksida: '#818CF8',
+  chartGacong: '#C084FC',
+  chartDeficit: '#7F1D1D',
+
+  border: '#475569',
+  borderLight: '#334155',
+  cardShadow: 'rgba(0, 0, 0, 0.4)',
+
   categoryBg: {
-    Insektisida: '#DBEAFE',
-    Fungisida: '#EDE9FE',
-    Rodentisida: '#FEF3C7',
-    Pupuk: '#D1FAE5',
-    'Jasa Pegawai': '#FCE7F3',
-    'Item Barang': '#FFEDD5',
-    Herbisida: '#CCFBF1',
-    Moluksida: '#E0E7FF',
+    Insektisida: '#172554',
+    Fungisida: '#2E1065',
+    Rodentisida: '#451A03',
+    Pupuk: '#064E3B',
+    'Jasa Pegawai': '#4A044E',
+    'Item Barang': '#431407',
+    Herbisida: '#134E4A',
+    Moluksida: '#1E1B4B',
   } as Record<string, string>,
   categoryText: {
-    Insektisida: '#1D4ED8',
-    Fungisida: '#6D28D9',
-    Rodentisida: '#D97706',
-    Pupuk: '#047857',
-    'Jasa Pegawai': '#BE185D',
-    'Item Barang': '#EA580C',
-    Herbisida: '#0F766E',
-    Moluksida: '#4338CA',
+    Insektisida: '#93C5FD',
+    Fungisida: '#C4B5FD',
+    Rodentisida: '#FCD34D',
+    Pupuk: '#6EE7B7',
+    'Jasa Pegawai': '#F9A8D4',
+    'Item Barang': '#FDBA74',
+    Herbisida: '#5EEAD4',
+    Moluksida: '#A5B4FC',
   } as Record<string, string>,
 };
+
+export const COLORS: ThemeColors = LIGHT_COLORS;
 
 export const SPACING = {
   xs: 4,
@@ -113,6 +245,12 @@ export const FONT_SIZE = {
   xl: 22,
   xxl: 28,
   hero: 36,
+};
+
+export const FONT_SCALE_MAP: Record<FontScaleLevel, number> = {
+  small: 0.9,
+  medium: 1,
+  large: 1.15,
 };
 
 export const FONT_WEIGHT = {

@@ -11,6 +11,7 @@ export interface Sale {
   payment_date: string | null;
   note: string | null;
   date: string;
+  plot_id: number | null;
 }
 
 export interface SaleInput {
@@ -22,6 +23,7 @@ export interface SaleInput {
   is_paid?: number;
   payment_date?: string;
   note?: string;
+  plot_id?: number | null;
 }
 
 export async function getAllSales(
@@ -39,8 +41,8 @@ export async function addSale(
   sale: SaleInput,
 ): Promise<number> {
   const result = await db.runAsync(
-    `INSERT INTO sales (season_code, gkg_sold, price_per_kg, total_revenue, buyer_name, is_paid, payment_date, note, date)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO sales (season_code, gkg_sold, price_per_kg, total_revenue, buyer_name, is_paid, payment_date, note, date, plot_id)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       sale.season_code,
       sale.gkg_sold,
@@ -51,6 +53,7 @@ export async function addSale(
       sale.payment_date || null,
       sale.note || null,
       new Date().toISOString().split('T')[0],
+      sale.plot_id ?? null,
     ],
   );
   return result.lastInsertRowId;

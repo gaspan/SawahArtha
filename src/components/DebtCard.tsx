@@ -1,13 +1,13 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import {
-  COLORS,
   SPACING,
   BORDER_RADIUS,
-  FONT_SIZE,
   FONT_WEIGHT,
   SHADOW,
+  type ThemeColors,
 } from '../constants/theme';
+import { useTheme, useThemedStyles } from '../context/ThemeContext';
 import { formatIDR } from '../utils/currency';
 import { computeTotalWithInterest, isOverdue } from '../database/debtService';
 import type { Debt } from '../database/debtService';
@@ -19,6 +19,9 @@ interface Props {
 }
 
 export default function DebtCard({ debt, onPayment, onDelete }: Props) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+
   const totalOwed = computeTotalWithInterest(debt.amount, debt.interest_rate, debt.date);
   const progressPct = debt.amount > 0 ? (debt.paid_amount / debt.amount) * 100 : 0;
   const safePct = Math.min(progressPct, 100);
@@ -97,7 +100,7 @@ export default function DebtCard({ debt, onPayment, onDelete }: Props) {
               styles.progressBarFill,
               {
                 width: `${safePct}%`,
-                backgroundColor: isLoan ? COLORS.primary : COLORS.info,
+                backgroundColor: isLoan ? colors.primary : colors.info,
               },
             ]}
           />
@@ -134,9 +137,10 @@ export default function DebtCard({ debt, onPayment, onDelete }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors, fs: typeof import('../constants/theme').FONT_SIZE) =>
+  StyleSheet.create({
   card: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.md + 4,
     marginBottom: SPACING.sm,
@@ -144,10 +148,10 @@ const styles = StyleSheet.create({
     ...SHADOW.md,
   },
   loanCard: {
-    borderLeftColor: COLORS.danger,
+    borderLeftColor: colors.danger,
   },
   outCard: {
-    borderLeftColor: COLORS.info,
+    borderLeftColor: colors.info,
   },
   headerRow: {
     flexDirection: 'row',
@@ -167,24 +171,24 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.sm,
   },
   typeLoan: {
-    backgroundColor: COLORS.dangerLight,
+    backgroundColor: colors.dangerLight,
     borderWidth: 1,
-    borderColor: COLORS.danger,
+    borderColor: colors.danger,
   },
   typeOut: {
-    backgroundColor: COLORS.infoLight,
+    backgroundColor: colors.infoLight,
     borderWidth: 1,
-    borderColor: COLORS.info,
+    borderColor: colors.info,
   },
   typeText: {
-    fontSize: FONT_SIZE.xs,
+    fontSize: fs.xs,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.text,
+    color: colors.text,
   },
   settledBadge: {
-    backgroundColor: COLORS.successLight,
+    backgroundColor: colors.successLight,
     borderWidth: 1,
-    borderColor: COLORS.success,
+    borderColor: colors.success,
     borderRadius: BORDER_RADIUS.sm,
     paddingHorizontal: SPACING.xs,
     paddingVertical: 1,
@@ -192,12 +196,12 @@ const styles = StyleSheet.create({
   settledText: {
     fontSize: 10,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.success,
+    color: colors.success,
   },
   overdueBadge: {
-    backgroundColor: COLORS.dangerLight,
+    backgroundColor: colors.dangerLight,
     borderWidth: 1,
-    borderColor: COLORS.danger,
+    borderColor: colors.danger,
     borderRadius: BORDER_RADIUS.sm,
     paddingHorizontal: SPACING.xs,
     paddingVertical: 1,
@@ -205,20 +209,20 @@ const styles = StyleSheet.create({
   overdueText: {
     fontSize: 10,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.danger,
+    color: colors.danger,
   },
   deleteBtn: {
     paddingHorizontal: SPACING.xs + 2,
     paddingVertical: 2,
   },
   deleteBtnText: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textLight,
+    fontSize: fs.xs,
+    color: colors.textLight,
   },
   name: {
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.text,
+    color: colors.text,
     marginBottom: SPACING.sm,
   },
   amountRow: {
@@ -228,24 +232,24 @@ const styles = StyleSheet.create({
   },
   amountBox: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
     borderRadius: BORDER_RADIUS.sm,
     padding: SPACING.sm,
   },
   amountLabel: {
-    fontSize: FONT_SIZE.xs - 1,
-    color: COLORS.textSecondary,
+    fontSize: fs.xs - 1,
+    color: colors.textSecondary,
     marginBottom: 2,
   },
   amountValue: {
-    fontSize: FONT_SIZE.sm,
+    fontSize: fs.sm,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.text,
+    color: colors.text,
   },
   amountValueSecondary: {
-    fontSize: FONT_SIZE.sm,
+    fontSize: fs.sm,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.amberDark,
+    color: colors.amberDark,
   },
   progressSection: {
     marginBottom: SPACING.xs,
@@ -256,17 +260,17 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   progressLabel: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textSecondary,
+    fontSize: fs.xs,
+    color: colors.textSecondary,
   },
   progressPct: {
-    fontSize: FONT_SIZE.xs,
+    fontSize: fs.xs,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.text,
+    color: colors.text,
   },
   progressBarBg: {
     height: 8,
-    backgroundColor: COLORS.borderLight,
+    backgroundColor: colors.borderLight,
     borderRadius: BORDER_RADIUS.full,
     overflow: 'hidden',
     marginBottom: 2,
@@ -276,30 +280,30 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.full,
   },
   remainingText: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textLight,
+    fontSize: fs.xs,
+    color: colors.textLight,
   },
   dueDate: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textSecondary,
+    fontSize: fs.xs,
+    color: colors.textSecondary,
     marginTop: SPACING.xs,
   },
   note: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textLight,
+    fontSize: fs.xs,
+    color: colors.textLight,
     marginTop: SPACING.xs,
     fontStyle: 'italic',
   },
   payBtn: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     borderRadius: BORDER_RADIUS.md,
     paddingVertical: SPACING.sm,
     alignItems: 'center',
     marginTop: SPACING.sm,
   },
   payBtnText: {
-    fontSize: FONT_SIZE.sm,
+    fontSize: fs.sm,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.textInverse,
+    color: colors.textInverse,
   },
 });

@@ -1,13 +1,13 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import {
-  COLORS,
   SPACING,
   BORDER_RADIUS,
-  FONT_SIZE,
   FONT_WEIGHT,
   SHADOW,
+  type ThemeColors,
 } from '../constants/theme';
+import { useTheme, useThemedStyles } from '../context/ThemeContext';
 import { formatIDR } from '../utils/currency';
 import type { BudgetVsActual } from '../database/budgetService';
 
@@ -20,19 +20,25 @@ interface Props {
   onOpenLog: () => void;
 }
 
-function statusColor(status: BudgetVsActual['status']): string {
+function statusColor(
+  status: BudgetVsActual['status'],
+  colors: ThemeColors
+): string {
   switch (status) {
-    case 'danger': return COLORS.danger;
-    case 'warning': return COLORS.warning;
-    default: return COLORS.success;
+    case 'danger': return colors.danger;
+    case 'warning': return colors.warning;
+    default: return colors.success;
   }
 }
 
-function statusBg(status: BudgetVsActual['status']): string {
+function statusBg(
+  status: BudgetVsActual['status'],
+  colors: ThemeColors
+): string {
   switch (status) {
-    case 'danger': return COLORS.dangerLight;
-    case 'warning': return COLORS.warningLight;
-    default: return COLORS.successLight;
+    case 'danger': return colors.dangerLight;
+    case 'warning': return colors.warningLight;
+    default: return colors.successLight;
   }
 }
 
@@ -44,6 +50,9 @@ export default function BudgetCard({
   onEditBudget,
   onOpenLog,
 }: Props) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+
   const overallPct = totalBudget > 0
     ? Math.min((totalActual / totalBudget) * 100, 100)
     : 0;
@@ -91,7 +100,7 @@ export default function BudgetCard({
           <Text
             style={[
               styles.progressPct,
-              { color: isOver ? COLORS.danger : COLORS.primary },
+              { color: isOver ? colors.danger : colors.primary },
             ]}
           >
             {isOver ? '+' : ''}{formatIDR(Math.abs(overallRemaining))}
@@ -103,7 +112,7 @@ export default function BudgetCard({
               styles.progressBarFill,
               {
                 width: `${overallPct}%`,
-                backgroundColor: isOver ? COLORS.danger : COLORS.primary,
+                backgroundColor: isOver ? colors.danger : colors.primary,
               },
             ]}
           />
@@ -121,7 +130,7 @@ export default function BudgetCard({
           activeOpacity={0.7}
         >
           <View style={styles.catLeft}>
-            <View style={[styles.statusDot, { backgroundColor: statusColor(item.status) }]} />
+            <View style={[styles.statusDot, { backgroundColor: statusColor(item.status, colors) }]} />
             <Text style={styles.catName}>{item.category}</Text>
           </View>
 
@@ -132,7 +141,7 @@ export default function BudgetCard({
                   styles.catBarFill,
                   {
                     width: `${Math.min(item.percentUsed, 100)}%`,
-                    backgroundColor: statusColor(item.status),
+                    backgroundColor: statusColor(item.status, colors),
                   },
                 ]}
               />
@@ -148,15 +157,15 @@ export default function BudgetCard({
             <Text
               style={[
                 styles.catPct,
-                { color: statusColor(item.status) },
+                { color: statusColor(item.status, colors) },
               ]}
             >
               {item.percentUsed.toLocaleString('id-ID', { maximumFractionDigits: 0 })}%
             </Text>
           </View>
 
-          <View style={[styles.remainingBadge, { backgroundColor: statusBg(item.status) }]}>
-            <Text style={[styles.remainingText, { color: statusColor(item.status) }]}>
+          <View style={[styles.remainingBadge, { backgroundColor: statusBg(item.status, colors) }]}>
+            <Text style={[styles.remainingText, { color: statusColor(item.status, colors) }]}>
               {item.remaining >= 0
                 ? `Sisa ${formatIDR(item.remaining)}`
                 : `Lewat ${formatIDR(Math.abs(item.remaining))}`}
@@ -168,169 +177,170 @@ export default function BudgetCard({
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: COLORS.surface,
-    borderRadius: BORDER_RADIUS.lg,
-    padding: SPACING.md + 4,
-    marginHorizontal: SPACING.md,
-    marginBottom: SPACING.md,
-    ...SHADOW.md,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: SPACING.xs,
-  },
-  title: {
-    fontSize: FONT_SIZE.md,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.text,
-  },
-  logBtn: {
-    paddingHorizontal: SPACING.sm + 2,
-    paddingVertical: SPACING.xs,
-    borderRadius: BORDER_RADIUS.sm,
-    backgroundColor: COLORS.primaryLight,
-  },
-  logBtnText: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.primaryDark,
-  },
-  warningBanner: {
-    backgroundColor: COLORS.dangerLight,
-    borderRadius: BORDER_RADIUS.sm,
-    paddingVertical: SPACING.xs + 2,
-    paddingHorizontal: SPACING.sm,
-    marginBottom: SPACING.sm,
-    borderWidth: 1,
-    borderColor: COLORS.danger,
-  },
-  warningText: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.danger,
-    textAlign: 'center',
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: SPACING.sm,
-    marginBottom: SPACING.sm,
-  },
-  summaryBox: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-    borderRadius: BORDER_RADIUS.md,
-    padding: SPACING.sm,
-    alignItems: 'center',
-  },
-  summaryLabel: {
-    fontSize: FONT_SIZE.xs - 1,
-    color: COLORS.textSecondary,
-    marginBottom: 2,
-  },
-  summaryValue: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.text,
-  },
-  progressSection: {
-    marginBottom: SPACING.md,
-  },
-  progressLabelRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: SPACING.xs,
-  },
-  progressLabel: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textSecondary,
-  },
-  progressPct: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.bold,
-  },
-  progressBarBg: {
-    height: 10,
-    backgroundColor: COLORS.borderLight,
-    borderRadius: BORDER_RADIUS.full,
-    overflow: 'hidden',
-    marginBottom: 4,
-  },
-  progressBarFill: {
-    height: '100%',
-    borderRadius: BORDER_RADIUS.full,
-  },
-  pctText: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textSecondary,
-    textAlign: 'right',
-  },
-  categoryRow: {
-    backgroundColor: COLORS.background,
-    borderRadius: BORDER_RADIUS.md,
-    padding: SPACING.sm + 2,
-    marginBottom: SPACING.xs,
-  },
-  catLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.xs,
-    marginBottom: SPACING.xs,
-  },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  catName: {
-    fontSize: FONT_SIZE.xs + 1,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.text,
-  },
-  catRight: {
-    marginBottom: SPACING.xs,
-  },
-  catBarBg: {
-    height: 6,
-    backgroundColor: COLORS.borderLight,
-    borderRadius: BORDER_RADIUS.full,
-    overflow: 'hidden',
-    marginBottom: 3,
-  },
-  catBarFill: {
-    height: '100%',
-    borderRadius: BORDER_RADIUS.full,
-  },
-  catAmounts: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-  },
-  catActual: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.text,
-  },
-  catBudget: {
-    fontSize: FONT_SIZE.xs - 1,
-    color: COLORS.textLight,
-  },
-  catPct: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.bold,
-    textAlign: 'right',
-  },
-  remainingBadge: {
-    borderRadius: BORDER_RADIUS.sm,
-    paddingVertical: 1,
-    paddingHorizontal: SPACING.xs,
-    alignSelf: 'flex-start',
-  },
-  remainingText: {
-    fontSize: 10,
-    fontWeight: FONT_WEIGHT.medium,
-  },
-});
+const makeStyles = (colors: ThemeColors, fs: typeof import('../constants/theme').FONT_SIZE) =>
+  StyleSheet.create({
+    card: {
+      backgroundColor: colors.surface,
+      borderRadius: BORDER_RADIUS.lg,
+      padding: SPACING.md + 4,
+      marginHorizontal: SPACING.md,
+      marginBottom: SPACING.md,
+      ...SHADOW.md,
+    },
+    headerRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: SPACING.xs,
+    },
+    title: {
+      fontSize: fs.md,
+      fontWeight: FONT_WEIGHT.bold,
+      color: colors.text,
+    },
+    logBtn: {
+      paddingHorizontal: SPACING.sm + 2,
+      paddingVertical: SPACING.xs,
+      borderRadius: BORDER_RADIUS.sm,
+      backgroundColor: colors.primaryLight,
+    },
+    logBtnText: {
+      fontSize: fs.xs,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.primaryDark,
+    },
+    warningBanner: {
+      backgroundColor: colors.dangerLight,
+      borderRadius: BORDER_RADIUS.sm,
+      paddingVertical: SPACING.xs + 2,
+      paddingHorizontal: SPACING.sm,
+      marginBottom: SPACING.sm,
+      borderWidth: 1,
+      borderColor: colors.danger,
+    },
+    warningText: {
+      fontSize: fs.xs,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.danger,
+      textAlign: 'center',
+    },
+    summaryRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      gap: SPACING.sm,
+      marginBottom: SPACING.sm,
+    },
+    summaryBox: {
+      flex: 1,
+      backgroundColor: colors.background,
+      borderRadius: BORDER_RADIUS.md,
+      padding: SPACING.sm,
+      alignItems: 'center',
+    },
+    summaryLabel: {
+      fontSize: fs.xs - 1,
+      color: colors.textSecondary,
+      marginBottom: 2,
+    },
+    summaryValue: {
+      fontSize: fs.sm,
+      fontWeight: FONT_WEIGHT.bold,
+      color: colors.text,
+    },
+    progressSection: {
+      marginBottom: SPACING.md,
+    },
+    progressLabelRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: SPACING.xs,
+    },
+    progressLabel: {
+      fontSize: fs.xs,
+      color: colors.textSecondary,
+    },
+    progressPct: {
+      fontSize: fs.xs,
+      fontWeight: FONT_WEIGHT.bold,
+    },
+    progressBarBg: {
+      height: 10,
+      backgroundColor: colors.borderLight,
+      borderRadius: BORDER_RADIUS.full,
+      overflow: 'hidden',
+      marginBottom: 4,
+    },
+    progressBarFill: {
+      height: '100%',
+      borderRadius: BORDER_RADIUS.full,
+    },
+    pctText: {
+      fontSize: fs.xs,
+      color: colors.textSecondary,
+      textAlign: 'right',
+    },
+    categoryRow: {
+      backgroundColor: colors.background,
+      borderRadius: BORDER_RADIUS.md,
+      padding: SPACING.sm + 2,
+      marginBottom: SPACING.xs,
+    },
+    catLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: SPACING.xs,
+      marginBottom: SPACING.xs,
+    },
+    statusDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+    },
+    catName: {
+      fontSize: fs.xs + 1,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.text,
+    },
+    catRight: {
+      marginBottom: SPACING.xs,
+    },
+    catBarBg: {
+      height: 6,
+      backgroundColor: colors.borderLight,
+      borderRadius: BORDER_RADIUS.full,
+      overflow: 'hidden',
+      marginBottom: 3,
+    },
+    catBarFill: {
+      height: '100%',
+      borderRadius: BORDER_RADIUS.full,
+    },
+    catAmounts: {
+      flexDirection: 'row',
+      alignItems: 'baseline',
+    },
+    catActual: {
+      fontSize: fs.xs,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.text,
+    },
+    catBudget: {
+      fontSize: fs.xs - 1,
+      color: colors.textLight,
+    },
+    catPct: {
+      fontSize: fs.xs,
+      fontWeight: FONT_WEIGHT.bold,
+      textAlign: 'right',
+    },
+    remainingBadge: {
+      borderRadius: BORDER_RADIUS.sm,
+      paddingVertical: 1,
+      paddingHorizontal: SPACING.xs,
+      alignSelf: 'flex-start',
+    },
+    remainingText: {
+      fontSize: 10,
+      fontWeight: FONT_WEIGHT.medium,
+    },
+  });

@@ -1,7 +1,7 @@
 # SawahArtha 🌾
 > **Aplikasi Manajemen Permodalan & Produktivitas Hasil Tani Padi**
 
-SawahArtha adalah aplikasi mobile berbasis Android yang dirancang khusus untuk membantu para petani padi mengelola siklus operasional, pencatatan keuangan (modal, pendapatan, piutang/hutang), anggaran per kategori, analisis produktivitas lahan, hingga perhitungan kewajiban zakat hasil tani secara terstruktur per musim tanam.
+SawahArtha adalah aplikasi mobile berbasis Android yang dirancang khusus untuk membantu para petani padi mengelola siklus operasional, pencatatan keuangan (modal, pendapatan, piutang/hutang), anggaran per kategori, multi-petak lahan, jurnal kegiatan tani, analisis produktivitas lahan, hingga perhitungan kewajiban zakat hasil tani secara terstruktur per musim tanam — lengkap dengan pengingat terjadwal dan laporan PDF siap cetak.
 
 ---
 
@@ -14,6 +14,9 @@ Aplikasi ini dibangun menggunakan tumpukan teknologi modern untuk memastikan sta
 *   **Database Lokal:** SQLite via `expo-sqlite` (dilengkapi dengan WAL mode untuk performa transaksi cepat)
 *   **Visualisasi Data:** `react-native-gifted-charts` & `react-native-svg` (grafik interaktif dan responsif)
 *   **Manajemen Status:** React Context API (untuk sinkronisasi data musim tanam global)
+*   **Notifikasi:** `expo-notifications` (pengingat terjadwal lokal, tanpa server)
+*   **Laporan & Berkas:** `expo-print` + `expo-sharing` (laporan PDF), `expo-document-picker` (impor backup)
+*   **Sinkronisasi Cloud:** `expo-auth-session` + `expo-secure-store` (Google Drive OAuth PKCE, opsional)
 
 ---
 
@@ -99,6 +102,33 @@ Mengalkulasi kewajiban zakat pertanian secara otomatis:
 *   **Total Pendapatan Net Zakat**: Estimasi total pendapatan ditampilkan setelah dikurangi kewajiban zakat, baik pada banner ringkasan maupun pada setiap record riwayat panen.
 *   **Zakat Mengikuti Stok Riil**: Jika GKG diinput langsung (bukan estimasi), zakat dihitung berdasarkan berat tersebut.
 
+### 11. Notifikasi Pengingat Lokal 🔔
+Pengingat terjadwal offline via `expo-notifications` (tanpa server):
+*   **Jatuh Tempo Hutang**: pengingat H-3 dan hari-H pukul 09:00 untuk setiap hutang belum lunas; jika sudah lewat jatuh tempo, pengingat harian sampai dilunasi.
+*   **Anggaran Terlampaui**: notifikasi harian 09:00 selama ada kategori dengan realisasi ≥ 80%, menyebut kategori yang terdampak.
+*   **Jadwal Tani**: pengingat harian 07:00 (opsional).
+*   **Kontrol di Settings**: toggle notifikasi, toggle jadwal tani, dan tombol "Kirim Notifikasi Uji" (muncul 5 detik) untuk memverifikasi izin.
+*   **Sinkronisasi Otomatis**: jadwal dihitung ulang dari data SQLite setiap aplikasi dibuka/fokus, sehingga selalu mengikuti kondisi hutang & anggaran terbaru.
+
+### 12. Multi-Lahan (Petak) 🌱
+Satu musim tanam dapat dipecah menjadi beberapa petak lahan:
+*   **Kartu Petak Lahan** di Dashboard: daftar petak, ringkasan jumlah petak + total luas, tambah/edit/hapus lewat modal.
+*   **Tagging Transaksi**: form Pengeluaran, Panen, Penjualan, dan Jurnal memiliki *chip picker* petak (opsional, default "Semua"). Picker otomatis tersembunyi bila belum ada petak.
+*   **Hapus Aman**: menghapus petak tidak menghapus transaksi — kolom `plot_id` pada catatan terkait di-set `NULL` dalam satu transaksi SQLite.
+
+### 13. Jurnal Kegiatan Tani 📔
+Tab kelima untuk mencatat kronologi kegiatan di sawah:
+*   **5 Jenis Kegiatan**: Tanam, Pupuk, Semprot, Panen, dan Lainnya.
+*   **Filter Chip**: menyaring riwayat per jenis kegiatan (tap ulang untuk reset).
+*   **Form Ringkas**: nama kegiatan, pilihan petak lahan, dan catatan; tanggal terisi otomatis hari ini.
+*   **Riwayat Kronologis**: diurutkan dari terbaru, menampilkan badge jenis, label "Hari ini", nama petak, dan catatan, dengan opsi hapus berkonfirmasi.
+
+### 14. Laporan PDF Musim 📄
+Ekspor ringkasan musim siap cetak untuk keperluan koperasi/bank (Settings → Data & Backup → **Laporan PDF Musim**):
+*   **7 Section**: Ringkasan Keuangan (11 metrik), Anggaran per Kategori, Hutang & Piutang, Petak Lahan, Jurnal Kegiatan Tani, Pengeluaran, dan Penjualan Gabah.
+*   **Metrik Ringkasan**: total modal, GKP, GKG, biaya gacong, pendapatan terjual, estimasi pendapatan, HPP/kg, zakat (kg & Rp), laba bersih setelah zakat, serta ROI.
+*   **Cetak & Bagikan**: PDF dihasilkan `expo-print` lalu dibuka melalui share sheet OS (`expo-sharing`) untuk disimpan, dikirim, atau dicetak.
+
 ---
 
 ## 🗺️ Roadmap
@@ -122,86 +152,100 @@ Mengalkulasi kewajiban zakat pertanian secara otomatis:
 | **Bonus** | Split panen/penjualan: tabel `sales` terpisah, sub-tab 🌾 Panen / 💰 Jual, `StockCard` (panen/terjual/sisa), harga rata-rata tertimbang, validasi stok | ✅ |
 | **Bonus** | Input GKG riil saat panen (fallback estimasi ×0.8), edit GKG inline di riwayat, badge estimasi/riil, peringatan jika GKG < stok terjual | ✅ |
 | **Bonus** | Ekspor/Impor CSV dengan tipe Panen/Penjualan + backward compat legacy | ✅ |
-| **Testing** | 130 unit test / 33 suite, `tsc --noEmit` bersih | ✅ |
+| **Tier 4A** | Layar Settings (`app/settings.tsx`), ikon ⚙️ di header dashboard, CSV dipindah dari dashboard ke Settings | ✅ |
+| **Tier 4B** | Tema gelap penuh: `ThemeContext` + `useThemedStyles`, palet light/dark (`LIGHT_COLORS`/`DARK_COLORS`), opsi Terang/Gelap/Sistem, StatusBar reaktif | ✅ |
+| **Tier 4C** | Preferensi: ukuran font (kecil/sedang/besar via `FONT_SCALE_MAP`), format angka (titik/koma), default luas lahan & harga referensi musim baru (prefill `NewSeasonModal`), reset anggaran default (`resetBudgetsToDefault`) | ✅ |
+| **Tier 4D** | Backup/restore JSON penuh (10 tabel data + `settings`, termasuk petak & jurnal — memperbaiki bug CSV yang kehilangan anggaran/hutang/status bayar) | ✅ |
+| **Tier 4D** | Sinkronisasi Google Drive via `expo-auth-session` (scope `drive.file`): upload/list/restore, refresh token di `expo-secure-store`, indikator backup terakhir | ✅ (perlu OAuth client ID) |
+| **Tier 5** | Notifikasi lokal (`expo-notifications`): reminder hutang H-3/H-0/overdue harian, peringatan anggaran harian (≥80%), pengingat jadwal tani harian (opsional), toggle di Settings + notifikasi uji | ✅ |
+| **Tier 6** | Laporan PDF musim (`expo-print` + `expo-sharing`): 7 section, 11 metrik ringkasan, share sheet untuk simpan/cetak | ✅ |
+| **Tier 6** | Multi-lahan: tabel `plots`, kolom `plot_id` di expenses/income/sales/farming_activities, `PlotCard`/`PlotModal`/`PlotPicker`, hapus petak tanpa menghapus transaksi | ✅ |
+| **Tier 6** | Jurnal kegiatan tani: tabel `farming_activities`, tab kelima 📔, 5 jenis kegiatan, filter chip, tagging petak | ✅ |
+| **Bonus** | App icon & splash/launcher baru dari gambar AI (`xCode_Generated_Image-5/6`): icon 1024px + adaptive icon Android, splash screen via plugin `expo-splash-screen` (cover) | ✅ |
+| **Testing** | 187 unit test / 49 suite, `tsc --noEmit` bersih | ✅ |
 
 ### 🔜 Belum Diimplementasikan (Rencana)
 
 | Tier | Fitur | Catatan |
 |---|---|---|
-| **Tier 5** | **Notifikasi** — reminder jatuh tempo hutang, peringatan anggaran terlampaui, pengingat jadwal tani | via `expo-notifications` (jadwal lokal) |
-| — | **Laporan PDF/Cetak** — ringkasan musim untuk koperasi/bank | — |
-| — | **Multi-lahan** — satu musim dengan beberapa petak lahan terpisah | — |
-| — | **Jurnal kegiatan tani** — catat tanam/pupuk/semprot/panen dengan tanggal | untuk analisis jadwal |
-| — | **Sinkronisasi cloud / backup online** | saat ini offline-first penuh |
+| — | **Edit kegiatan jurnal** — saat ini hanya tambah & hapus | perlu `updateActivity` + modal edit |
+| — | **Pilih tanggal kegiatan** — jurnal selalu memakai tanggal hari ini | butuh date picker |
+| — | **Analisis per petak** — bandingkan produktivitas & biaya antar petak | data `plot_id` sudah tersedia |
+| — | **Auto-backup terjadwal ke Drive** — cadangkan otomatis + rotasi 5 file terakhir | butuh background task |
 
 ---
 
-### 📋 Tier 4 — Pengaturan & Tema (Rencana Detail)
+### ✅ Tier 5 — Notifikasi (Selesai)
 
-> Dokumen perencanaan untuk implementasi di masa depan. Masih **belum dikerjakan**.
+> Reminder lokal via `expo-notifications` (jadwal lokal, offline-first).
 
-#### 4A. Layar Settings
+*   **Reminder jatuh tempo hutang**: H-3 (09:00) dan hari H (09:00) per hutang belum lunas; jika sudah lewat jatuh tempo, pengingat harian 09:00 sampai dilunasi.
+*   **Peringatan anggaran terlampaui**: notifikasi harian 09:00 selama ada kategori realisasi ≥ 80% (warning/danger), menyebut kategori yang terpengaruh.
+*   **Pengingat jadwal tani**: notifikasi harian 07:00 (opsional, toggle di Settings).
+*   **Settings → Notifikasi**: toggle global, toggle jadwal tani, tombol "Kirim Notifikasi Uji" (5 detik).
+*   **Sync otomatis**: jadwal di-reschedule saat app dibuka/fokus dan saat toggle berubah (data dibaca langsung dari SQLite).
+*   Plugin `expo-notifications` terpasang di `app.json` (channel `reminders`, warna `#059669`). Android 13+ meminta izin saat toggle diaktifkan pertama kali.
 
-*   **Lokasi**: Ikon ⚙️ di header dashboard yang membuka layar stack `app/settings.tsx` (bukan tab kelima — tab bar saat ini sudah berisi 4 tab dan cukup padat).
-*   **Struktur layar** (Section list):
-    *   **Tampilan** — pilihan tema, ukuran font.
-    *   **Data & Backup** — ekspor/impor CSV (dipindah dari dashboard), cadangan/restore Google Drive, riwayat backup.
-    *   **Preferensi** — format angka (ribuan titik/koma), default luas lahan & harga referensi untuk musim baru, reset anggaran default.
-    *   **Tentang** — versi aplikasi, lisensi, tautan repositori.
+---
 
-#### 4B. Tema Gelap — Keputusan Arsitektur Penting
+### ✅ Tier 4 — Pengaturan & Tema (Selesai)
 
-**Kendala yang ditemukan saat riset:**
-*   `COLORS` adalah objek statis di `src/constants/theme.ts`, dibaca oleh **37 blok `StyleSheet.create`** yang dievaluasi saat module-load (`_layout.tsx:78`, `IncomeList.tsx:224`, dst.).
-*   `StyleSheet.create` hanya dievaluasi **sekali saat import** → mengubah nilai `COLORS` saat runtime **tidak me-re-render komponen apa pun**.
+> Semua item 4A–4D sudah diimplementasikan. Sisa pekerjaan opsional di bawah.
 
-**Opsi pendekatan (belum diputuskan):**
+#### 4A. Layar Settings — ✅ DONE
 
-| Opsi | Effort | Hasil | Catatan |
-|---|---|---|---|
-| **A. Refactor penuh ke hook** | Tinggi (~37 file) | Tema instan, arsitektur benar | Ganti `StyleSheet.create` → `useMemo(() => StyleSheet.create(...), [colors])` + `ThemeContext` (terang/gelap/system) |
-| **B. Restart-required** | Rendah (~3 file) | Tema aktif setelah app restart | Simpan preferensi di storage, mutate `COLORS` saat boot |
-| **C. Tunda tema** | 0 | — | Kerjakan 4C & 4D dulu, tema menyusul |
+*   Ikon ⚙️ di header dashboard membuka layar stack `app/settings.tsx`.
+*   Section list: **Tampilan** (tema, ukuran font), **Preferensi** (format angka, default musim baru, reset anggaran), **Data & Backup** (ekspor/impor CSV, backup/restore JSON), **Google Drive**, **Tentang**.
 
-**Rekomendasi**: **A** jika dark mode dipakai serius; **C** jika prioritas adalah backup Drive terlebih dahulu.
+#### 4B. Tema Gelap — ✅ DONE (Pendekatan A: refactor penuh)
 
-#### 4C. Preferensi Lain (Effort Rendah, Tanpa Kendala Arsitektur)
+*   **Arsitektur**: `ThemeContext` menyediakan `colors` + `fs` (font scale) secara reaktif; `useThemedStyles(makeStyles)` membungkus `StyleSheet.create` dalam `useMemo`. Semua 37 blok `StyleSheet.create` di 34 file dikonversi.
+*   **Palet**: `LIGHT_COLORS` / `DARK_COLORS` di `src/constants/theme.ts` dengan struktur kunci identik (termasuk `categoryBg`/`categoryText`).
+*   **Mode**: Terang / Gelap / Sistem (`useColorScheme`), preferensi tersimpan di tabel `settings`.
+*   `app.json` `userInterfaceStyle` diubah ke `"automatic"`.
 
-*   **Ukuran font** (kecil/sedang/besar) — aksesibilitas untuk petani usia lanjut.
-*   **Format angka** — preferensi pemisah ribuan (titik/koma) untuk tampilan Rupiah.
-*   **Default musim baru** — luas lahan & harga referensi isi otomatis dari pengaturan.
-*   **Reset anggaran default** — mengembalikan nilai anggaran per kategori ke rasio standar (`DEFAULT_BUDGET_RATIO`).
+#### 4C. Preferensi — ✅ DONE
 
-#### 4D. Backup & Restore Google Drive (lihat Tier 6 di bawah)
+*   **Ukuran font**: kecil/sedang/besar via `FONT_SCALE_MAP` (0.9/1/1.15), diterapkan melalui `fs` di semua style.
+*   **Format angka**: pemisah ribuan titik/koma via `setThousandsSeparator` (singleton `formatConfig`), `formatIDR`/`formatNumber`/`formatCurrencyInput` otomatis mengikutinya.
+*   **Default musim baru**: luas lahan & harga referensi tersimpan di settings, `NewSeasonModal` ter-prefill.
+*   **Reset anggaran default**: `resetBudgetsToDefault` mengembalikan semua kategori ke `DEFAULT_BUDGET_RATIO`, tercatat di log audit.
 
-*   Ekspor/Impor CSV dipindah dari dashboard ke Settings → section **Data & Backup**.
-*   **Backup JSON penuh** (bukan hanya CSV) karena CSV saat ini **kehilangan data**: anggaran, hutang, cicilan, status bayar, vendor, buyer tidak ikut terekspor → ini bug backup yang harus diperbaiki sebelum integrasi Drive.
-*   **Google Drive Sync** via `expo-auth-session` + scope `drive.file`:
-    *   Upload `SawahArtha_Backup_YYYY-MM-DD.json` ke folder aplikasi.
-    *   Restore: list backup dari Drive → pilih → konfirmasi → impor transaksional.
-    *   Simpan refresh token di `expo-secure-store`.
-    *   Indikator "Terakhir dicadangkan: ..." di Settings.
-    *   **Prasyarat**: Google Cloud project + OAuth client Android + SHA-1 fingerprint dari EAS credentials (tidak berfungsi di Expo Go untuk build produksi).
-*   **Auto-backup (opsional)**: toggle cadangkan otomatis saat app dibuka & >7 hari sejak backup terakhir; rotasi simpan 5 backup terakhir.
+#### 4D. Backup & Restore — ✅ DONE
 
-#### ❓ Pertanyaan Terbuka — Wajib Dijawab Sebelum Build
+*   **Backup JSON penuh** (`src/utils/jsonBackup.ts`): mengekspor seluruh 10 tabel data (seasons, expenses, income, sales, budgets, budget_logs, debts, debt_payments, plots, farming_activities) + settings. **Ini memperbaiki bug lama**: CSV sebelumnya kehilangan anggaran, hutang, cicilan, status bayar, vendor, dan buyer.
+*   **Restore transaksional**: merge dengan ID asli, duplikat di-skip, FK cicilan tetap utuh.
+*   **Google Drive sync** (`src/services/driveService.ts`): OAuth authorization-code + PKCE via `expo-auth-session`. Kode otorisasi ditukar menjadi token lewat `exchangeDriveCode` (`exchangeCodeAsync` + `code_verifier`), refresh token disimpan di `expo-secure-store`, scope `drive.file` (hanya file buatan app), folder `SawahArtha Backups`, upload/list/download-restore.
+*   **Indikator**: "Terakhir dicadangkan" di Settings (disimpan di settings `last_backup_at`).
 
-> Pertanyaan-pertanyaan ini diajukan saat perencanaan Tier 4 dan **belum dijawab**. Jawablah di sesi build nanti sebelum mulai implementasi.
+#### ⚠️ Prasyarat Google Drive
 
-1.  **Tema gelap** — pilih pendekatan mana?
-    *   **A. Refactor penuh ke hook** (tema instan, ~37 file diubah, arsitektur benar)
-    *   **B. Restart-required** (murah ~3 file, tapi tema baru aktif setelah app restart)
-    *   **C. Tunda tema** (kerjakan 4C & 4D dulu)
-    *   Rekomendasi saat ini: **A** jika dark mode dipakai serius, atau **C** jika prioritas backup Drive.
-2.  **Backup JSON penuh** — setuju menjadikan ini prasyarat sebelum integrasi Google Drive? (Tanpa ini, backup ke Drive tetap kehilangan data anggaran/hutang/status bayar.)
-3.  **Letak Settings** — tab kelima ⚙️ di tab bar (bar jadi 5, agak sempit) atau ikon gear di header dashboard yang membuka layar stack? Rekomendasi saat ini: **ikon di header** supaya tab bar tidak sesak.
-4.  **Cakupan implementasi** — setelah roadmap disetujui, kerjakan seluruh Tier 4 sekaligus atau bertahap (4A → 4C → 4B → 4D)?
+Client ID Android sudah terisi di `app.json` → `extra.googleDriveClientIds.android` (iOS & web masih kosong). Bila membuat OAuth client sendiri, ikuti langkah berikut:
+
+1.  Buat project Google Cloud + aktifkan **Google Drive API**.
+2.  Buat **OAuth 2.0 Client ID** tipe *Android* dengan:
+    *   **Package name**: `com.gentur.ariya.SawahArtha` (harus sama dengan `app.json` → `android.package`)
+    *   **SHA-1**: fingerprint keystore yang menandatangani APK terpasang — ambil dengan `eas credentials` (pilih platform Android → build profile yang dipakai). Salah SHA-1 = OAuth selalu gagal walau redirect sudah benar.
+3.  Isi `extra.googleDriveClientIds.android`, lalu **build ulang** (`eas build -p android --profile preview`).
+
+> **Redirect URI**: aplikasi memakai `com.gentur.ariya.SawahArtha:/oauthredirect` (pola resmi *installed app* yang juga dipakai provider Google bawaan `expo-auth-session`). Redirect ini **diterima otomatis** oleh client Android — tidak perlu didaftarkan di console. Karena itu package name juga terdaftar pada `app.json` → `scheme` agar browser dapat kembali ke aplikasi.
+>
+> **Jangan** memakai custom scheme seperti `sawahartha://` sebagai redirect — client Android akan menolaknya dengan `redirect_uri_mismatch` (gejalanya: alert "Gagal" saat menekan *Hubungkan Google Drive*).
+>
+> **Expo Go tidak didukung** untuk alur ini: redirect di Expo Go menjadi `exp://…` sehingga tidak pernah cocok. Gunakan APK/dev build.
+
+#### ❓ Pertanyaan Tier 4 — Sudah Dijawab
+
+1.  Tema gelap → **A. Refactor penuh ke hook** (tema instan).
+2.  Backup JSON penuh → **Ya, dijadikan prasyarat** dan sudah diimplementasikan sebelum Drive.
+3.  Letak Settings → **Ikon ⚙️ di header dashboard** (bukan tab kelima).
+4.  Cakupan → **Seluruh Tier 4 sekaligus** (4A → 4C → 4B → 4D).
 
 ---
 
 ## 🗄️ Arsitektur Database (SQLite Schema)
 
-Database SQLite lokal didefinisikan dengan enam tabel utama dan satu tabel migrasi:
+Database SQLite lokal terdiri dari 12 tabel (11 tabel data + 1 tabel marker migrasi):
 
 ```sql
 -- 1. Tabel Musim Tanam
@@ -306,9 +350,41 @@ CREATE TABLE IF NOT EXISTS _migrations (
   name TEXT UNIQUE NOT NULL,
   applied_at TEXT NOT NULL
 );
+
+-- 10. Tabel Preferensi (key-value)
+CREATE TABLE IF NOT EXISTS settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);
+
+-- 11. Tabel Petak Lahan (multi-lahan)
+CREATE TABLE IF NOT EXISTS plots (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  season_code TEXT NOT NULL,
+  name TEXT NOT NULL,
+  land_size_m2 REAL NOT NULL DEFAULT 0,
+  note TEXT,
+  date TEXT NOT NULL
+);
+
+-- 12. Tabel Jurnal Kegiatan Tani
+CREATE TABLE IF NOT EXISTS farming_activities (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  season_code TEXT NOT NULL,
+  activity_type TEXT NOT NULL,
+  title TEXT NOT NULL,
+  date TEXT NOT NULL,
+  plot_id INTEGER,
+  note TEXT
+);
+
+-- Kolom multi-lahan pada tabel transaksi (via ALTER TABLE, idempotent)
+-- expenses.plot_id, income.plot_id, sales.plot_id  → INTEGER, nullable
 ```
 
 > **Perubahan dari v1:** Tabel `income` tidak lagi memiliki kolom harga/pendapatan (dipisah ke `sales`). Kolom `is_paid`, `vendor_name`, `payment_date` ditambahkan ke `expenses` untuk pelacakan status pembayaran. Tabel `sales`, `budgets`, `budget_logs`, `debts`, `debt_payments`, `_migrations` adalah penambahan baru.
+>
+> **Perubahan terbaru:** Tabel `settings` (preferensi & tema), `plots` (multi-lahan), dan `farming_activities` (jurnal) ditambahkan; kolom `plot_id` disisipkan ke `expenses`, `income`, dan `sales` melalui `ALTER TABLE`. Kunci `settings` yang dipakai: `theme`, `font_scale`, `number_format`, `default_land_size`, `default_ref_price`, `last_backup_at`, `notifications_enabled`, `farm_reminder_enabled`. Seluruh migrasi bersifat *idempotent* (`IF NOT EXISTS` + `try/catch` pada `ALTER TABLE`), sehingga aman untuk upgrade dari instalasi lama. Indeks: `idx_plots_season(season_code)` dan `idx_activities_season(season_code, date DESC)`.
 
 ---
 
@@ -316,13 +392,15 @@ CREATE TABLE IF NOT EXISTS _migrations (
 
 ```
 app/
-  _layout.tsx                # SQLiteProvider → SeasonProvider → BudgetProvider → Stack
+  _layout.tsx                # SQLiteProvider → ThemeProvider → SettingsProvider → SeasonProvider → BudgetProvider → Stack
+  settings.tsx               # ⚙️ Pengaturan: Tampilan, Notifikasi, Preferensi, Data & Backup (CSV/JSON/PDF), Google Drive, Tentang
   (tabs)/
-    _layout.tsx              # Tab bar: 🌾 Panen | 💰 Keuangan | 💸 Pengeluaran | 💳 Hutang
-    index.tsx                # Dashboard (Ringkasan, Grafik, KPI)
+    _layout.tsx              # Tab bar: 📊 Dashboard | 💰 Pengeluaran | 🌾 Penghasilan | 💳 Hutang | 📔 Jurnal
+    index.tsx                # Dashboard (Ringkasan, Grafik, KPI, Petak Lahan, ⚙️ ke Settings)
     income.tsx               # Sub-tab: 🌾 Panen & 💰 Jual (StockCard + Zakat)
     expenses.tsx             # Pengeluaran + Anggaran banner
     debts.tsx                # 💳 Hutang & Piutang (DebtCard list)
+    journal.tsx              # 📔 Jurnal kegiatan tani (filter jenis + form + riwayat)
 src/
   components/
     StockCard.tsx            # Total Panen → Terjual → Sisa (progress bar)
@@ -348,16 +426,26 @@ src/
     DonutChart.tsx           # Pie chart gifted-charts
     CategoryBarChart.tsx     # Bar chart per kategori + Rp/kg
     ZakatSection.tsx         # Kalkulator zakat display
+    PlotCard.tsx             # 🌱 Kartu daftar petak lahan (dashboard)
+    PlotModal.tsx            # Modal tambah/edit/hapus petak
+    PlotPicker.tsx           # Chip pemilih petak untuk form (auto-hide bila kosong)
   database/
-    init.ts                  # Schema + migrasi + seed anggaran
+    init.ts                  # Schema + migrasi (settings, plots, farming_activities, plot_id)
     incomeService.ts         # CRUD panen + updateIncomeGKG
     salesService.ts          # CRUD penjualan + rata-rata tertimbang
     expenseService.ts        # CRUD pengeluaran + markPaid
-    budgetService.ts         # Anggaran + log audit
+    budgetService.ts         # Anggaran + log audit + resetBudgetsToDefault
     debtService.ts           # CRUD hutang + cicilan
     analyticsService.ts      # Cross-season metrics (LEFT JOIN sales)
     seasonService.ts         # CRUD musim + ref price
+    settingsService.ts       # Key-value preferensi (tema, font, format, default, backup, notifikasi)
+    plotService.ts           # CRUD petak + detach plot_id saat hapus
+    activityService.ts       # CRUD jurnal kegiatan + ACTIVITY_TYPES
     csv.ts                   # Ekspor/Impor CSV (Panen/Penjualan/Pengeluaran)
+  services/
+    driveService.ts          # Google Drive OAuth (PKCE + code exchange) + upload/list/restore
+    notificationService.ts   # Jadwal notifikasi lokal (hutang, anggaran, jadwal tani)
+    pdfService.ts            # Query musim → HTML → PDF → share sheet
   hooks/
     useIncome.ts             # State panen (GKG, GKP, gacong, updateGKG)
     useSales.ts              # State penjualan (revenue, avgPrice, unpaid)
@@ -365,18 +453,32 @@ src/
     useDebts.ts              # State hutang + cicilan
     useBudget.ts             # State anggaran + overBudgetCount
     useSeasonMetrics.ts      # Cross-season metrics
+    useNotifications.ts      # Re-sync jadwal notifikasi saat fokus/setting berubah
+    usePlots.ts              # State petak lahan per musim
+    useActivities.ts         # State jurnal kegiatan per musim
   context/
     SeasonContext.tsx         # Season global + auto-seed budget
     BudgetContext.tsx         # Budget global + badge driver
+    SettingsContext.tsx       # Preferensi global (format angka, default, last backup, notifikasi)
+    ThemeContext.tsx          # Tema + useThemedStyles + useTheme
   utils/
     zakat.ts                 # Kalkulator zakat + resolveGKG + isEstimatedGKG
-    currency.ts              # FormatIDR + formatCurrencyInput
+    currency.ts              # FormatIDR + formatCurrencyInput (ikut preferensi separator)
+    formatConfig.ts          # Singleton pemisah ribuan (titik/koma)
     csv.ts                   # CSV parser + konverter
+    jsonBackup.ts            # Backup/restore JSON penuh (semua tabel)
+    backupCore.ts            # Helper murni backup (testable tanpa RN)
+    notificationCore.ts      # Pure logic jadwal notifikasi (testable tanpa RN)
+    pdfHtml.ts               # Pure builder HTML laporan (testable tanpa RN)
+    plotCore.ts              # Pure logic petak (totalPlotArea)
+    dateUtil.ts              # formatDate id-ID untuk jurnal
+    expenseListItems.ts      # Pure list-builder ExpenseList (regression RN 0.86)
   features/
     dashboard.test.ts        # 40 tes (KPI, waterfall, break-even, simulasi, perbandingan musim)
     budget.test.ts           # 37 tes (anggaran, seed, audit log)
     sales.test.ts            # 30 tes (stok, weighted avg, revisi, piutang, alur lengkap)
     income-form.test.ts      # 23 tes (resolveGKG, isEstimatedGKG, isValidGKG, alur form)
+    expense-list.test.ts     # 8 tes (key numerik, separator, regression Fragment)
 ```
 
 ---
@@ -389,14 +491,21 @@ Logika perhitungan inti diuji menggunakan **Node.js built-in test runner** (`nod
 npm test
 ```
 
-**Total: 130 tes, 31 suite, 0 fail.**
+**Total: 187 tes, 49 suite, 0 fail.**
 
 | File Tes | Jumlah | Cakupan |
 |---|---|---|
 | `dashboard.test.ts` | 40 | KPI, waterfall, break-even, simulasi harga, perbandingan musim, per-hektar, edge cases |
 | `budget.test.ts` | 37 | Hitung anggaran, seed default, realisasi vs anggaran, audit log, edge cases |
 | `sales.test.ts` | 30 | Stok gabah, weighted average, revisi penjualan, piutang, gacong rupiah, migrasi legacy, alur lengkap |
+| `zakat.test.ts` | 25 | Nisab, kadar zakat, gacong berat/pembagian, zakat rupiah, summary |
 | `income-form.test.ts` | 23 | resolveGKG, isEstimatedGKG, isValidGKG, alur form estimasi vs riil |
+| `expense-list.test.ts` | 8 | Key numerik, spacing separator, regression `<Fragment>` RN 0.86 |
+| `notificationCore.test.ts` | 7 | H-3/H-0/overdue hutang, warning & danger anggaran, hutang lunas/tanpa jatuh tempo |
+| `pdfHtml.test.ts` | 6 | Builder HTML laporan, escaping, section kosong |
+| `jsonBackup.test.ts` | 5 | Nama file backup, validasi payload JSON |
+| `plotCore.test.ts` | 3 | Total luas petak, list kosong |
+| `dateUtil.test.ts` | 3 | Format tanggal id-ID, input invalid |
 
 ---
 

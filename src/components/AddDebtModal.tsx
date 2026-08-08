@@ -11,13 +11,13 @@ import {
   Modal,
 } from 'react-native';
 import {
-  COLORS,
   SPACING,
   BORDER_RADIUS,
-  FONT_SIZE,
   FONT_WEIGHT,
   SHADOW,
+  type ThemeColors,
 } from '../constants/theme';
+import { useTheme, useThemedStyles } from '../context/ThemeContext';
 import { formatCurrencyInput } from '../utils/currency';
 
 interface Props {
@@ -34,6 +34,8 @@ interface Props {
 }
 
 export default function AddDebtModal({ visible, onSave, onClose }: Props) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const [type, setType] = useState<'loan_in' | 'loan_out'>('loan_in');
   const [counterparty, setCounterparty] = useState('');
   const [amountDisplay, setAmountDisplay] = useState('');
@@ -143,7 +145,7 @@ export default function AddDebtModal({ visible, onSave, onClose }: Props) {
             <TextInput
               style={styles.input}
               placeholder="e.g., KUR BRI, Pak Ahmad"
-              placeholderTextColor={COLORS.textLight}
+              placeholderTextColor={colors.textLight}
               value={counterparty}
               onChangeText={setCounterparty}
               maxLength={100}
@@ -160,7 +162,7 @@ export default function AddDebtModal({ visible, onSave, onClose }: Props) {
               <TextInput
                 style={styles.amountInput}
                 placeholder="0"
-                placeholderTextColor={COLORS.textLight}
+                placeholderTextColor={colors.textLight}
                 value={amountDisplay}
                 onChangeText={handleAmountChange}
                 keyboardType="numeric"
@@ -178,7 +180,7 @@ export default function AddDebtModal({ visible, onSave, onClose }: Props) {
               <TextInput
                 style={styles.amountInput}
                 placeholder="0"
-                placeholderTextColor={COLORS.textLight}
+                placeholderTextColor={colors.textLight}
                 value={interestDisplay}
                 onChangeText={handleInterestChange}
                 keyboardType="decimal-pad"
@@ -198,7 +200,7 @@ export default function AddDebtModal({ visible, onSave, onClose }: Props) {
             <TextInput
               style={styles.input}
               placeholder="YYYY-MM-DD"
-              placeholderTextColor={COLORS.textLight}
+              placeholderTextColor={colors.textLight}
               value={dueDate}
               onChangeText={setDueDate}
               maxLength={10}
@@ -213,7 +215,7 @@ export default function AddDebtModal({ visible, onSave, onClose }: Props) {
             <TextInput
               style={[styles.input, styles.textArea]}
               placeholder="Tambahkan catatan..."
-              placeholderTextColor={COLORS.textLight}
+              placeholderTextColor={colors.textLight}
               value={note}
               onChangeText={setNote}
               multiline
@@ -249,7 +251,8 @@ export default function AddDebtModal({ visible, onSave, onClose }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors, fs: typeof import('../constants/theme').FONT_SIZE) =>
+  StyleSheet.create({
   overlay: {
     flex: 1,
     justifyContent: 'flex-end',
@@ -263,7 +266,7 @@ const styles = StyleSheet.create({
     right: 0,
   },
   card: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderTopLeftRadius: BORDER_RADIUS.xl,
     borderTopRightRadius: BORDER_RADIUS.xl,
     padding: SPACING.lg,
@@ -272,9 +275,9 @@ const styles = StyleSheet.create({
     ...SHADOW.lg,
   },
   title: {
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.text,
+    color: colors.text,
     textAlign: 'center',
     marginBottom: SPACING.md,
   },
@@ -282,9 +285,9 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm + 2,
   },
   label: {
-    fontSize: FONT_SIZE.xs + 1,
+    fontSize: fs.xs + 1,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     marginBottom: SPACING.xs,
   },
   labelRow: {
@@ -295,8 +298,8 @@ const styles = StyleSheet.create({
   },
   optionalBadge: {
     fontSize: 10,
-    color: COLORS.textLight,
-    backgroundColor: COLORS.borderLight,
+    color: colors.textLight,
+    backgroundColor: colors.borderLight,
     paddingHorizontal: SPACING.xs + 2,
     paddingVertical: 1,
     borderRadius: BORDER_RADIUS.full,
@@ -304,12 +307,12 @@ const styles = StyleSheet.create({
   input: {
     height: 46,
     borderWidth: 1.5,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
     borderRadius: BORDER_RADIUS.md,
     paddingHorizontal: SPACING.md,
-    fontSize: FONT_SIZE.md,
-    color: COLORS.text,
-    backgroundColor: COLORS.background,
+    fontSize: fs.md,
+    color: colors.text,
+    backgroundColor: colors.background,
   },
   textArea: {
     height: 60,
@@ -318,13 +321,13 @@ const styles = StyleSheet.create({
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
     borderRadius: BORDER_RADIUS.md,
     borderWidth: 1.5,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
   },
   currencyPrefix: {
-    backgroundColor: COLORS.primaryLight,
+    backgroundColor: colors.primaryLight,
     paddingHorizontal: SPACING.md,
     justifyContent: 'center',
     alignItems: 'center',
@@ -334,15 +337,15 @@ const styles = StyleSheet.create({
     minWidth: 45,
   },
   currencyPrefixText: {
-    fontSize: FONT_SIZE.sm,
+    fontSize: fs.sm,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.primaryDark,
+    color: colors.primaryDark,
   },
   amountInput: {
     flex: 1,
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.text,
+    color: colors.text,
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.xs + 2,
     minHeight: 46,
@@ -352,9 +355,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   pctSuffixText: {
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   radioRow: {
     flexDirection: 'row',
@@ -362,24 +365,24 @@ const styles = StyleSheet.create({
   },
   radioOption: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
     borderRadius: BORDER_RADIUS.md,
     borderWidth: 1.5,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
     paddingVertical: SPACING.sm,
     alignItems: 'center',
   },
   radioOptionActive: {
-    borderColor: COLORS.primary,
-    backgroundColor: COLORS.primaryLight,
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryLight,
   },
   radioText: {
-    fontSize: FONT_SIZE.xs + 1,
+    fontSize: fs.xs + 1,
     fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   radioTextActive: {
-    color: COLORS.primaryDark,
+    color: colors.primaryDark,
     fontWeight: FONT_WEIGHT.bold,
   },
   buttonRow: {
@@ -392,21 +395,21 @@ const styles = StyleSheet.create({
     height: 46,
     borderRadius: BORDER_RADIUS.md,
     borderWidth: 1.5,
-    borderColor: COLORS.border,
-    backgroundColor: COLORS.surface,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
   cancelButtonText: {
-    fontSize: FONT_SIZE.sm,
+    fontSize: fs.sm,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   saveButton: {
     flex: 1,
     height: 46,
     borderRadius: BORDER_RADIUS.md,
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -414,8 +417,8 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   saveButtonText: {
-    fontSize: FONT_SIZE.sm,
+    fontSize: fs.sm,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.textInverse,
+    color: colors.textInverse,
   },
 });

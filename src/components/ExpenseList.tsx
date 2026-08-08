@@ -1,21 +1,24 @@
-import { Fragment, useCallback } from 'react';
+import { useCallback } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
   Alert,
+  type StyleProp,
+  type ViewStyle,
 } from 'react-native';
 import {
-  COLORS,
   SPACING,
   BORDER_RADIUS,
-  FONT_SIZE,
   FONT_WEIGHT,
   SHADOW,
+  type ThemeColors,
 } from '../constants/theme';
+import { useTheme, useThemedStyles } from '../context/ThemeContext';
 import { formatIDR } from '../utils/currency';
 
+import { buildExpenseListItems } from '../utils/expenseListItems';
 import { type Expense } from '../database/expenseService';
 
 interface ExpenseListProps {
@@ -39,6 +42,9 @@ function formatDate(dateStr: string): string {
 }
 
 function EmptyState() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+
   return (
     <View style={styles.emptyContainer}>
       <Text style={styles.emptyIcon}>📋</Text>
@@ -55,13 +61,18 @@ function ExpenseItem({
   onEdit,
   onDelete,
   onMarkPaid,
+  style,
 }: {
   item: Expense;
   onEdit: (item: Expense) => void;
   onDelete: (id: number) => void;
   onMarkPaid?: (id: number) => void;
+  style?: StyleProp<ViewStyle>;
 }) {
-  const textColor = COLORS.categoryText[item.category] || COLORS.textSecondary;
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+
+  const textColor = colors.categoryText[item.category] || colors.textSecondary;
 
   const handleDelete = useCallback(() => {
     Alert.alert(
@@ -82,7 +93,8 @@ function ExpenseItem({
     <View
       style={[
         styles.card,
-        { borderLeftWidth: 3, borderLeftColor: COLORS.danger },
+        style,
+        { borderLeftWidth: 3, borderLeftColor: colors.danger },
       ]}
     >
       {!item.is_paid && (
@@ -163,29 +175,37 @@ function ExpenseItem({
 }
 
 export default function ExpenseList({ expenses, onEdit, onDelete, onMarkPaid }: ExpenseListProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+
   if (expenses.length === 0) {
     return <EmptyState />;
   }
 
   return (
     <View style={styles.listContent}>
-      {expenses.map((item, index) => (
-        <Fragment key={item.id.toString()}>
-          {index > 0 && <View style={styles.separator} />}
-          <ExpenseItem item={item} onEdit={onEdit} onDelete={onDelete} onMarkPaid={onMarkPaid} />
-        </Fragment>
+      {buildExpenseListItems(expenses).map(({ key, item, hasTopSpacing }) => (
+        <ExpenseItem
+          key={key}
+          item={item}
+          onEdit={onEdit}
+          onDelete={onDelete}
+          onMarkPaid={onMarkPaid}
+          style={hasTopSpacing ? styles.separator : undefined}
+        />
       ))}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors, fs: typeof import('../constants/theme').FONT_SIZE) =>
+  StyleSheet.create({
   listContent: {
     paddingHorizontal: SPACING.md,
     paddingBottom: SPACING.xl,
   },
   separator: {
-    height: SPACING.sm,
+    marginTop: SPACING.sm,
   },
 
   // Empty State
@@ -201,21 +221,21 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   emptyTitle: {
-    fontSize: FONT_SIZE.lg,
+    fontSize: fs.lg,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     marginBottom: SPACING.xs,
   },
   emptySubtitle: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textLight,
+    fontSize: fs.sm,
+    color: colors.textLight,
     textAlign: 'center',
     lineHeight: 20,
   },
 
   // Card
   card: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.md,
     ...SHADOW.md,
@@ -234,12 +254,12 @@ const styles = StyleSheet.create({
     gap: SPACING.xs,
   },
   dateIcon: {
-    fontSize: FONT_SIZE.sm,
+    fontSize: fs.sm,
   },
   dateText: {
-    fontSize: FONT_SIZE.sm,
+    fontSize: fs.sm,
     fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
 
   // Top Row
@@ -254,21 +274,21 @@ const styles = StyleSheet.create({
     marginRight: SPACING.md,
   },
   cardTitle: {
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.text,
+    color: colors.text,
     marginBottom: 2,
   },
   cardDescription: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textSecondary,
+    fontSize: fs.sm,
+    color: colors.textSecondary,
     lineHeight: 18,
     marginTop: 2,
   },
   cardAmount: {
-    fontSize: FONT_SIZE.lg,
+    fontSize: fs.lg,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.danger,
+    color: colors.danger,
     letterSpacing: 0.3,
   },
 
@@ -278,16 +298,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: SPACING.sm,
     borderTopWidth: 1,
-    borderTopColor: COLORS.borderLight,
+    borderTopColor: colors.borderLight,
   },
   categoryBadge: {
     paddingHorizontal: SPACING.sm + 2,
     paddingVertical: SPACING.xs,
     borderRadius: BORDER_RADIUS.full,
-    backgroundColor: COLORS.dangerLight,
+    backgroundColor: colors.dangerLight,
   },
   categoryBadgeText: {
-    fontSize: FONT_SIZE.xs,
+    fontSize: fs.xs,
     fontWeight: FONT_WEIGHT.semibold,
     letterSpacing: 0.2,
   },
@@ -302,18 +322,18 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: BORDER_RADIUS.sm,
-    backgroundColor: COLORS.secondaryLight,
+    backgroundColor: colors.secondaryLight,
     alignItems: 'center',
     justifyContent: 'center',
   },
   editIcon: {
-    fontSize: FONT_SIZE.sm,
+    fontSize: fs.sm,
   },
   deleteButton: {
     width: 32,
     height: 32,
     borderRadius: BORDER_RADIUS.sm,
-    backgroundColor: COLORS.dangerLight,
+    backgroundColor: colors.dangerLight,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -325,21 +345,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: COLORS.warningLight,
+    backgroundColor: colors.warningLight,
     borderWidth: 1,
-    borderColor: COLORS.warning,
+    borderColor: colors.warning,
     borderRadius: BORDER_RADIUS.sm,
     paddingVertical: SPACING.xs,
     paddingHorizontal: SPACING.sm,
     marginBottom: SPACING.sm,
   },
   unpaidBadgeText: {
-    fontSize: FONT_SIZE.xs,
+    fontSize: fs.xs,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.warning,
+    color: colors.warning,
   },
   markPaidBtn: {
-    backgroundColor: COLORS.success,
+    backgroundColor: colors.success,
     borderRadius: BORDER_RADIUS.sm,
     paddingVertical: SPACING.xs,
     paddingHorizontal: SPACING.sm,
@@ -347,7 +367,7 @@ const styles = StyleSheet.create({
   markPaidBtnText: {
     fontSize: 10,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.textInverse,
+    color: colors.textInverse,
   },
   vendorRow: {
     flexDirection: 'row',
@@ -355,12 +375,12 @@ const styles = StyleSheet.create({
     gap: SPACING.xs,
   },
   vendorLabel: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textSecondary,
+    fontSize: fs.xs,
+    color: colors.textSecondary,
   },
   vendorName: {
-    fontSize: FONT_SIZE.xs,
+    fontSize: fs.xs,
     fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.text,
+    color: colors.text,
   },
 });

@@ -1,13 +1,13 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import {
-  COLORS,
   SPACING,
   BORDER_RADIUS,
-  FONT_SIZE,
   FONT_WEIGHT,
   SHADOW,
+  type ThemeColors,
 } from '../constants/theme';
+import { useTheme, useThemedStyles } from '../context/ThemeContext';
 import { formatIDR } from '../utils/currency';
 
 interface Props {
@@ -17,6 +17,9 @@ interface Props {
 }
 
 export default function SummaryCards({ totalExpenses, totalRevenue, zakatRp }: Props) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+
   const netProfit = totalRevenue - zakatRp - totalExpenses;
   const isProfit = netProfit >= 0;
 
@@ -27,7 +30,7 @@ export default function SummaryCards({ totalExpenses, totalRevenue, zakatRp }: P
         <View
           style={[
             styles.accentBar,
-            { backgroundColor: isProfit ? COLORS.success : COLORS.danger },
+            { backgroundColor: isProfit ? colors.success : colors.danger },
           ]}
         />
         <View style={styles.cardBody}>
@@ -38,7 +41,7 @@ export default function SummaryCards({ totalExpenses, totalRevenue, zakatRp }: P
           <Text
             style={[
               styles.profitValue,
-              { color: isProfit ? COLORS.success : COLORS.danger },
+              { color: isProfit ? colors.success : colors.danger },
             ]}
             numberOfLines={1}
             adjustsFontSizeToFit
@@ -56,7 +59,7 @@ export default function SummaryCards({ totalExpenses, totalRevenue, zakatRp }: P
       <View style={styles.halfRow}>
         {/* Total Capital */}
         <View style={styles.halfCard}>
-          <View style={[styles.accentBar, { backgroundColor: COLORS.danger }]} />
+          <View style={[styles.accentBar, { backgroundColor: colors.danger }]} />
           <View style={styles.cardBody}>
             <View style={styles.labelRow}>
               <Text style={styles.icon}>💰</Text>
@@ -65,7 +68,7 @@ export default function SummaryCards({ totalExpenses, totalRevenue, zakatRp }: P
               </Text>
             </View>
             <Text
-              style={[styles.value, { color: COLORS.danger }]}
+              style={[styles.value, { color: colors.danger }]}
               numberOfLines={1}
               adjustsFontSizeToFit
             >
@@ -77,7 +80,7 @@ export default function SummaryCards({ totalExpenses, totalRevenue, zakatRp }: P
 
         {/* Gross Revenue */}
         <View style={styles.halfCard}>
-          <View style={[styles.accentBar, { backgroundColor: COLORS.success }]} />
+          <View style={[styles.accentBar, { backgroundColor: colors.success }]} />
           <View style={styles.cardBody}>
             <View style={styles.labelRow}>
               <Text style={styles.icon}>🌾</Text>
@@ -86,7 +89,7 @@ export default function SummaryCards({ totalExpenses, totalRevenue, zakatRp }: P
               </Text>
             </View>
             <Text
-              style={[styles.value, { color: COLORS.success }]}
+              style={[styles.value, { color: colors.success }]}
               numberOfLines={1}
               adjustsFontSizeToFit
             >
@@ -100,14 +103,15 @@ export default function SummaryCards({ totalExpenses, totalRevenue, zakatRp }: P
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors, fs: typeof import('../constants/theme').FONT_SIZE) =>
+  StyleSheet.create({
   container: {
     paddingHorizontal: SPACING.md,
     marginBottom: SPACING.md,
     gap: SPACING.sm,
   },
   fullCard: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: BORDER_RADIUS.lg,
     overflow: 'hidden',
     ...SHADOW.md,
@@ -119,7 +123,7 @@ const styles = StyleSheet.create({
   },
   halfCard: {
     flex: 1,
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: BORDER_RADIUS.lg,
     overflow: 'hidden',
     ...SHADOW.md,
@@ -139,31 +143,31 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.xs,
   },
   icon: {
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
   },
   label: {
-    fontSize: FONT_SIZE.xs,
+    fontSize: fs.xs,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   profitValue: {
-    fontSize: FONT_SIZE.xxl,
+    fontSize: fs.xxl,
     fontWeight: FONT_WEIGHT.bold,
     marginVertical: 2,
   },
   profitSubtext: {
-    fontSize: FONT_SIZE.xs - 1,
-    color: COLORS.textLight,
+    fontSize: fs.xs - 1,
+    color: colors.textLight,
     marginTop: 2,
   },
   value: {
-    fontSize: FONT_SIZE.md + 2,
+    fontSize: fs.md + 2,
     fontWeight: FONT_WEIGHT.bold,
     marginVertical: 2,
   },
   subtext: {
-    fontSize: FONT_SIZE.xs - 1,
-    color: COLORS.textLight,
+    fontSize: fs.xs - 1,
+    color: colors.textLight,
     marginTop: 2,
   },
 });

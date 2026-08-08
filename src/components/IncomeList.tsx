@@ -8,13 +8,13 @@ import {
   Alert,
 } from 'react-native';
 import {
-  COLORS,
   SPACING,
   BORDER_RADIUS,
-  FONT_SIZE,
   FONT_WEIGHT,
   SHADOW,
+  type ThemeColors,
 } from '../constants/theme';
+import { useTheme, useThemedStyles } from '../context/ThemeContext';
 import { isEstimatedGKG } from '../utils/zakat';
 import { isValidGKG } from '../database/incomeService';
 import type { Income } from '../database/incomeService';
@@ -27,6 +27,9 @@ interface Props {
 }
 
 export default function IncomeList({ records, totalGKGSold, onDelete, onUpdateGKG }: Props) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editGkg, setEditGkg] = useState('');
 
@@ -221,7 +224,8 @@ export default function IncomeList({ records, totalGKGSold, onDelete, onUpdateGK
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors, fs: typeof import('../constants/theme').FONT_SIZE) =>
+  StyleSheet.create({
   listContent: {
     paddingHorizontal: SPACING.md,
     paddingBottom: SPACING.xl,
@@ -240,22 +244,22 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   emptyTitle: {
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     marginBottom: SPACING.xs,
   },
   emptySubtitle: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textLight,
+    fontSize: fs.sm,
+    color: colors.textLight,
     textAlign: 'center',
   },
   card: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.md,
     borderLeftWidth: 3,
-    borderLeftColor: COLORS.primary,
+    borderLeftColor: colors.primary,
     ...SHADOW.md,
   },
   cardHeader: {
@@ -270,27 +274,27 @@ const styles = StyleSheet.create({
     gap: SPACING.xs,
   },
   dateIcon: {
-    fontSize: FONT_SIZE.sm,
+    fontSize: fs.sm,
   },
   dateText: {
-    fontSize: FONT_SIZE.sm,
+    fontSize: fs.sm,
     fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   deleteButton: {
     width: 32,
     height: 32,
     borderRadius: BORDER_RADIUS.sm,
-    backgroundColor: COLORS.dangerLight,
+    backgroundColor: colors.dangerLight,
     alignItems: 'center',
     justifyContent: 'center',
   },
   deleteIcon: {
-    fontSize: FONT_SIZE.sm,
+    fontSize: fs.sm,
   },
   weightRow: {
     flexDirection: 'row',
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
     borderRadius: BORDER_RADIUS.md,
     padding: SPACING.sm,
   },
@@ -300,25 +304,25 @@ const styles = StyleSheet.create({
   },
   weightDivider: {
     width: 1,
-    backgroundColor: COLORS.border,
+    backgroundColor: colors.border,
     marginHorizontal: SPACING.xs,
   },
   weightLabel: {
-    fontSize: FONT_SIZE.xs,
+    fontSize: fs.xs,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.primary,
+    color: colors.primary,
     letterSpacing: 0.5,
     textTransform: 'uppercase',
     marginBottom: 2,
   },
   weightValue: {
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.text,
+    color: colors.text,
   },
   weightSublabel: {
     fontSize: 9,
-    color: COLORS.textLight,
+    color: colors.textLight,
     marginTop: 1,
   },
   gkgBadgeRow: {
@@ -328,42 +332,42 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
   estimatedBadge: {
-    backgroundColor: COLORS.warningLight,
+    backgroundColor: colors.warningLight,
     borderRadius: BORDER_RADIUS.full,
     paddingHorizontal: SPACING.xs + 1,
     paddingVertical: 1,
     borderWidth: 0.5,
-    borderColor: COLORS.warning,
+    borderColor: colors.warning,
   },
   estimatedBadgeText: {
     fontSize: 8,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.warning,
+    color: colors.warning,
   },
   actualBadge: {
-    backgroundColor: COLORS.primaryLight,
+    backgroundColor: colors.primaryLight,
     borderRadius: BORDER_RADIUS.full,
     paddingHorizontal: SPACING.xs + 1,
     paddingVertical: 1,
     borderWidth: 0.5,
-    borderColor: COLORS.primary,
+    borderColor: colors.primary,
   },
   actualBadgeText: {
     fontSize: 8,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.primaryDark,
+    color: colors.primaryDark,
   },
   editGkgInput: {
     height: 32,
     width: 56,
     borderWidth: 1,
-    borderColor: COLORS.secondary,
+    borderColor: colors.secondary,
     borderRadius: BORDER_RADIUS.sm,
     paddingHorizontal: SPACING.xs,
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.text,
-    backgroundColor: COLORS.surface,
+    color: colors.text,
+    backgroundColor: colors.surface,
     textAlign: 'center',
   },
   cardBottom: {
@@ -372,15 +376,15 @@ const styles = StyleSheet.create({
     marginTop: SPACING.sm,
   },
   editBtn: {
-    backgroundColor: COLORS.secondaryLight,
+    backgroundColor: colors.secondaryLight,
     paddingHorizontal: SPACING.sm,
     paddingVertical: SPACING.xs,
     borderRadius: BORDER_RADIUS.sm,
   },
   editBtnText: {
-    fontSize: FONT_SIZE.xs,
+    fontSize: fs.xs,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.amberDark,
+    color: colors.amberDark,
   },
   editActions: {
     flexDirection: 'row',
@@ -389,28 +393,28 @@ const styles = StyleSheet.create({
   },
   saveBtn: {
     flex: 1,
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     paddingVertical: SPACING.xs + 2,
     borderRadius: BORDER_RADIUS.sm,
     alignItems: 'center',
   },
   saveBtnText: {
-    fontSize: FONT_SIZE.xs,
+    fontSize: fs.xs,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.textInverse,
+    color: colors.textInverse,
   },
   cancelBtn: {
     flex: 1,
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     paddingVertical: SPACING.xs + 2,
     borderRadius: BORDER_RADIUS.sm,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
   },
   cancelBtnText: {
-    fontSize: FONT_SIZE.xs,
+    fontSize: fs.xs,
     fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
 });

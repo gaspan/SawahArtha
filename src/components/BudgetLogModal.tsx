@@ -10,13 +10,13 @@ import {
   Modal,
 } from 'react-native';
 import {
-  COLORS,
   SPACING,
   BORDER_RADIUS,
-  FONT_SIZE,
   FONT_WEIGHT,
   SHADOW,
+  type ThemeColors,
 } from '../constants/theme';
+import { useTheme, useThemedStyles } from '../context/ThemeContext';
 import { formatIDR } from '../utils/currency';
 import type { BudgetLog } from '../database/budgetService';
 
@@ -49,16 +49,19 @@ function actionLabel(action: BudgetLog['action']): string {
   }
 }
 
-function actionColor(action: BudgetLog['action']): string {
+function actionColor(action: BudgetLog['action'], colors: ThemeColors): string {
   switch (action) {
-    case 'seed': return COLORS.textLight;
-    case 'create': return COLORS.success;
-    case 'update': return COLORS.warning;
-    case 'delete': return COLORS.danger;
+    case 'seed': return colors.textLight;
+    case 'create': return colors.success;
+    case 'update': return colors.warning;
+    case 'delete': return colors.danger;
   }
 }
 
 export default function BudgetLogModal({ visible, logs, onClose }: Props) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+
   return (
     <Modal
       visible={visible}
@@ -113,7 +116,7 @@ export default function BudgetLogModal({ visible, logs, onClose }: Props) {
 
                   <View style={styles.logBody}>
                     <Text
-                      style={[styles.actionText, { color: actionColor(log.action) }]}
+                      style={[styles.actionText, { color: actionColor(log.action, colors) }]}
                     >
                       {actionLabel(log.action)}
                     </Text>
@@ -132,8 +135,8 @@ export default function BudgetLogModal({ visible, logs, onClose }: Props) {
                             {
                               color:
                                 log.new_amount > log.old_amount
-                                  ? COLORS.warning
-                                  : COLORS.info,
+                                  ? colors.warning
+                                  : colors.info,
                             },
                           ]}
                         >
@@ -163,7 +166,8 @@ export default function BudgetLogModal({ visible, logs, onClose }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors, fs: typeof import('../constants/theme').FONT_SIZE) =>
+  StyleSheet.create({
   overlay: {
     flex: 1,
     justifyContent: 'center',
@@ -181,7 +185,7 @@ const styles = StyleSheet.create({
     width: '90%',
     maxWidth: 400,
     maxHeight: '75%',
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: BORDER_RADIUS.xl,
     padding: SPACING.lg,
     ...SHADOW.lg,
@@ -193,29 +197,29 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.md,
   },
   title: {
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.text,
+    color: colors.text,
     flex: 1,
   },
   closeBtn: {
-    backgroundColor: COLORS.primaryLight,
+    backgroundColor: colors.primaryLight,
     borderRadius: BORDER_RADIUS.sm,
     paddingHorizontal: SPACING.sm + 2,
     paddingVertical: SPACING.xs,
   },
   closeBtnText: {
-    fontSize: FONT_SIZE.xs,
+    fontSize: fs.xs,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.primaryDark,
+    color: colors.primaryDark,
   },
   emptyState: {
     paddingVertical: SPACING.xl,
     alignItems: 'center',
   },
   emptyText: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textLight,
+    fontSize: fs.sm,
+    color: colors.textLight,
   },
   list: {
     maxHeight: '90%',
@@ -224,7 +228,7 @@ const styles = StyleSheet.create({
     paddingBottom: SPACING.sm,
   },
   logItem: {
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
     borderRadius: BORDER_RADIUS.md,
     padding: SPACING.sm + 2,
     marginBottom: SPACING.sm,
@@ -236,7 +240,7 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.xs,
   },
   catBadge: {
-    backgroundColor: COLORS.primaryLight,
+    backgroundColor: colors.primaryLight,
     borderRadius: BORDER_RADIUS.sm,
     paddingHorizontal: SPACING.xs + 2,
     paddingVertical: 1,
@@ -244,24 +248,24 @@ const styles = StyleSheet.create({
   catBadgeText: {
     fontSize: 10,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.primaryDark,
+    color: colors.primaryDark,
   },
   dateGroup: {
     alignItems: 'flex-end',
   },
   dateText: {
-    fontSize: FONT_SIZE.xs - 1,
-    color: COLORS.textSecondary,
+    fontSize: fs.xs - 1,
+    color: colors.textSecondary,
   },
   timeText: {
     fontSize: 9,
-    color: COLORS.textLight,
+    color: colors.textLight,
   },
   logBody: {
     gap: 2,
   },
   actionText: {
-    fontSize: FONT_SIZE.xs,
+    fontSize: fs.xs,
     fontWeight: FONT_WEIGHT.medium,
   },
   amountRow: {
@@ -269,30 +273,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   amountOld: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textLight,
+    fontSize: fs.xs,
+    color: colors.textLight,
     textDecorationLine: 'line-through',
   },
   amountNew: {
-    fontSize: FONT_SIZE.xs,
+    fontSize: fs.xs,
     fontWeight: FONT_WEIGHT.bold,
   },
   arrow: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textLight,
+    fontSize: fs.xs,
+    color: colors.textLight,
   },
   delta: {
-    fontSize: FONT_SIZE.xs,
+    fontSize: fs.xs,
     marginLeft: 4,
   },
   amountSeed: {
-    fontSize: FONT_SIZE.xs,
+    fontSize: fs.xs,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   amountDeleted: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textLight,
+    fontSize: fs.xs,
+    color: colors.textLight,
     textDecorationLine: 'line-through',
   },
 });

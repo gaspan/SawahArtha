@@ -1,13 +1,13 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import {
-  COLORS,
   SPACING,
   BORDER_RADIUS,
-  FONT_SIZE,
   FONT_WEIGHT,
   SHADOW,
+  type ThemeColors,
 } from '../constants/theme';
+import { useTheme, useThemedStyles } from '../context/ThemeContext';
 import { formatIDR } from '../utils/currency';
 
 interface Props {
@@ -23,6 +23,9 @@ export default function BreakEvenCard({
   totalGKG,
   avgOrRefPrice,
 }: Props) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+
   const hpp = totalGKG > 0 ? totalExpenses / totalGKG : 0;
   const recoveryPct = totalExpenses > 0 ? (totalRevenue / totalExpenses) * 100 : 0;
   const isRecovered = totalRevenue >= totalExpenses;
@@ -56,7 +59,7 @@ export default function BreakEvenCard({
               styles.progressBarFill,
               {
                 width: `${safeRecoveryPct}%`,
-                backgroundColor: isRecovered ? COLORS.success : COLORS.warning,
+                backgroundColor: isRecovered ? colors.success : colors.warning,
               },
             ]}
           />
@@ -103,9 +106,10 @@ export default function BreakEvenCard({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors, fs: typeof import('../constants/theme').FONT_SIZE) =>
+  StyleSheet.create({
   card: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.md + 4,
     marginHorizontal: SPACING.md,
@@ -113,9 +117,9 @@ const styles = StyleSheet.create({
     ...SHADOW.md,
   },
   title: {
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.text,
+    color: colors.text,
     marginBottom: SPACING.sm,
   },
   badgeRow: {
@@ -128,24 +132,24 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.full,
   },
   badgeSuccess: {
-    backgroundColor: COLORS.successLight,
+    backgroundColor: colors.successLight,
     borderWidth: 1,
-    borderColor: COLORS.success,
+    borderColor: colors.success,
   },
   badgePending: {
-    backgroundColor: COLORS.warningLight,
+    backgroundColor: colors.warningLight,
     borderWidth: 1,
-    borderColor: COLORS.warning,
+    borderColor: colors.warning,
   },
   badgeText: {
-    fontSize: FONT_SIZE.sm,
+    fontSize: fs.sm,
     fontWeight: FONT_WEIGHT.bold,
   },
   badgeTextSuccess: {
-    color: COLORS.success,
+    color: colors.success,
   },
   badgeTextPending: {
-    color: COLORS.warning,
+    color: colors.warning,
   },
   progressSection: {
     marginBottom: SPACING.md,
@@ -156,17 +160,17 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.xs,
   },
   progressLabel: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textSecondary,
+    fontSize: fs.xs,
+    color: colors.textSecondary,
   },
   progressPct: {
-    fontSize: FONT_SIZE.sm,
+    fontSize: fs.sm,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.primary,
+    color: colors.primary,
   },
   progressBarBg: {
     height: 12,
-    backgroundColor: COLORS.borderLight,
+    backgroundColor: colors.borderLight,
     borderRadius: BORDER_RADIUS.full,
     overflow: 'hidden',
   },
@@ -181,24 +185,24 @@ const styles = StyleSheet.create({
   },
   metricBox: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
     borderRadius: BORDER_RADIUS.md,
     padding: SPACING.sm + 2,
     alignItems: 'center',
   },
   metricLabel: {
-    fontSize: FONT_SIZE.xs - 1,
-    color: COLORS.textSecondary,
+    fontSize: fs.xs - 1,
+    color: colors.textSecondary,
     marginBottom: 2,
   },
   metricValue: {
-    fontSize: FONT_SIZE.sm,
+    fontSize: fs.sm,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.text,
+    color: colors.text,
   },
   divider: {
     height: 1,
-    backgroundColor: COLORS.borderLight,
+    backgroundColor: colors.borderLight,
     marginVertical: SPACING.sm,
   },
   priceRow: {
@@ -208,35 +212,35 @@ const styles = StyleSheet.create({
     gap: SPACING.xs,
   },
   priceLabel: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textSecondary,
+    fontSize: fs.xs,
+    color: colors.textSecondary,
   },
   priceValue: {
-    fontSize: FONT_SIZE.md + 2,
+    fontSize: fs.md + 2,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.text,
+    color: colors.text,
   },
   priceUnit: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textLight,
+    fontSize: fs.xs,
+    color: colors.textLight,
   },
   gapRow: {
     marginTop: SPACING.sm,
-    backgroundColor: COLORS.warningLight,
+    backgroundColor: colors.warningLight,
     borderRadius: BORDER_RADIUS.md,
     padding: SPACING.sm,
   },
   gapText: {
-    fontSize: FONT_SIZE.xs + 1,
-    color: COLORS.text,
+    fontSize: fs.xs + 1,
+    color: colors.text,
     textAlign: 'center',
   },
   gapHighlight: {
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.danger,
+    color: colors.danger,
   },
   gapSub: {
-    fontSize: FONT_SIZE.xs - 1,
-    color: COLORS.textSecondary,
+    fontSize: fs.xs - 1,
+    color: colors.textSecondary,
   },
 });

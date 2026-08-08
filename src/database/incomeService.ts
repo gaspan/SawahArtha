@@ -10,6 +10,7 @@ export interface Income {
   net_gkp: number;
   season_code: string;
   date: string;
+  plot_id: number | null;
 }
 
 export interface IncomeInput {
@@ -20,6 +21,7 @@ export interface IncomeInput {
   gacong_weight: number;
   net_gkp: number;
   season_code: string;
+  plot_id?: number | null;
 }
 
 export async function getAllIncome(
@@ -27,7 +29,7 @@ export async function getAllIncome(
   seasonCode: string
 ): Promise<Income[]> {
   return db.getAllAsync<Income>(
-    'SELECT id, gkp_weight, gkg_weight, gacong_type, gacong_input, gacong_weight, net_gkp, season_code, date FROM income WHERE season_code = ? ORDER BY date DESC, id DESC',
+    'SELECT id, gkp_weight, gkg_weight, gacong_type, gacong_input, gacong_weight, net_gkp, season_code, date, plot_id FROM income WHERE season_code = ? ORDER BY date DESC, id DESC',
     [seasonCode]
   );
 }
@@ -37,7 +39,7 @@ export async function addIncome(
   income: IncomeInput
 ): Promise<number> {
   const result = await db.runAsync(
-    'INSERT INTO income (gkp_weight, gkg_weight, gacong_type, gacong_input, gacong_weight, net_gkp, season_code, date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    'INSERT INTO income (gkp_weight, gkg_weight, gacong_type, gacong_input, gacong_weight, net_gkp, season_code, date, plot_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
     [
       income.gkp_weight,
       income.gkg_weight,
@@ -47,6 +49,7 @@ export async function addIncome(
       income.net_gkp,
       income.season_code,
       new Date().toISOString().split('T')[0],
+      income.plot_id ?? null,
     ]
   );
   return result.lastInsertRowId;

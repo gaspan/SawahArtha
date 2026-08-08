@@ -20,13 +20,14 @@ import {
   Platform,
 } from 'react-native';
 import {
-  COLORS,
   SPACING,
   BORDER_RADIUS,
-  FONT_SIZE,
   FONT_WEIGHT,
   SHADOW,
+  type ThemeColors,
 } from '../constants/theme';
+import { useTheme, useThemedStyles } from '../context/ThemeContext';
+import { useSettings } from '../context/SettingsContext';
 
 interface Props {
   visible: boolean;
@@ -35,6 +36,10 @@ interface Props {
 }
 
 const NewSeasonModal: React.FC<Props> = ({ visible, onClose, onSave }) => {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+  const { defaultLandSize } = useSettings();
+
   const [seasonCode, setSeasonCode] = useState('');
   const [landSize, setLandSize] = useState('');
 
@@ -43,8 +48,10 @@ const NewSeasonModal: React.FC<Props> = ({ visible, onClose, onSave }) => {
     if (!visible) {
       setSeasonCode('');
       setLandSize('');
+    } else {
+      setLandSize(defaultLandSize > 0 ? String(defaultLandSize) : '');
     }
-  }, [visible]);
+  }, [visible, defaultLandSize]);
 
   const handleSave = () => {
     const trimmedCode = seasonCode.trim();
@@ -99,7 +106,7 @@ const NewSeasonModal: React.FC<Props> = ({ visible, onClose, onSave }) => {
               value={seasonCode}
               onChangeText={setSeasonCode}
               placeholder="e.g., MT-2026-2"
-              placeholderTextColor={COLORS.textLight}
+              placeholderTextColor={colors.textLight}
               autoCapitalize="characters"
               autoCorrect={false}
               maxLength={20}
@@ -115,7 +122,7 @@ const NewSeasonModal: React.FC<Props> = ({ visible, onClose, onSave }) => {
               value={landSize}
               onChangeText={(text) => setLandSize(text.replace(/[^0-9.]/g, ''))}
               placeholder="e.g., 1400"
-              placeholderTextColor={COLORS.textLight}
+              placeholderTextColor={colors.textLight}
               keyboardType="decimal-pad"
               maxLength={10}
               returnKeyType="done"
@@ -165,7 +172,8 @@ const NewSeasonModal: React.FC<Props> = ({ visible, onClose, onSave }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors, fs: typeof import('../constants/theme').FONT_SIZE) =>
+  StyleSheet.create({
   overlay: {
     flex: 1,
     justifyContent: 'center',
@@ -182,7 +190,7 @@ const styles = StyleSheet.create({
   card: {
     width: '85%',
     maxWidth: 380,
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: BORDER_RADIUS.xl,
     padding: SPACING.lg,
     alignItems: 'center',
@@ -192,7 +200,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: BORDER_RADIUS.full,
-    backgroundColor: COLORS.primaryLight,
+    backgroundColor: colors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: SPACING.md,
@@ -201,16 +209,16 @@ const styles = StyleSheet.create({
     fontSize: 32,
   },
   title: {
-    fontSize: FONT_SIZE.xl,
+    fontSize: fs.xl,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.text,
+    color: colors.text,
     textAlign: 'center',
     marginBottom: SPACING.xs,
   },
   subtitle: {
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
     fontWeight: FONT_WEIGHT.normal,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     textAlign: 'center',
     marginBottom: SPACING.lg,
   },
@@ -219,9 +227,9 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
   },
   inputLabel: {
-    fontSize: FONT_SIZE.xs,
+    fontSize: fs.xs,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     marginBottom: 6,
     alignSelf: 'flex-start',
     paddingLeft: 4,
@@ -230,19 +238,19 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 52,
     borderWidth: 1.5,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
     borderRadius: BORDER_RADIUS.md,
     paddingHorizontal: SPACING.md,
-    fontSize: FONT_SIZE.lg,
+    fontSize: fs.lg,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.text,
-    backgroundColor: COLORS.background,
+    color: colors.text,
+    backgroundColor: colors.background,
     textAlign: 'center',
     letterSpacing: 1,
   },
   helperText: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textLight,
+    fontSize: fs.xs,
+    color: colors.textLight,
     textAlign: 'center',
     marginBottom: SPACING.lg,
   },
@@ -256,38 +264,38 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: BORDER_RADIUS.md,
     borderWidth: 1.5,
-    borderColor: COLORS.border,
-    backgroundColor: COLORS.surface,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
   cancelButtonText: {
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   saveButton: {
     flex: 1,
     height: 48,
     borderRadius: BORDER_RADIUS.md,
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     ...SHADOW.sm,
   },
   saveButtonDisabled: {
-    backgroundColor: COLORS.primaryMuted,
+    backgroundColor: colors.primaryMuted,
     ...SHADOW.sm,
     shadowOpacity: 0,
     elevation: 0,
   },
   saveButtonText: {
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.textInverse,
+    color: colors.textInverse,
   },
   saveButtonTextDisabled: {
-    color: COLORS.surface,
+    color: colors.surface,
     opacity: 0.7,
   },
 });

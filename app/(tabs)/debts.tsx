@@ -12,7 +12,8 @@ import {
 import { useFocusEffect } from 'expo-router';
 import { useDebts } from '../../src/hooks/useDebts';
 import { formatIDR } from '../../src/utils/currency';
-import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOW } from '../../src/constants/theme';
+import { SPACING, BORDER_RADIUS, FONT_WEIGHT, SHADOW, type ThemeColors } from '../../src/constants/theme';
+import { useTheme, useThemedStyles } from '../../src/context/ThemeContext';
 import type { Debt } from '../../src/database/debtService';
 
 import DebtCard from '../../src/components/DebtCard';
@@ -22,6 +23,8 @@ import DebtPaymentModal from '../../src/components/DebtPaymentModal';
 type FilterType = 'all' | 'loan_in' | 'loan_out';
 
 export default function DebtsScreen() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const {
     debts,
     totalLoanIn,
@@ -67,15 +70,15 @@ export default function DebtsScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.summaryRow}>
-          <View style={[styles.summaryBox, { backgroundColor: COLORS.dangerLight }]}>
+          <View style={[styles.summaryBox, { backgroundColor: colors.dangerLight }]}>
             <Text style={styles.summaryLabel}>Pinjaman Masuk</Text>
-            <Text style={[styles.summaryValue, { color: COLORS.danger }]}>
+            <Text style={[styles.summaryValue, { color: colors.danger }]}>
               {formatIDR(totalLoanIn)}
             </Text>
           </View>
-          <View style={[styles.summaryBox, { backgroundColor: COLORS.infoLight }]}>
+          <View style={[styles.summaryBox, { backgroundColor: colors.infoLight }]}>
             <Text style={styles.summaryLabel}>Piutang Keluar</Text>
-            <Text style={[styles.summaryValue, { color: COLORS.info }]}>
+            <Text style={[styles.summaryValue, { color: colors.info }]}>
               {formatIDR(totalLoanOut)}
             </Text>
           </View>
@@ -106,7 +109,7 @@ export default function DebtsScreen() {
 
         {isLoading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={COLORS.primary} />
+            <ActivityIndicator size="large" color={colors.primary} />
             <Text style={styles.loadingText}>Memuat data...</Text>
           </View>
         ) : filtered.length === 0 ? (
@@ -164,13 +167,14 @@ export default function DebtsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors, fs: typeof import('../../src/constants/theme').FONT_SIZE) =>
+  StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
   },
   header: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     paddingTop: 56,
     paddingBottom: SPACING.lg,
     paddingHorizontal: SPACING.lg,
@@ -185,13 +189,13 @@ const styles = StyleSheet.create({
     fontSize: 32,
   },
   headerTitle: {
-    fontSize: FONT_SIZE.xl,
+    fontSize: fs.xl,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.textInverse,
+    color: colors.textInverse,
   },
   headerSubtitle: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.primaryMuted,
+    fontSize: fs.sm,
+    color: colors.primaryMuted,
     marginTop: 2,
   },
   scrollView: {
@@ -213,28 +217,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   summaryLabel: {
-    fontSize: FONT_SIZE.xs,
+    fontSize: fs.xs,
     fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     marginBottom: SPACING.xs,
   },
   summaryValue: {
-    fontSize: FONT_SIZE.lg,
+    fontSize: fs.lg,
     fontWeight: FONT_WEIGHT.bold,
   },
   overdueBanner: {
-    backgroundColor: COLORS.dangerLight,
+    backgroundColor: colors.dangerLight,
     borderWidth: 1,
-    borderColor: COLORS.danger,
+    borderColor: colors.danger,
     borderRadius: BORDER_RADIUS.md,
     padding: SPACING.sm,
     marginBottom: SPACING.md,
     alignItems: 'center',
   },
   overdueBannerText: {
-    fontSize: FONT_SIZE.xs + 1,
+    fontSize: fs.xs + 1,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.danger,
+    color: colors.danger,
   },
   filterRow: {
     flexDirection: 'row',
@@ -243,24 +247,24 @@ const styles = StyleSheet.create({
   },
   filterChip: {
     flex: 1,
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderWidth: 1.5,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
     borderRadius: BORDER_RADIUS.full,
     paddingVertical: SPACING.sm,
     alignItems: 'center',
   },
   filterChipActive: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   filterChipText: {
-    fontSize: FONT_SIZE.xs + 1,
+    fontSize: fs.xs + 1,
     fontWeight: FONT_WEIGHT.medium,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   filterChipTextActive: {
-    color: COLORS.textInverse,
+    color: colors.textInverse,
     fontWeight: FONT_WEIGHT.semibold,
   },
   loadingContainer: {
@@ -269,8 +273,8 @@ const styles = StyleSheet.create({
     gap: SPACING.sm,
   },
   loadingText: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textSecondary,
+    fontSize: fs.sm,
+    color: colors.textSecondary,
   },
   emptyContainer: {
     alignItems: 'center',
@@ -283,14 +287,14 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   emptyTitle: {
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     marginBottom: SPACING.xs,
   },
   emptySubtitle: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textLight,
+    fontSize: fs.sm,
+    color: colors.textLight,
     textAlign: 'center',
   },
   fab: {
@@ -300,14 +304,14 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     ...SHADOW.lg,
   },
   fabText: {
     fontSize: 28,
-    color: COLORS.textInverse,
+    color: colors.textInverse,
     fontWeight: FONT_WEIGHT.bold,
     lineHeight: 30,
   },

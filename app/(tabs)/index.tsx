@@ -12,22 +12,20 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
-  Platform,
 } from 'react-native';
-import * as FileSystem from 'expo-file-system/legacy';
-import { useFocusEffect } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useSeason } from '../../src/context/SeasonContext';
 import { useBudget } from '../../src/context/BudgetContext';
+import { useNotificationSync } from '../../src/hooks/useNotifications';
 import { useExpenses } from '../../src/hooks/useExpenses';
 import { useIncome } from '../../src/hooks/useIncome';
 import { useSales } from '../../src/hooks/useSales';
 import { useSeasonMetrics } from '../../src/hooks/useSeasonMetrics';
 import { getZakatSummary } from '../../src/utils/zakat';
-import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOW } from '../../src/constants/theme';
+import { SPACING, BORDER_RADIUS, FONT_WEIGHT, SHADOW, type ThemeColors } from '../../src/constants/theme';
 import { formatIDR } from '../../src/utils/currency';
-import * as DocumentPicker from 'expo-document-picker';
-import { convertToCSV, exportToCSVFile, importFromCSV } from '../../src/utils/csv';
+import { useTheme, useThemedStyles } from '../../src/context/ThemeContext';
 
 import SeasonPicker from '../../src/components/SeasonPicker';
 import NewSeasonModal from '../../src/components/NewSeasonModal';
@@ -46,39 +44,16 @@ import BudgetEditModal from '../../src/components/BudgetEditModal';
 import BudgetLogModal from '../../src/components/BudgetLogModal';
 import CashPositionCard from '../../src/components/CashPositionCard';
 import { useDebts } from '../../src/hooks/useDebts';
-
-function formatDisplayPath(path: string): string {
-  if (!path) return '';
-  if (path.startsWith('content://')) {
-    try {
-      const decoded = decodeURIComponent(path);
-      const parts = decoded.split('/');
-      const fileName = parts[parts.length - 1] || 'SawahArtha_Backup.csv';
-      if (decoded.includes('Download')) {
-        return `Penyimpanan Internal > Download > ${fileName}`;
-      }
-      if (decoded.includes('Documents')) {
-        return `Penyimpanan Internal > Documents > ${fileName}`;
-      }
-      const primaryMatch = decoded.match(/primary:([^/]+)/);
-      if (primaryMatch) {
-        return `Penyimpanan Internal > ${primaryMatch[1]} > ${fileName}`;
-      }
-      return `Penyimpanan Internal > ${fileName}`;
-    } catch (e) {
-      return path;
-    }
-  }
-  if (path.startsWith('file://')) {
-    const parts = path.split('/');
-    const fileName = parts[parts.length - 1] || 'SawahArtha_Backup.csv';
-    return `Documents (Files App) > SawahArtha > ${fileName}`;
-  }
-  return path;
-}
+import PlotCard from '../../src/components/PlotCard';
+import PlotModal from '../../src/components/PlotModal';
+import { usePlots } from '../../src/hooks/usePlots';
+import type { Plot } from '../../src/database/plotService';
 
 export default function DashboardScreen() {
   const db = useSQLiteContext();
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+  useNotificationSync();
   const { selectedSeason, seasons, switchSeason, createNewSeason, updateLandSize, updateRefPrice, refreshSeasons } = useSeason();
   const { expenses, totalExpenses, categoryTotals, unpaidAmount, refreshExpenses, isLoading: expensesLoading } = useExpenses();
   const {
@@ -113,25 +88,8 @@ export default function DashboardScreen() {
 
   const [showNewSeasonModal, setShowNewSeasonModal] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [lastExportPath, setLastExportPath] = useState<string>('');
   const [editingBudgetCategory, setEditingBudgetCategory] = useState<string | null>(null);
   const [showBudgetLog, setShowBudgetLog] = useState(false);
-
-  useEffect(() => {
-    const loadLastExportPath = async () => {
-      try {
-        const pathFile = `${FileSystem.documentDirectory}last_export_path.txt`;
-        const info = await FileSystem.getInfoAsync(pathFile);
-        if (info.exists) {
-          const savedPath = await FileSystem.readAsStringAsync(pathFile);
-          setLastExportPath(savedPath);
-        }
-      } catch (err) {
-        // ignore
-      }
-    };
-    loadLastExportPath();
-  }, []);
 
   const currentSeasonObj = seasons.find((s) => s.season_code === selectedSeason);
   const landSizeM2 = currentSeasonObj?.land_size_m2 ?? 1400;
@@ -145,77 +103,9 @@ export default function DashboardScreen() {
   const totalExpensesPaid = totalExpenses - unpaidAmount;
   const hpp = totalGKG > 0 ? totalExpenses / totalGKG : 0;
 
-  const handleExportCSV = async () => {
-    try {
-      const allExpenses = await db.getAllAsync('SELECT * FROM expenses ORDER BY date DESC, id DESC');
-      const allIncome = await db.getAllAsync('SELECT * FROM income ORDER BY date DESC, id DESC');
-      const allSales = await db.getAllAsync('SELECT * FROM sales ORDER BY date DESC, id DESC');
-      const csvStr = convertToCSV(allExpenses, allIncome, allSales);
-      const filePath = await exportToCSVFile(csvStr);
-
-      const pathFile = `${FileSystem.documentDirectory}last_export_path.txt`;
-      await FileSystem.writeAsStringAsync(pathFile, filePath, {
-        encoding: FileSystem.EncodingType.UTF8,
-      });
-
-      setLastExportPath(filePath);
-
-      Alert.alert(
-        'Ekspor Berhasil ✅',
-        `File backup CSV berhasil disimpan ke:\n\n${formatDisplayPath(filePath)}`
-      );
-    } catch (error) {
-      console.error('Error exporting data:', error);
-      Alert.alert('Error ❌', 'Gagal memuat data dari database untuk ekspor.');
-    }
-  };
-
-  const handleImportCSV = async () => {
-    try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: ['text/comma-separated-values', 'text/csv', 'application/csv'],
-        copyToCacheDirectory: true,
-      });
-
-      if (result.canceled || !result.assets || result.assets.length === 0) {
-        return;
-      }
-
-      const fileAsset = result.assets[0];
-
-      Alert.alert(
-        'Konfirmasi Impor 📥',
-        `Apakah Anda yakin ingin mengimpor data dari "${fileAsset.name}"?\n\nData lama tidak akan terhapus, dan data duplikat akan diabaikan secara otomatis.`,
-        [
-          { text: 'Batal', style: 'cancel' },
-          {
-            text: 'Impor',
-            onPress: async () => {
-              try {
-                const { expensesAdded, incomesAdded } = await importFromCSV(db, fileAsset.uri);
-                await Promise.all([
-                  refreshExpenses(),
-                  refreshIncome(),
-                  refreshSeasons(),
-                ]);
-
-                Alert.alert(
-                  'Impor Berhasil ✅',
-                  `Berhasil mengimpor data:\n• ${expensesAdded} catatan Pengeluaran baru\n• ${incomesAdded} catatan Hasil Panen baru.`
-                );
-              } catch (err: any) {
-                console.error('Import processing error:', err);
-                Alert.alert('Gagal Impor ❌', err.message || 'Terjadi kesalahan saat memproses data CSV.');
-              }
-            },
-          },
-        ]
-      );
-    } catch (error) {
-      console.error('Pick document error:', error);
-      Alert.alert('Gagal Membuka File ❌', 'Tidak dapat membuka file manager.');
-    }
-  };
+  const { plots, addPlot, updatePlot, deletePlot, refreshPlots } = usePlots();
+  const [plotModalVisible, setPlotModalVisible] = useState(false);
+  const [editingPlot, setEditingPlot] = useState<Plot | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -225,7 +115,8 @@ export default function DashboardScreen() {
       refreshMetrics();
       refreshBudgets();
       refreshDebts();
-    }, [refreshExpenses, refreshIncome, refreshSales, refreshMetrics, refreshBudgets, refreshDebts])
+      refreshPlots();
+    }, [refreshExpenses, refreshIncome, refreshSales, refreshMetrics, refreshBudgets, refreshDebts, refreshPlots])
   );
 
   const combinedTransactions: FeedTransaction[] = useMemo(() => {
@@ -293,6 +184,13 @@ export default function DashboardScreen() {
             <Text style={styles.headerSubtitle}>Manajemen Permodalan & Hasil Tani</Text>
           </View>
         </View>
+        <TouchableOpacity
+          style={styles.settingsBtn}
+          onPress={() => router.push('/settings')}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.settingsBtnText}>⚙️</Text>
+        </TouchableOpacity>
       </View>
 
       <ScrollView
@@ -303,8 +201,8 @@ export default function DashboardScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={COLORS.primary}
-            colors={[COLORS.primary]}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
           />
         }
       >
@@ -315,35 +213,9 @@ export default function DashboardScreen() {
           onNewSeason={() => setShowNewSeasonModal(true)}
         />
 
-        <View style={styles.actionRow}>
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={handleExportCSV}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.actionButtonText}>📤 Ekspor Data (CSV)</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={handleImportCSV}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.actionButtonText}>📥 Impor Data (CSV)</Text>
-          </TouchableOpacity>
-        </View>
-
-        {lastExportPath ? (
-          <View style={styles.pathCard}>
-            <Text style={styles.pathLabel}>💾 File Ekspor Terakhir:</Text>
-            <Text style={styles.pathText} selectable>
-              {formatDisplayPath(lastExportPath)}
-            </Text>
-          </View>
-        ) : null}
-
         {isDataLoading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={COLORS.primary} />
+            <ActivityIndicator size="large" color={colors.primary} />
             <Text style={styles.loadingText}>Memuat data musim...</Text>
           </View>
         ) : (
@@ -391,6 +263,13 @@ export default function DashboardScreen() {
               loanIn={totalLoanIn}
               loanOut={totalLoanOut}
               zakatRp={zakatSummary.zakatRp}
+            />
+
+            {/* Petak Lahan (multi-lahan) */}
+            <PlotCard
+              plots={plots}
+              onAddPlot={() => { setEditingPlot(null); setPlotModalVisible(true); }}
+              onEditPlot={(p) => { setEditingPlot(p); setPlotModalVisible(true); }}
             />
 
             {/* KPI Metrics */}
@@ -478,17 +357,35 @@ export default function DashboardScreen() {
         logs={budgetLogs}
         onClose={() => setShowBudgetLog(false)}
       />
+
+      <PlotModal
+        visible={plotModalVisible}
+        plot={editingPlot}
+        onSave={async (input) => {
+          if (editingPlot) {
+            await updatePlot(editingPlot.id, input);
+          } else {
+            await addPlot(input);
+          }
+        }}
+        onDelete={editingPlot ? async () => deletePlot(editingPlot.id) : undefined}
+        onClose={() => setPlotModalVisible(false)}
+      />
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors, fs: typeof import('../../src/constants/theme').FONT_SIZE) =>
+  StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
   },
   header: {
-    backgroundColor: COLORS.primary,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.primary,
     paddingTop: 56,
     paddingBottom: SPACING.lg,
     paddingHorizontal: SPACING.lg,
@@ -505,13 +402,13 @@ const styles = StyleSheet.create({
     fontSize: 36,
   },
   headerTitle: {
-    fontSize: FONT_SIZE.xxl,
+    fontSize: fs.xxl,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.textInverse,
+    color: colors.textInverse,
   },
   headerSubtitle: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.primaryMuted,
+    fontSize: fs.sm,
+    color: colors.primaryMuted,
     marginTop: 2,
   },
   scrollView: {
@@ -521,28 +418,16 @@ const styles = StyleSheet.create({
     padding: SPACING.md,
     paddingTop: SPACING.lg,
   },
-  actionRow: {
-    flexDirection: 'row',
-    gap: SPACING.sm,
-    marginHorizontal: SPACING.md,
-    marginBottom: SPACING.md,
-  },
-  actionButton: {
-    flex: 1,
-    flexDirection: 'row',
+  settingsBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: BORDER_RADIUS.full,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.infoLight,
-    paddingVertical: SPACING.sm + 2,
-    borderRadius: BORDER_RADIUS.md,
-    borderWidth: 1,
-    borderColor: 'rgba(59, 130, 246, 0.2)',
-    ...SHADOW.sm,
   },
-  actionButtonText: {
-    fontSize: FONT_SIZE.xs + 1,
-    fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.info,
+  settingsBtnText: {
+    fontSize: 20,
   },
   loadingContainer: {
     paddingVertical: SPACING.xxl,
@@ -551,29 +436,8 @@ const styles = StyleSheet.create({
     gap: SPACING.sm,
   },
   loadingText: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textSecondary,
+    fontSize: fs.sm,
+    color: colors.textSecondary,
     fontWeight: FONT_WEIGHT.medium,
-  },
-  pathCard: {
-    backgroundColor: COLORS.surface,
-    borderColor: COLORS.borderLight,
-    borderWidth: 1,
-    borderRadius: BORDER_RADIUS.md,
-    padding: SPACING.sm + 2,
-    marginHorizontal: SPACING.md,
-    marginBottom: SPACING.md,
-    ...SHADOW.sm,
-  },
-  pathLabel: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.textSecondary,
-    marginBottom: 4,
-  },
-  pathText: {
-    fontSize: 10,
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
-    color: COLORS.textLight,
   },
 });

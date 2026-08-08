@@ -1,13 +1,13 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import {
-  COLORS,
   SPACING,
   BORDER_RADIUS,
-  FONT_SIZE,
   FONT_WEIGHT,
   SHADOW,
+  type ThemeColors,
 } from '../constants/theme';
+import { useTheme, useThemedStyles } from '../context/ThemeContext';
 import { formatIDR } from '../utils/currency';
 import { getZakatSummary, NISAB_KG, ZAKAT_RATE } from '../utils/zakat';
 
@@ -17,6 +17,9 @@ interface Props {
 }
 
 export default function ZakatSection({ totalGKG, avgPricePerKg }: Props) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+
   const summary = getZakatSummary(totalGKG, avgPricePerKg);
 
   return (
@@ -69,8 +72,8 @@ export default function ZakatSection({ totalGKG, avgPricePerKg }: Props) {
               {
                 width: `${summary.progressToNisab}%`,
                 backgroundColor: summary.wajib
-                  ? COLORS.primary
-                  : COLORS.secondary,
+                  ? colors.primary
+                  : colors.secondary,
               },
             ]}
           />
@@ -178,14 +181,17 @@ function InfoRow({
   highlight?: boolean;
   accent?: boolean;
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+
   return (
-    <View style={infoStyles.row}>
-      <Text style={infoStyles.label}>{label}</Text>
+    <View style={styles.row}>
+      <Text style={styles.label}>{label}</Text>
       <Text
         style={[
-          infoStyles.value,
-          highlight && infoStyles.valueHighlight,
-          accent && infoStyles.valueAccent,
+          styles.value,
+          highlight && styles.valueHighlight,
+          accent && styles.valueAccent,
         ]}
       >
         {value}
@@ -194,7 +200,8 @@ function InfoRow({
   );
 }
 
-const infoStyles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors, fs: typeof import('../constants/theme').FONT_SIZE) =>
+  StyleSheet.create({
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -202,28 +209,25 @@ const infoStyles = StyleSheet.create({
     paddingVertical: SPACING.xs + 2,
   },
   label: {
-    fontSize: FONT_SIZE.sm,
-    color: COLORS.textSecondary,
+    fontSize: fs.sm,
+    color: colors.textSecondary,
   },
   value: {
-    fontSize: FONT_SIZE.sm,
+    fontSize: fs.sm,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.text,
+    color: colors.text,
   },
   valueHighlight: {
-    color: COLORS.primary,
+    color: colors.primary,
     fontWeight: FONT_WEIGHT.bold,
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
   },
   valueAccent: {
-    color: COLORS.secondary,
+    color: colors.secondary,
     fontWeight: FONT_WEIGHT.bold,
   },
-});
-
-const styles = StyleSheet.create({
   container: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: BORDER_RADIUS.lg,
     overflow: 'hidden',
     ...SHADOW.lg,
@@ -232,7 +236,7 @@ const styles = StyleSheet.create({
   },
   accentBar: {
     height: 4,
-    backgroundColor: COLORS.secondary,
+    backgroundColor: colors.secondary,
   },
 
   // Header
@@ -250,13 +254,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   headerTitle: {
-    fontSize: FONT_SIZE.lg,
+    fontSize: fs.lg,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.text,
+    color: colors.text,
   },
   headerSubtitle: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textSecondary,
+    fontSize: fs.xs,
+    color: colors.textSecondary,
     marginTop: 2,
   },
 
@@ -269,24 +273,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   wajibBadgeActive: {
-    backgroundColor: COLORS.primaryLight,
+    backgroundColor: colors.primaryLight,
     borderWidth: 1,
-    borderColor: COLORS.primary,
+    borderColor: colors.primary,
   },
   wajibBadgeInactive: {
-    backgroundColor: COLORS.borderLight,
+    backgroundColor: colors.borderLight,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
   },
   wajibBadgeText: {
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
     fontWeight: FONT_WEIGHT.bold,
   },
   wajibBadgeTextActive: {
-    color: COLORS.primaryDark,
+    color: colors.primaryDark,
   },
   wajibBadgeTextInactive: {
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
 
   // Progress Bar
@@ -301,18 +305,18 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.xs,
   },
   progressLabel: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textSecondary,
+    fontSize: fs.xs,
+    color: colors.textSecondary,
     fontWeight: FONT_WEIGHT.medium,
   },
   progressPercent: {
-    fontSize: FONT_SIZE.sm,
+    fontSize: fs.sm,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.primary,
+    color: colors.primary,
   },
   progressBarBg: {
     height: 10,
-    backgroundColor: COLORS.borderLight,
+    backgroundColor: colors.borderLight,
     borderRadius: BORDER_RADIUS.full,
     overflow: 'hidden',
   },
@@ -328,7 +332,7 @@ const styles = StyleSheet.create({
   },
   progressMarkerText: {
     fontSize: 9,
-    color: COLORS.textLight,
+    color: colors.textLight,
   },
 
   // Info Section
@@ -350,31 +354,31 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
   },
   zakatCalcIcon: {
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
   },
   zakatCalcTitle: {
-    fontSize: FONT_SIZE.sm,
+    fontSize: fs.sm,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.text,
+    color: colors.text,
   },
   calcCard: {
-    backgroundColor: COLORS.amberBg,
+    backgroundColor: colors.amberBg,
     borderRadius: BORDER_RADIUS.md,
     padding: SPACING.sm,
     borderWidth: 1,
-    borderColor: COLORS.amberLight,
+    borderColor: colors.amberLight,
   },
   calcDivider: {
     height: 1,
-    backgroundColor: COLORS.amberLight,
+    backgroundColor: colors.amberLight,
     marginVertical: SPACING.xs,
   },
   calcRow: {
     paddingVertical: 2,
   },
   calcFormula: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textSecondary,
+    fontSize: fs.xs,
+    color: colors.textSecondary,
     fontStyle: 'italic',
   },
   calcResultRow: {
@@ -384,31 +388,31 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.xs,
   },
   calcResultLabel: {
-    fontSize: FONT_SIZE.sm,
+    fontSize: fs.sm,
     fontWeight: FONT_WEIGHT.semibold,
-    color: COLORS.text,
+    color: colors.text,
   },
   calcResultValue: {
-    fontSize: FONT_SIZE.lg,
+    fontSize: fs.lg,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.primaryDark,
+    color: colors.primaryDark,
   },
   calcResultValueGold: {
-    fontSize: FONT_SIZE.lg,
+    fontSize: fs.lg,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.amberDark,
+    color: colors.amberDark,
   },
 
   // Footer Note
   footerNote: {
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
     paddingVertical: SPACING.sm,
     paddingHorizontal: SPACING.md,
     marginTop: SPACING.xs,
   },
   footerNoteText: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textSecondary,
+    fontSize: fs.xs,
+    color: colors.textSecondary,
     lineHeight: 16,
   },
 });

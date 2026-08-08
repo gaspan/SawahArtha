@@ -1,13 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import {
-  COLORS,
   SPACING,
   BORDER_RADIUS,
-  FONT_SIZE,
   FONT_WEIGHT,
   SHADOW,
+  type ThemeColors,
 } from '../constants/theme';
+import { useTheme, useThemedStyles } from '../context/ThemeContext';
 import { formatIDR } from '../utils/currency';
 
 interface Props {
@@ -29,6 +29,9 @@ export default function PriceSimulatorCard({
   minPrice,
   maxPrice,
 }: Props) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+
   const stepSize = (maxPrice - minPrice) / STEPS;
   const [stepIndex, setStepIndex] = useState(5);
 
@@ -68,8 +71,8 @@ export default function PriceSimulatorCard({
                 {
                   width: `${(stepIndex / STEPS) * 100}%`,
                   backgroundColor: stepIndex > 0
-                    ? isProfit ? COLORS.success : COLORS.warning
-                    : COLORS.borderLight,
+                    ? isProfit ? colors.success : colors.warning
+                    : colors.borderLight,
                 },
               ]}
             />
@@ -77,7 +80,7 @@ export default function PriceSimulatorCard({
 
           <View style={styles.priceDisplay}>
             <Text style={styles.priceDisplayLabel}>Harga simulasi</Text>
-            <Text style={[styles.priceDisplayValue, { color: isProfit ? COLORS.success : COLORS.danger }]}>
+            <Text style={[styles.priceDisplayValue, { color: isProfit ? colors.success : colors.danger }]}>
               {formatIDR(sliderPrice)}
             </Text>
             <Text style={styles.priceDisplayUnit}>/kg GKG</Text>
@@ -105,7 +108,7 @@ export default function PriceSimulatorCard({
       <View style={styles.resultRow}>
         <View style={styles.resultBox}>
           <Text style={styles.resultLabel}>Laba Proyeksi</Text>
-          <Text style={[styles.resultValue, { color: isProfit ? COLORS.success : COLORS.danger }]}>
+          <Text style={[styles.resultValue, { color: isProfit ? colors.success : colors.danger }]}>
             {isProfit ? '+' : ''}
             {formatIDR(netProfit)}
           </Text>
@@ -115,7 +118,7 @@ export default function PriceSimulatorCard({
 
         <View style={styles.resultBox}>
           <Text style={styles.resultLabel}>ROI</Text>
-          <Text style={[styles.resultValueSm, { color: isProfit ? COLORS.success : COLORS.danger }]}>
+          <Text style={[styles.resultValueSm, { color: isProfit ? colors.success : colors.danger }]}>
             {isProfit ? '+' : ''}
             {roi.toLocaleString('id-ID', { maximumFractionDigits: 1 })}%
           </Text>
@@ -125,7 +128,7 @@ export default function PriceSimulatorCard({
 
         <View style={styles.resultBox}>
           <Text style={styles.resultLabel}>Margin</Text>
-          <Text style={[styles.resultValueSm, { color: isProfit ? COLORS.success : COLORS.danger }]}>
+          <Text style={[styles.resultValueSm, { color: isProfit ? colors.success : colors.danger }]}>
             {isProfit ? '+' : ''}
             {margin.toLocaleString('id-ID', { maximumFractionDigits: 1 })}%
           </Text>
@@ -139,9 +142,10 @@ export default function PriceSimulatorCard({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors, fs: typeof import('../constants/theme').FONT_SIZE) =>
+  StyleSheet.create({
   card: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.md + 4,
     marginHorizontal: SPACING.md,
@@ -149,9 +153,9 @@ const styles = StyleSheet.create({
     ...SHADOW.md,
   },
   title: {
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.text,
+    color: colors.text,
     marginBottom: SPACING.md,
   },
   sliderSection: {
@@ -163,9 +167,9 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: BORDER_RADIUS.full,
-    backgroundColor: COLORS.primaryLight,
+    backgroundColor: colors.primaryLight,
     borderWidth: 1.5,
-    borderColor: COLORS.primary,
+    borderColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -173,12 +177,12 @@ const styles = StyleSheet.create({
     opacity: 0.3,
   },
   stepBtnText: {
-    fontSize: FONT_SIZE.lg,
+    fontSize: fs.lg,
     fontWeight: FONT_WEIGHT.bold,
-    color: COLORS.primaryDark,
+    color: colors.primaryDark,
   },
   stepBtnTextDisabled: {
-    color: COLORS.textLight,
+    color: colors.textLight,
   },
   sliderCenter: {
     flex: 1,
@@ -186,7 +190,7 @@ const styles = StyleSheet.create({
   },
   sliderBar: {
     height: 8,
-    backgroundColor: COLORS.borderLight,
+    backgroundColor: colors.borderLight,
     borderRadius: BORDER_RADIUS.full,
     overflow: 'hidden',
     marginBottom: SPACING.sm,
@@ -200,17 +204,17 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.xs,
   },
   priceDisplayLabel: {
-    fontSize: FONT_SIZE.xs - 1,
-    color: COLORS.textLight,
+    fontSize: fs.xs - 1,
+    color: colors.textLight,
     marginBottom: 2,
   },
   priceDisplayValue: {
-    fontSize: FONT_SIZE.lg,
+    fontSize: fs.lg,
     fontWeight: FONT_WEIGHT.bold,
   },
   priceDisplayUnit: {
-    fontSize: FONT_SIZE.xs - 1,
-    color: COLORS.textLight,
+    fontSize: fs.xs - 1,
+    color: colors.textLight,
   },
   markerRow: {
     flexDirection: 'row',
@@ -218,16 +222,16 @@ const styles = StyleSheet.create({
   },
   markerText: {
     fontSize: 9,
-    color: COLORS.textLight,
+    color: colors.textLight,
   },
   markerHint: {
     fontSize: 9,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     fontWeight: FONT_WEIGHT.medium,
   },
   resultRow: {
     flexDirection: 'row',
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
     borderRadius: BORDER_RADIUS.md,
     padding: SPACING.sm + 2,
     marginBottom: SPACING.sm,
@@ -238,25 +242,25 @@ const styles = StyleSheet.create({
   },
   resultDivider: {
     width: 1,
-    backgroundColor: COLORS.borderLight,
+    backgroundColor: colors.borderLight,
     marginVertical: SPACING.xs,
   },
   resultLabel: {
-    fontSize: FONT_SIZE.xs - 1,
-    color: COLORS.textSecondary,
+    fontSize: fs.xs - 1,
+    color: colors.textSecondary,
     marginBottom: 2,
   },
   resultValue: {
-    fontSize: FONT_SIZE.md,
+    fontSize: fs.md,
     fontWeight: FONT_WEIGHT.bold,
   },
   resultValueSm: {
-    fontSize: FONT_SIZE.sm,
+    fontSize: fs.sm,
     fontWeight: FONT_WEIGHT.bold,
   },
   hint: {
     fontSize: 9,
-    color: COLORS.textLight,
+    color: colors.textLight,
     textAlign: 'center',
   },
 });
