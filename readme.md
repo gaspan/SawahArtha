@@ -96,7 +96,7 @@ Tab keempat untuk pengelolaan utang piutang:
 ### 10. Kalkulator Zakat Hasil Tani Otomatis
 Mengalkulasi kewajiban zakat pertanian secara otomatis:
 *   Mendukung konversi otomatis dari **Hasil Bersih GKP (setelah dikurangi biaya gacong)** ke Gabah Kering Giling (GKG) dengan rasio penyusutan standar 80% (atau berat riil jika dimasukkan manual).
-*   Validasi otomatis terhadap batas minimal kewajiban zakat (Nisab pertanian sebesar $653 \text{ kg GKG}$).
+*   Validasi otomatis terhadap batas minimal kewajiban zakat (Nisab pertanian 5 wasq = 520 kg beras, dikonversi ke GKG menggunakan rendemen giling: $\text{Nisab GKG} = \frac{520}{\text{rendemen}}$, default rendemen 60% ≈ 866.7 kg GKG, dapat diubah di Pengaturan).
 *   Penerapan kadar zakat sebesar 5% (untuk sistem pengairan berbayar/irigasi pompa).
 *   **Estimasi Zakat dalam Rupiah**: Perhitungan estimasi nilai zakat dalam mata uang Rupiah dengan mengalikan berat zakat (kg) terhadap harga rata-rata tertimbang berat GKG (apabila ada data harga jual yang tercatat).
 *   **Total Pendapatan Net Zakat**: Estimasi total pendapatan ditampilkan setelah dikurangi kewajiban zakat, baik pada banner ringkasan maupun pada setiap record riwayat panen.

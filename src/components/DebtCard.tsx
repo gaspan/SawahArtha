@@ -141,11 +141,11 @@ const makeStyles = (colors: ThemeColors, fs: typeof import('../constants/theme')
   StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
-    borderRadius: BORDER_RADIUS.lg,
+    borderRadius: BORDER_RADIUS.xl,
     padding: SPACING.md + 4,
-    marginBottom: SPACING.sm,
-    borderLeftWidth: 3,
-    ...SHADOW.md,
+    marginBottom: SPACING.md,
+    marginHorizontal: SPACING.md,
+    ...SHADOW.sm,
   },
   loanCard: {
     borderLeftColor: colors.danger,

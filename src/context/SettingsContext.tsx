@@ -12,8 +12,9 @@ import React, {
   type ReactNode,
 } from 'react';
 import { useSQLiteContext } from 'expo-sqlite';
-import { getSetting, setSetting, SETTING_KEYS } from '../database/settingsService';
+import { getAllSettings, getSetting, setSetting, SETTING_KEYS } from '../database/settingsService';
 import { setThousandsSeparator } from '../utils/formatConfig';
+import { setRendemenRatio, DEFAULT_RENDEMEN_RATIO } from '../utils/zakat';
 
 export type NumberFormat = 'dot' | 'comma';
 
@@ -30,6 +31,10 @@ interface SettingsContextType {
   setNotificationsEnabled: (enabled: boolean) => Promise<void>;
   farmReminderEnabled: boolean;
   setFarmReminderEnabled: (enabled: boolean) => Promise<void>;
+  rendemenRatio: number;
+  setRendemenRatioSetting: (ratio: number) => Promise<void>;
+  appsScriptUrl: string;
+  setAppsScriptUrl: (url: string) => Promise<void>;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -42,19 +47,26 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [lastBackupAt, setLastBackupAtState] = useState<string | null>(null);
   const [notificationsEnabled, setNotificationsEnabledState] = useState(false);
   const [farmReminderEnabled, setFarmReminderEnabledState] = useState(false);
+  const [rendemenRatio, setRendemenRatioState] = useState(DEFAULT_RENDEMEN_RATIO);
+  const [appsScriptUrl, setAppsScriptUrlState] = useState('');
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
     const load = async () => {
       try {
-        const [nf, dls, drp, lba, ntf, farm] = await Promise.all([
-          getSetting(db, SETTING_KEYS.numberFormat),
-          getSetting(db, SETTING_KEYS.defaultLandSize),
-          getSetting(db, SETTING_KEYS.defaultRefPrice),
-          getSetting(db, SETTING_KEYS.lastBackupAt),
-          getSetting(db, SETTING_KEYS.notificationsEnabled),
-          getSetting(db, SETTING_KEYS.farmReminderEnabled),
-        ]);
+        const settings = await getAllSettings(db);
+        if (!isMounted) return;
+
+        const nf = settings[SETTING_KEYS.numberFormat];
+        const dls = settings[SETTING_KEYS.defaultLandSize];
+        const drp = settings[SETTING_KEYS.defaultRefPrice];
+        const lba = settings[SETTING_KEYS.lastBackupAt];
+        const ntf = settings[SETTING_KEYS.notificationsEnabled];
+        const farm = settings[SETTING_KEYS.farmReminderEnabled];
+        const rendemen = settings[SETTING_KEYS.rendemenRatio];
+        const asUrl = settings[SETTING_KEYS.appsScriptUrl];
+
         const fmt: NumberFormat = nf === 'comma' ? 'comma' : 'dot';
         setNumberFormatState(fmt);
         setThousandsSeparator(fmt === 'comma' ? ',' : '.');
@@ -63,13 +75,31 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         if (lba) setLastBackupAtState(lba);
         setNotificationsEnabledState(ntf === '1');
         setFarmReminderEnabledState(farm === '1');
-      } catch (error) {
+        if (asUrl) setAppsScriptUrlState(asUrl);
+        const ratio = parseFloat(rendemen || '');
+        if (!isNaN(ratio) && ratio > 0) {
+          setRendemenRatioState(ratio);
+          setRendemenRatio(ratio);
+        }
+      } catch (error: any) {
+        if (!isMounted) return;
+        if (
+          error?.message?.includes('already released') ||
+          error?.message?.includes('closed')
+        ) {
+          return;
+        }
         console.error('Error loading settings:', error);
       } finally {
-        setIsLoaded(true);
+        if (isMounted) {
+          setIsLoaded(true);
+        }
       }
     };
     load();
+    return () => {
+      isMounted = false;
+    };
   }, [db]);
 
   const setNumberFormat = useCallback(
@@ -145,6 +175,31 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     [db]
   );
 
+  const setRendemenRatioSetting = useCallback(
+    async (ratio: number) => {
+      setRendemenRatioState(ratio);
+      setRendemenRatio(ratio);
+      try {
+        await setSetting(db, SETTING_KEYS.rendemenRatio, String(ratio));
+      } catch (error) {
+        console.error('Error saving rendemen setting:', error);
+      }
+    },
+    [db]
+  );
+
+  const setAppsScriptUrl = useCallback(
+    async (url: string) => {
+      setAppsScriptUrlState(url);
+      try {
+        await setSetting(db, SETTING_KEYS.appsScriptUrl, url);
+      } catch (error) {
+        console.error('Error saving apps script url:', error);
+      }
+    },
+    [db]
+  );
+
   const value = useMemo<SettingsContextType>(
     () => ({
       numberFormat,
@@ -159,6 +214,10 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       setNotificationsEnabled,
       farmReminderEnabled,
       setFarmReminderEnabled,
+      rendemenRatio,
+      setRendemenRatioSetting,
+      appsScriptUrl,
+      setAppsScriptUrl,
     }),
     [
       numberFormat,
@@ -173,6 +232,10 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       setNotificationsEnabled,
       farmReminderEnabled,
       setFarmReminderEnabled,
+      rendemenRatio,
+      setRendemenRatioSetting,
+      appsScriptUrl,
+      setAppsScriptUrl,
     ]
   );
 

@@ -162,13 +162,18 @@ function ExpenseItem({
         </View>
       ) : null}
 
-      {/* Category Badge */}
+      {/* Category Badge & Receipt Indicator */}
       <View style={styles.cardBottomRow}>
         <View style={styles.categoryBadge}>
           <Text style={[styles.categoryBadgeText, { color: textColor }]}>
             {item.category}
           </Text>
         </View>
+        {Boolean(item.has_receipt) && (
+          <View style={styles.receiptIndicator}>
+            <Text style={styles.receiptIndicatorText}>📄 Struk</Text>
+          </View>
+        )}
       </View>
     </View>
   );
@@ -236,9 +241,11 @@ const makeStyles = (colors: ThemeColors, fs: typeof import('../constants/theme')
   // Card
   card: {
     backgroundColor: colors.surface,
-    borderRadius: BORDER_RADIUS.lg,
+    borderRadius: BORDER_RADIUS.xl,
     padding: SPACING.md,
-    ...SHADOW.md,
+    marginBottom: SPACING.md,
+    marginHorizontal: SPACING.md,
+    ...SHADOW.sm,
   },
 
   // Header Row
@@ -310,6 +317,22 @@ const makeStyles = (colors: ThemeColors, fs: typeof import('../constants/theme')
     fontSize: fs.xs,
     fontWeight: FONT_WEIGHT.semibold,
     letterSpacing: 0.2,
+  },
+  receiptIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: SPACING.xs,
+    backgroundColor: colors.successLight,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: SPACING.xs,
+    borderRadius: BORDER_RADIUS.full,
+    borderWidth: 1,
+    borderColor: colors.success + '40',
+  },
+  receiptIndicatorText: {
+    fontSize: fs.xs - 1,
+    color: colors.success,
+    fontWeight: FONT_WEIGHT.semibold,
   },
 
   // Actions

@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useSeason } from '../../src/context/SeasonContext';
 import { useBudget } from '../../src/context/BudgetContext';
 import { useNotificationSync } from '../../src/hooks/useNotifications';
@@ -48,6 +49,11 @@ import PlotCard from '../../src/components/PlotCard';
 import PlotModal from '../../src/components/PlotModal';
 import { usePlots } from '../../src/hooks/usePlots';
 import type { Plot } from '../../src/database/plotService';
+import WeatherWidget from '../../src/components/WeatherWidget';
+import WeatherAlertCard, { type WeatherAlertItem } from '../../src/components/WeatherAlertCard';
+import { evaluateWeatherAlerts } from '../../src/utils/weatherAlerts';
+import { syncWeatherAlerts } from '../../src/database/weatherAlertService';
+import type { WeatherData } from '../../src/services/weatherService';
 
 export default function DashboardScreen() {
   const db = useSQLiteContext();
@@ -106,6 +112,34 @@ export default function DashboardScreen() {
   const { plots, addPlot, updatePlot, deletePlot, refreshPlots } = usePlots();
   const [plotModalVisible, setPlotModalVisible] = useState(false);
   const [editingPlot, setEditingPlot] = useState<Plot | null>(null);
+  const [weatherAlerts, setWeatherAlerts] = useState<WeatherAlertItem[]>([]);
+
+  const weatherCoords = useMemo(() => {
+    const plotWithLoc = plots.find((p) => p.latitude != null && p.longitude != null);
+    if (plotWithLoc && plotWithLoc.latitude != null && plotWithLoc.longitude != null) {
+      return { latitude: plotWithLoc.latitude, longitude: plotWithLoc.longitude };
+    }
+    return { latitude: -7.5, longitude: 110.0 };
+  }, [plots]);
+
+  const handleWeatherLoaded = useCallback(
+    async (data: WeatherData) => {
+      try {
+        const calculated = evaluateWeatherAlerts(data.current, data.forecast);
+        if (calculated.length > 0) {
+          await syncWeatherAlerts(db, selectedSeason, calculated);
+        }
+        setWeatherAlerts(calculated);
+      } catch (err) {
+        console.error('Error handling weather alerts:', err);
+      }
+    },
+    [db, selectedSeason]
+  );
+
+  const handleDismissAlert = useCallback((index: number) => {
+    setWeatherAlerts((prev) => prev.filter((_, i) => i !== index));
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -176,7 +210,12 @@ export default function DashboardScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <LinearGradient
+        colors={['#065F46', '#047857', '#0284C7']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.header}
+      >
         <View style={styles.headerContent}>
           <Text style={styles.headerEmoji}>🌾</Text>
           <View>
@@ -191,7 +230,7 @@ export default function DashboardScreen() {
         >
           <Text style={styles.settingsBtnText}>⚙️</Text>
         </TouchableOpacity>
-      </View>
+      </LinearGradient>
 
       <ScrollView
         style={styles.scrollView}
@@ -211,6 +250,17 @@ export default function DashboardScreen() {
           seasons={seasons}
           onSelectSeason={switchSeason}
           onNewSeason={() => setShowNewSeasonModal(true)}
+        />
+
+        {/* Cuaca & Rekomendasi Pintar */}
+        <WeatherWidget
+          latitude={weatherCoords.latitude}
+          longitude={weatherCoords.longitude}
+          onWeatherLoaded={handleWeatherLoaded}
+        />
+        <WeatherAlertCard
+          alerts={weatherAlerts}
+          onDismiss={handleDismissAlert}
         />
 
         {isDataLoading ? (

@@ -16,6 +16,7 @@ import {
   type NativeSyntheticEvent,
   type NativeScrollEvent,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from 'expo-router';
 import { useExpenses } from '../../src/hooks/useExpenses';
 import { useBudget } from '../../src/context/BudgetContext';
@@ -24,7 +25,7 @@ import { SPACING, BORDER_RADIUS, FONT_WEIGHT, SHADOW, CATEGORIES, type ThemeColo
 import { useTheme, useThemedStyles } from '../../src/context/ThemeContext';
 import { type Expense } from '../../src/database/expenseService';
 
-import ExpenseForm from '../../src/components/ExpenseForm';
+import ExpenseFormWithOCR from '../../src/components/ExpenseFormWithOCR';
 import ExpenseList from '../../src/components/ExpenseList';
 import EditExpenseModal from '../../src/components/EditExpenseModal';
 import MarkPaidModal from '../../src/components/MarkPaidModal';
@@ -91,6 +92,9 @@ export default function ExpensesScreen() {
     category: string;
     is_paid: number;
     vendor_name: string;
+    plot_id?: number | null;
+    receipt_image_uri?: string | null;
+    receipt_raw_text?: string | null;
   }) => {
     try {
       await addExpense(data);
@@ -135,13 +139,18 @@ export default function ExpensesScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       {/* Header */}
-      <View style={styles.header}>
+      <LinearGradient
+        colors={['#065F46', '#047857', '#0284C7']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.header}
+      >
         <Text style={styles.headerEmoji}>💰</Text>
         <View>
           <Text style={styles.headerTitle}>Pengeluaran</Text>
           <Text style={styles.headerSubtitle}>Catat modal & biaya operasional</Text>
         </View>
-      </View>
+      </LinearGradient>
 
       <ScrollView
         style={styles.scrollView}
@@ -175,8 +184,8 @@ export default function ExpensesScreen() {
           </View>
         )}
 
-        {/* Expense Form */}
-        <ExpenseForm onSubmit={handleAddExpense} />
+        {/* Expense Form with OCR */}
+        <ExpenseFormWithOCR onSubmit={handleAddExpense} />
 
         {/* Expense List */}
         <View style={styles.listSection}>

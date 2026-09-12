@@ -213,7 +213,8 @@ export default function ExpenseForm({ onSubmit }: ExpenseFormProps) {
             >
               <View style={styles.radioCircle}>
                 {isPaid && <View style={styles.radioDot} />}
-              </View>              <Text style={[styles.radioLabel, isPaid && styles.radioLabelActive]}>
+              </View>
+              <Text style={[styles.radioLabel, isPaid && styles.radioLabelActive]}>
                 Sudah Dibayar
               </Text>
             </TouchableOpacity>

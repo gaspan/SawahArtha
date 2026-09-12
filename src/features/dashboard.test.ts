@@ -348,9 +348,9 @@ describe('Edge cases', () => {
   });
 
   it('Zakat > 0 only when nisab reached', () => {
-    // NISAB = 653 kg GKG
+    // NISAB = 520 kg beras ÷ rendemen 60% ≈ 866.67 kg GKG
     const totalGKGBelow = 500;
-    const totalGKGAbove = 700;
+    const totalGKGAbove = 900;
     const price = 6000;
 
     const below = getZakatSummary(totalGKGBelow, price);

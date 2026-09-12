@@ -24,8 +24,8 @@ import {
   resolveGKG,
   GACONG_BERAT,
   GACONG_PEMBAGIAN,
+  getNisabGKG,
   type GacongType,
-  NISAB_KG,
 } from '../utils/zakat';
 import { usePlots } from '../hooks/usePlots';
 import PlotPicker from './PlotPicker';
@@ -320,8 +320,8 @@ export default function IncomeForm({ onSubmit }: IncomeFormProps) {
               </View>
             ) : (
               <Text style={styles.nisabSummaryText}>
-                ℹ️ Belum mencapai nisab ({NISAB_KG} kg). Sisa{' '}
-                {(NISAB_KG - effectiveGKG).toLocaleString('id-ID', { maximumFractionDigits: 1 })}{' '}
+                ℹ️ Belum mencapai nisab ({getNisabGKG().toLocaleString('id-ID', { maximumFractionDigits: 0 })} kg). Sisa{' '}
+                {(getNisabGKG() - effectiveGKG).toLocaleString('id-ID', { maximumFractionDigits: 1 })}{' '}
                 kg lagi.
               </Text>
             )}

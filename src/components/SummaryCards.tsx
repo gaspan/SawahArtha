@@ -112,7 +112,7 @@ const makeStyles = (colors: ThemeColors, fs: typeof import('../constants/theme')
   },
   fullCard: {
     backgroundColor: colors.surface,
-    borderRadius: BORDER_RADIUS.lg,
+    borderRadius: BORDER_RADIUS.xl,
     overflow: 'hidden',
     ...SHADOW.md,
   },
@@ -124,7 +124,7 @@ const makeStyles = (colors: ThemeColors, fs: typeof import('../constants/theme')
   halfCard: {
     flex: 1,
     backgroundColor: colors.surface,
-    borderRadius: BORDER_RADIUS.lg,
+    borderRadius: BORDER_RADIUS.xl,
     overflow: 'hidden',
     ...SHADOW.md,
   },

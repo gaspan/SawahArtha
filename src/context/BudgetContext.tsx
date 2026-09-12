@@ -56,8 +56,13 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
       setBudgetVsActual(vsActual);
       setTotalBudget(total);
       setOverBudgetCount(overCount);
-      setBudgetLogs(logs);
-    } catch (error) {
+    } catch (error: any) {
+      if (
+        error?.message?.includes('already released') ||
+        error?.message?.includes('closed')
+      ) {
+        return;
+      }
       console.error('Error fetching budgets:', error);
     } finally {
       setIsLoading(false);

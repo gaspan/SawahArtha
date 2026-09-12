@@ -7,6 +7,7 @@ import { shareAsync } from 'expo-sharing';
 import { Platform } from 'react-native';
 import { type SQLiteDatabase } from 'expo-sqlite';
 import { buildReportHtml, type PdfReportData } from '../utils/pdfHtml';
+import { getNisabGKG, ZAKAT_RATE } from '../utils/zakat';
 
 export async function buildPdfReport(
   db: SQLiteDatabase,
@@ -74,8 +75,8 @@ export async function buildPdfReport(
   const unsoldGKG = Math.max(0, totalGKG - sales.reduce((s, x) => s + x.gkg_sold, 0));
   const totalRevenueEstimate = totalRevenue + unsoldGKG * refPricePerKg;
 
-  const zakatRate = 0.05;
-  const zakatKg = totalGKG >= 653 ? totalGKG * zakatRate : 0;
+  const zakatRate = ZAKAT_RATE;
+  const zakatKg = totalGKG >= getNisabGKG() ? totalGKG * zakatRate : 0;
   const zakatRp =
     zakatKg > 0 && sales.length > 0
       ? zakatKg * (totalRevenue / Math.max(1, sales.reduce((s, x) => s + x.gkg_sold, 0)))

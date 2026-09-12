@@ -278,4 +278,131 @@ export async function initializeDatabase(db: SQLiteDatabase): Promise<void> {
     );
     CREATE INDEX IF NOT EXISTS idx_activities_season ON farming_activities(season_code, date DESC);
   `);
+
+  // Migrate: receipt images for OCR feature
+  await db.execAsync(`
+    CREATE TABLE IF NOT EXISTS receipt_images (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      expense_id INTEGER,
+      image_uri TEXT NOT NULL,
+      thumbnail_uri TEXT,
+      ocr_raw_text TEXT,
+      ocr_confidence REAL,
+      created_at TEXT DEFAULT (datetime('now', 'localtime')),
+      FOREIGN KEY (expense_id) REFERENCES expenses(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_receipt_images_expense ON receipt_images(expense_id);
+  `);
+
+  try {
+    await db.execAsync('ALTER TABLE expenses ADD COLUMN has_receipt INTEGER DEFAULT 0');
+  } catch (error) {
+    // Column already exists
+  }
+
+  // Migrate: location columns for geolocation feature
+  try {
+    await db.execAsync('ALTER TABLE plots ADD COLUMN location_type TEXT DEFAULT \'none\'');
+  } catch (error) {
+    // Column already exists
+  }
+  try {
+    await db.execAsync('ALTER TABLE plots ADD COLUMN latitude REAL');
+  } catch (error) {
+    // Column already exists
+  }
+  try {
+    await db.execAsync('ALTER TABLE plots ADD COLUMN longitude REAL');
+  } catch (error) {
+    // Column already exists
+  }
+  try {
+    await db.execAsync('ALTER TABLE plots ADD COLUMN location_accuracy REAL');
+  } catch (error) {
+    // Column already exists
+  }
+  try {
+    await db.execAsync('ALTER TABLE plots ADD COLUMN polygon_coords TEXT');
+  } catch (error) {
+    // Column already exists
+  }
+  try {
+    await db.execAsync('ALTER TABLE plots ADD COLUMN calculated_area REAL');
+  } catch (error) {
+    // Column already exists
+  }
+  try {
+    await db.execAsync('ALTER TABLE plots ADD COLUMN address TEXT');
+  } catch (error) {
+    // Column already exists
+  }
+  try {
+    await db.execAsync('ALTER TABLE plots ADD COLUMN location_tagged_at TEXT');
+  } catch (error) {
+    // Column already exists
+  }
+
+  // Migrate: weather cache and alerts
+  await db.execAsync(`
+    CREATE TABLE IF NOT EXISTS weather_cache (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      latitude REAL NOT NULL,
+      longitude REAL NOT NULL,
+      weather_data TEXT NOT NULL,
+      forecast_data TEXT,
+      fetched_at TEXT NOT NULL,
+      expires_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_weather_cache_location ON weather_cache(latitude, longitude, expires_at);
+    
+    CREATE TABLE IF NOT EXISTS weather_alerts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      season_code TEXT,
+      alert_type TEXT NOT NULL,
+      title TEXT NOT NULL,
+      message TEXT NOT NULL,
+      priority TEXT DEFAULT 'medium',
+      is_read INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now', 'localtime')),
+      FOREIGN KEY (season_code) REFERENCES seasons(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_weather_alerts_season ON weather_alerts(season_code, created_at DESC);
+  `);
+
+  // Migrate: diary photos for photo diary feature
+  await db.execAsync(`
+    CREATE TABLE IF NOT EXISTS diary_photos (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      season_code TEXT NOT NULL,
+      plot_id INTEGER,
+      image_uri TEXT NOT NULL,
+      thumbnail_uri TEXT,
+      caption TEXT,
+      farming_stage TEXT,
+      days_since_planting INTEGER,
+      latitude REAL,
+      longitude REAL,
+      weather_condition TEXT,
+      file_size INTEGER,
+      taken_at TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now', 'localtime')),
+      FOREIGN KEY (season_code) REFERENCES seasons(season_code) ON DELETE CASCADE,
+      FOREIGN KEY (plot_id) REFERENCES plots(id) ON DELETE SET NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_diary_photos_season_date ON diary_photos(season_code, taken_at DESC);
+  `);
+
+  // Migrate: weather and diary settings
+  try {
+    await db.execAsync("INSERT OR IGNORE INTO settings (key, value) VALUES ('weather_location_mode', 'auto')");
+    await db.execAsync("INSERT OR IGNORE INTO settings (key, value) VALUES ('weather_manual_location', '')");
+    await db.execAsync("INSERT OR IGNORE INTO settings (key, value) VALUES ('weather_alerts_enabled', '1')");
+    await db.execAsync("INSERT OR IGNORE INTO settings (key, value) VALUES ('weather_cache_duration', '30')");
+    await db.execAsync("INSERT OR IGNORE INTO settings (key, value) VALUES ('diary_auto_stage', '1')");
+    await db.execAsync("INSERT OR IGNORE INTO settings (key, value) VALUES ('diary_compress_images', '1')");
+    await db.execAsync("INSERT OR IGNORE INTO settings (key, value) VALUES ('diary_max_photo_size', '2048')");
+    await db.execAsync("INSERT OR IGNORE INTO settings (key, value) VALUES ('diary_watermark_enabled', '0')");
+  } catch (error) {
+    // Settings might already exist
+  }
 }

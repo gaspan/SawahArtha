@@ -13,8 +13,11 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Image,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from 'expo-router';
+import { useSQLiteContext } from 'expo-sqlite';
 import {
   SPACING,
   BORDER_RADIUS,
@@ -23,18 +26,31 @@ import {
   type ThemeColors,
 } from '../../src/constants/theme';
 import { useTheme, useThemedStyles } from '../../src/context/ThemeContext';
+import { useSeason } from '../../src/context/SeasonContext';
 import { useActivities, type ActivityType } from '../../src/hooks/useActivities';
 import { usePlots } from '../../src/hooks/usePlots';
+import { useDiaryPhotos } from '../../src/hooks/useDiaryPhotos';
 import { ACTIVITY_TYPES } from '../../src/database/activityService';
+import {
+  getPlantingDate,
+  computeDaysSincePlanting,
+  detectFarmingStage,
+} from '../../src/database/diaryService';
 import PlotPicker from '../../src/components/PlotPicker';
+import PhotoUploader from '../../src/components/PhotoUploader';
+import PhotoTimeline from '../../src/components/PhotoTimeline';
 import { formatDate } from '../../src/utils/dateUtil';
 
 export default function JournalScreen() {
+  const db = useSQLiteContext();
   const { colors } = useTheme();
   const styles = useThemedStyles(makeStyles);
+  const { selectedSeason } = useSeason();
   const { activities, isLoading, addActivity, deleteActivity, refreshActivities } = useActivities();
   const { plots } = usePlots();
+  const { photos, isLoading: photosLoading, addPhoto, deletePhoto, refreshPhotos } = useDiaryPhotos();
 
+  const [mainTab, setMainTab] = useState<'catat' | 'foto'>('catat');
   const [filter, setFilter] = useState<ActivityType | null>(null);
   const [title, setTitle] = useState('');
   const [type, setType] = useState<ActivityType>('Tanam');
@@ -42,10 +58,17 @@ export default function JournalScreen() {
   const [selectedPlotId, setSelectedPlotId] = useState<number | null>(null);
   const [expandedForm, setExpandedForm] = useState(false);
 
+  const [pendingUri, setPendingUri] = useState<string | null>(null);
+  const [pendingSize, setPendingSize] = useState<number | null>(null);
+  const [photoCaption, setPhotoCaption] = useState('');
+  const [photoPlotId, setPhotoPlotId] = useState<number | null>(null);
+  const [savingPhoto, setSavingPhoto] = useState(false);
+
   useFocusEffect(
     useCallback(() => {
       refreshActivities();
-    }, [refreshActivities])
+      refreshPhotos();
+    }, [refreshActivities, refreshPhotos])
   );
 
   const handleSubmit = async () => {
@@ -84,6 +107,45 @@ export default function JournalScreen() {
     );
   };
 
+  const handleSavePhoto = async () => {
+    if (!pendingUri) {
+      Alert.alert('Foto belum dipilih 📷', 'Ambil foto atau pilih dari galeri dulu.');
+      return;
+    }
+    setSavingPhoto(true);
+    try {
+      const nowIso = new Date().toISOString();
+      const plantingDate = await getPlantingDate(db, selectedSeason);
+      const days = plantingDate ? computeDaysSincePlanting(nowIso, plantingDate) : null;
+      await addPhoto({
+        imageUri: pendingUri,
+        caption: photoCaption.trim() || undefined,
+        plotId: photoPlotId,
+        farmingStage: detectFarmingStage(days),
+        daysSincePlanting: days,
+        fileSize: pendingSize,
+        takenAt: nowIso,
+      });
+      setPendingUri(null);
+      setPendingSize(null);
+      setPhotoCaption('');
+      setPhotoPlotId(null);
+      Alert.alert('✅ Tersimpan', 'Foto progress tanaman tersimpan di diary.');
+    } catch (error) {
+      console.error('Error saving diary photo:', error);
+      Alert.alert('Error', 'Gagal menyimpan foto.');
+    } finally {
+      setSavingPhoto(false);
+    }
+  };
+
+  const handleDeletePhoto = (id: number) => {
+    Alert.alert('Hapus Foto 🗑️', 'Hapus foto ini dari diary?', [
+      { text: 'Batal', style: 'cancel' },
+      { text: 'Hapus', style: 'destructive', onPress: async () => { await deletePhoto(id); } },
+    ]);
+  };
+
   const filtered = filter
     ? activities.filter((a) => a.activity_type === filter)
     : activities;
@@ -95,19 +157,48 @@ export default function JournalScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <View style={styles.header}>
+      <LinearGradient
+        colors={['#065F46', '#047857', '#0284C7']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.header}
+      >
         <Text style={styles.headerEmoji}>📔</Text>
         <View>
           <Text style={styles.headerTitle}>Jurnal Kegiatan Tani</Text>
           <Text style={styles.headerSubtitle}>Tanam · Pupuk · Semprot · Panen</Text>
         </View>
-      </View>
+      </LinearGradient>
 
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        {/* Main tabs: Catatan vs Foto */}
+        <View style={styles.mainTabRow}>
+          <TouchableOpacity
+            style={[styles.mainTab, mainTab === 'catat' && styles.mainTabActive]}
+            onPress={() => setMainTab('catat')}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.mainTabText, mainTab === 'catat' && { color: colors.primaryDark }]}>
+              📝 Kegiatan
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.mainTab, mainTab === 'foto' && styles.mainTabActive]}
+            onPress={() => setMainTab('foto')}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.mainTabText, mainTab === 'foto' && { color: colors.primaryDark }]}>
+              📷 Foto ({photos.length})
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {mainTab === 'catat' ? (
+        <>
         {/* Filter chips */}
         <ScrollView
           horizontal
@@ -256,6 +347,77 @@ export default function JournalScreen() {
               </View>
             );
           })
+        )}
+        </>
+        ) : (
+        <>
+        {/* Photo Diary */}
+        <View style={styles.formCard}>
+          <Text style={styles.formLabel}>Dokumentasi Foto</Text>
+          <Text style={styles.photoHint}>
+            Foto progress tanaman dari tanam sampai panen. Fase terdeteksi otomatis dari tanggal Tanam di jurnal.
+          </Text>
+          <PhotoUploader
+            onPhotoSelected={(uri, size) => {
+              setPendingUri(uri);
+              setPendingSize(size);
+            }}
+          />
+          {pendingUri ? (
+            <View style={styles.photoPreviewWrap}>
+              <Image source={{ uri: pendingUri }} style={styles.photoPreview} resizeMode="cover" />
+              <TextInput
+                style={[styles.input, styles.noteInput]}
+                value={photoCaption}
+                onChangeText={setPhotoCaption}
+                placeholder="Caption — mis. Daun mulai lebat, malai keluar..."
+                placeholderTextColor={colors.textLight}
+                multiline
+                maxLength={200}
+              />
+              <PlotPicker plots={plots} selectedPlotId={photoPlotId} onChange={setPhotoPlotId} />
+              <View style={styles.photoActionRow}>
+                <TouchableOpacity
+                  style={styles.photoCancelBtn}
+                  onPress={() => {
+                    setPendingUri(null);
+                    setPendingSize(null);
+                    setPhotoCaption('');
+                    setPhotoPlotId(null);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.photoCancelText}>Batal</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.photoSaveBtn}
+                  onPress={handleSavePhoto}
+                  disabled={savingPhoto}
+                  activeOpacity={0.8}
+                >
+                  {savingPhoto ? (
+                    <ActivityIndicator size="small" color={colors.textInverse} />
+                  ) : (
+                    <Text style={styles.submitButtonText}>💾 Simpan Foto</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : null}
+        </View>
+
+        <Text style={styles.formLabel}>Timeline ({photos.length})</Text>
+        {photosLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={styles.loadingText}>Memuat foto...</Text>
+          </View>
+        ) : (
+          <View style={styles.timelineWrap}>
+            <PhotoTimeline photos={photos} onDeletePhoto={handleDeletePhoto} />
+          </View>
+        )}
+        </>
         )}
         <View style={{ height: SPACING.xl }} />
       </ScrollView>
@@ -475,5 +637,73 @@ const makeStyles = (colors: ThemeColors, fs: typeof import('../../src/constants/
       color: colors.textSecondary,
       marginTop: SPACING.xs,
       lineHeight: 16,
+    },
+    mainTabRow: {
+      flexDirection: 'row',
+      gap: SPACING.xs,
+      marginBottom: SPACING.sm,
+    },
+    mainTab: {
+      flex: 1,
+      paddingVertical: SPACING.sm,
+      borderRadius: BORDER_RADIUS.md,
+      borderWidth: 1,
+      borderColor: colors.borderLight,
+      backgroundColor: colors.surface,
+      alignItems: 'center',
+    },
+    mainTabActive: {
+      borderColor: colors.primary,
+      backgroundColor: colors.primaryLight,
+    },
+    mainTabText: {
+      fontSize: fs.sm,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.textSecondary,
+    },
+    photoHint: {
+      fontSize: fs.xs,
+      color: colors.textLight,
+      marginBottom: SPACING.sm,
+      lineHeight: 18,
+    },
+    photoPreviewWrap: {
+      marginTop: SPACING.sm,
+      gap: SPACING.sm,
+    },
+    photoPreview: {
+      width: '100%',
+      height: 220,
+      borderRadius: BORDER_RADIUS.md,
+      backgroundColor: colors.borderLight,
+    },
+    photoActionRow: {
+      flexDirection: 'row',
+      gap: SPACING.sm,
+    },
+    photoCancelBtn: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: SPACING.sm + 2,
+      borderRadius: BORDER_RADIUS.md,
+      borderWidth: 1,
+      borderColor: colors.borderLight,
+    },
+    photoCancelText: {
+      fontSize: fs.sm,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.textSecondary,
+    },
+    photoSaveBtn: {
+      flex: 2,
+      backgroundColor: colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: SPACING.sm + 2,
+      borderRadius: BORDER_RADIUS.md,
+    },
+    timelineWrap: {
+      height: 520,
     },
   });

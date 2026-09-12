@@ -244,11 +244,11 @@ const makeStyles = (colors: ThemeColors, fs: typeof import('../constants/theme')
   },
   card: {
     backgroundColor: colors.surface,
-    borderRadius: BORDER_RADIUS.lg,
+    borderRadius: BORDER_RADIUS.xl,
     padding: SPACING.md,
-    borderLeftWidth: 3,
-    borderLeftColor: colors.primary,
-    ...SHADOW.md,
+    marginBottom: SPACING.md,
+    marginHorizontal: SPACING.md,
+    ...SHADOW.sm,
   },
   cardHeader: {
     flexDirection: 'row',

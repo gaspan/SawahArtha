@@ -21,7 +21,12 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.gentur.ariya.SawahArtha"
+      "package": "com.gentur.ariya.SawahArtha",
+      "config": {
+        "googleMaps": {
+          "apiKey": ""
+        }
+      }
     },
     "web": {
       "favicon": "./assets/images/favicon.png"
@@ -47,6 +52,33 @@
         {
           "color": "#059669",
           "defaultChannel": "reminders"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Aplikasi memerlukan akses galeri untuk melampirkan foto struk dan dokumentasi sawah.",
+          "cameraPermission": "Aplikasi memerlukan akses kamera untuk memindai struk dan mengambil foto progress tanaman."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Aplikasi memerlukan akses kamera untuk memindai struk belanja."
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Aplikasi memerlukan akses galeri untuk menyimpan foto dokumentasi sawah.",
+          "savePhotosPermission": "Aplikasi memerlukan izin untuk menyimpan foto."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Aplikasi memerlukan akses lokasi untuk menandai posisi sawah Anda.",
+          "locationWhenInUsePermission": "Aplikasi memerlukan akses lokasi untuk menandai posisi sawah Anda."
         }
       ],
       "expo-splash-screen"

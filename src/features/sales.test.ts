@@ -144,13 +144,13 @@ describe('Rata-rata harga tertimbang dari sales', () => {
 
   it('konsisten dengan formula zakat rupiah', () => {
     const sales = [
-      { gkg_sold: 400, price_per_kg: 6000 },
-      { gkg_sold: 400, price_per_kg: 7000 },
+      { gkg_sold: 440, price_per_kg: 6000 },
+      { gkg_sold: 440, price_per_kg: 7000 },
     ];
     const avg = weightedAvgPrice(sales);
-    const summary = getZakatSummary(800, avg);
-    assert.strictEqual(summary.zakatKg, 40);
-    assert.strictEqual(summary.zakatRp, 40 * avg);
+    const summary = getZakatSummary(880, avg);
+    assert.strictEqual(summary.zakatKg, 44);
+    assert.strictEqual(summary.zakatRp, 44 * avg);
   });
 });
 

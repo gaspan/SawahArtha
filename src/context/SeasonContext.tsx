@@ -45,23 +45,38 @@ export function SeasonProvider({ children }: { children: ReactNode }) {
 
   // Initial load: get active season and all seasons
   useEffect(() => {
+    let isMounted = true;
     const init = async () => {
       try {
         const active = await getActiveSeason(db);
+        if (!isMounted) return;
         const allSeasons = await getAllSeasons(db);
+        if (!isMounted) return;
         setSeasons(allSeasons);
         if (active) {
           setSelectedSeason(active.season_code);
         } else if (allSeasons.length > 0) {
           setSelectedSeason(allSeasons[0].season_code);
         }
-      } catch (error) {
+      } catch (error: any) {
+        if (!isMounted) return;
+        if (
+          error?.message?.includes('already released') ||
+          error?.message?.includes('closed')
+        ) {
+          return;
+        }
         console.error('Error initializing seasons:', error);
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
     init();
+    return () => {
+      isMounted = false;
+    };
   }, [db]);
 
   const switchSeason = useCallback(async (seasonCode: string) => {

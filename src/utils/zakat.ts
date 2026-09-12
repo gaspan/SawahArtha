@@ -3,18 +3,36 @@
  *
  * Based on Indonesian rice farming standards:
  * - Net GKP to GKG conversion: 80% (standard moisture reduction)
- * - Nisab: 653 kg GKG (Gabah Kering Giling)
+ * - Nisab: 520 kg beras (BAZNAS, PMA No. 52/2014), converted to GKG using
+ *   rendemen (GKG → beras milling yield). Default rendemen: 60%.
+ *   Nisab GKG = 520 / rendemen ≈ 866.67 kg at 60%.
  * - Rate: 5% (for irrigated/artificial irrigation farming with high operational costs)
  * - Gacong (harvest fee) is deducted from gross GKP before GKG conversion
  */
 
-export const NISAB_KG = 653;
+export const NISAB_BERAS_KG = 520;
+export const DEFAULT_RENDEMEN_RATIO = 0.6;
 export const ZAKAT_RATE = 0.05;
 export const GKP_TO_GKG_RATIO = 0.8;
 
 export const GACONG_BERAT = 'berat';
 export const GACONG_PEMBAGIAN = 'pembagian';
 export type GacongType = typeof GACONG_BERAT | typeof GACONG_PEMBAGIAN;
+
+let currentRendemen = DEFAULT_RENDEMEN_RATIO;
+
+export function setRendemenRatio(ratio: number): void {
+  if (isNaN(ratio) || ratio <= 0) return;
+  currentRendemen = ratio;
+}
+
+export function getRendemenRatio(): number {
+  return currentRendemen;
+}
+
+export function getNisabGKG(rendemen = currentRendemen): number {
+  return NISAB_BERAS_KG / rendemen;
+}
 
 /**
  * Calculate gacong (harvest fee) deduction weight in kg.
@@ -75,7 +93,7 @@ export function isEstimatedGKG(gkgWeight: number, netGkp: number, tolerance = 0.
  * Check if zakat is obligatory based on total GKG
  */
 export function isZakatWajib(totalGKG: number): boolean {
-  return totalGKG >= NISAB_KG;
+  return totalGKG >= getNisabGKG();
 }
 
 /**
@@ -99,19 +117,23 @@ export function calculateZakatRupiah(zakatKg: number, pricePerKg: number): numbe
  * Get comprehensive zakat calculation result
  */
 export function getZakatSummary(totalGKG: number, avgPricePerKg: number) {
+  const rendemen = getRendemenRatio();
+  const nisab = getNisabGKG(rendemen);
   const wajib = isZakatWajib(totalGKG);
   const zakatKg = calculateZakatKg(totalGKG);
   const zakatRp = calculateZakatRupiah(zakatKg, avgPricePerKg);
-  const progressToNisab = Math.min((totalGKG / NISAB_KG) * 100, 100);
+  const progressToNisab = Math.min((totalGKG / nisab) * 100, 100);
 
   return {
     wajib,
     totalGKG,
-    nisab: NISAB_KG,
+    nisab,
+    nisabBerasKg: NISAB_BERAS_KG,
+    rendemen,
     rate: ZAKAT_RATE,
     zakatKg,
     zakatRp,
     progressToNisab,
-    remainingToNisab: Math.max(NISAB_KG - totalGKG, 0),
+    remainingToNisab: Math.max(nisab - totalGKG, 0),
   };
 }

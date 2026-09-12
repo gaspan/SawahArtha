@@ -110,7 +110,7 @@ const makeStyles = (colors: ThemeColors, fs: typeof import('../constants/theme')
   StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
-    borderRadius: BORDER_RADIUS.lg,
+    borderRadius: BORDER_RADIUS.xl,
     padding: SPACING.md + 4,
     marginHorizontal: SPACING.md,
     marginBottom: SPACING.md,
@@ -185,10 +185,12 @@ const makeStyles = (colors: ThemeColors, fs: typeof import('../constants/theme')
   },
   metricBox: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: colors.surfaceElevated,
     borderRadius: BORDER_RADIUS.md,
     padding: SPACING.sm + 2,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.borderLight,
   },
   metricLabel: {
     fontSize: fs.xs - 1,

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import {
   SPACING,
@@ -52,6 +52,7 @@ export default function BudgetCard({
 }: Props) {
   const { colors } = useTheme();
   const styles = useThemedStyles(makeStyles);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const overallPct = totalBudget > 0
     ? Math.min((totalActual / totalBudget) * 100, 100)
@@ -122,57 +123,71 @@ export default function BudgetCard({
         </Text>
       </View>
 
-      {budgetVsActual.map((item) => (
-        <TouchableOpacity
-          key={item.category}
-          style={styles.categoryRow}
-          onPress={() => onEditBudget(item.category)}
-          activeOpacity={0.7}
-        >
-          <View style={styles.catLeft}>
-            <View style={[styles.statusDot, { backgroundColor: statusColor(item.status, colors) }]} />
-            <Text style={styles.catName}>{item.category}</Text>
-          </View>
+      <TouchableOpacity
+        style={styles.toggleBtn}
+        onPress={() => setIsExpanded(!isExpanded)}
+        activeOpacity={0.7}
+      >
+        <Text style={styles.toggleBtnText}>
+          {isExpanded ? 'Tutup Rincian ▲' : 'Lihat Rincian ▼'}
+        </Text>
+      </TouchableOpacity>
 
-          <View style={styles.catRight}>
-            <View style={styles.catBarBg}>
-              <View
-                style={[
-                  styles.catBarFill,
-                  {
-                    width: `${Math.min(item.percentUsed, 100)}%`,
-                    backgroundColor: statusColor(item.status, colors),
-                  },
-                ]}
-              />
-            </View>
-            <View style={styles.catAmounts}>
-              <Text style={styles.catActual}>
-                {formatIDR(item.actualAmount)}
-              </Text>
-              <Text style={styles.catBudget}>
-                {' / '}{formatIDR(item.budgetAmount)}
-              </Text>
-            </View>
-            <Text
-              style={[
-                styles.catPct,
-                { color: statusColor(item.status, colors) },
-              ]}
+      {isExpanded && (
+        <View style={styles.expandedSection}>
+          {budgetVsActual.map((item) => (
+            <TouchableOpacity
+              key={item.category}
+              style={styles.categoryRow}
+              onPress={() => onEditBudget(item.category)}
+              activeOpacity={0.7}
             >
-              {item.percentUsed.toLocaleString('id-ID', { maximumFractionDigits: 0 })}%
-            </Text>
-          </View>
+              <View style={styles.catLeft}>
+                <View style={[styles.statusDot, { backgroundColor: statusColor(item.status, colors) }]} />
+                <Text style={styles.catName}>{item.category}</Text>
+              </View>
 
-          <View style={[styles.remainingBadge, { backgroundColor: statusBg(item.status, colors) }]}>
-            <Text style={[styles.remainingText, { color: statusColor(item.status, colors) }]}>
-              {item.remaining >= 0
-                ? `Sisa ${formatIDR(item.remaining)}`
-                : `Lewat ${formatIDR(Math.abs(item.remaining))}`}
-            </Text>
-          </View>
-        </TouchableOpacity>
-      ))}
+              <View style={styles.catRight}>
+                <View style={styles.catBarBg}>
+                  <View
+                    style={[
+                      styles.catBarFill,
+                      {
+                        width: `${Math.min(item.percentUsed, 100)}%`,
+                        backgroundColor: statusColor(item.status, colors),
+                      },
+                    ]}
+                  />
+                </View>
+                <View style={styles.catAmounts}>
+                  <Text style={styles.catActual}>
+                    {formatIDR(item.actualAmount)}
+                  </Text>
+                  <Text style={styles.catBudget}>
+                    {' / '}{formatIDR(item.budgetAmount)}
+                  </Text>
+                </View>
+                <Text
+                  style={[
+                    styles.catPct,
+                    { color: statusColor(item.status, colors) },
+                  ]}
+                >
+                  {item.percentUsed.toLocaleString('id-ID', { maximumFractionDigits: 0 })}%
+                </Text>
+              </View>
+
+              <View style={[styles.remainingBadge, { backgroundColor: statusBg(item.status, colors) }]}>
+                <Text style={[styles.remainingText, { color: statusColor(item.status, colors) }]}>
+                  {item.remaining >= 0
+                    ? `Sisa ${formatIDR(item.remaining)}`
+                    : `Lewat ${formatIDR(Math.abs(item.remaining))}`}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
     </View>
   );
 }
@@ -278,6 +293,22 @@ const makeStyles = (colors: ThemeColors, fs: typeof import('../constants/theme')
       fontSize: fs.xs,
       color: colors.textSecondary,
       textAlign: 'right',
+    },
+    toggleBtn: {
+      paddingVertical: SPACING.sm,
+      alignItems: 'center',
+      marginBottom: SPACING.sm,
+      borderTopWidth: 1,
+      borderTopColor: colors.borderLight,
+      marginTop: SPACING.xs,
+    },
+    toggleBtnText: {
+      fontSize: fs.xs,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.primaryDark,
+    },
+    expandedSection: {
+      marginTop: SPACING.xs,
     },
     categoryRow: {
       backgroundColor: colors.background,

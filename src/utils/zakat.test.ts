@@ -5,9 +5,10 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  NISAB_KG,
+  NISAB_BERAS_KG,
   ZAKAT_RATE,
   GKP_TO_GKG_RATIO,
+  DEFAULT_RENDEMEN_RATIO,
   GACONG_BERAT,
   GACONG_PEMBAGIAN,
   calculateGacongWeight,
@@ -17,6 +18,9 @@ import {
   calculateZakatKg,
   calculateZakatRupiah,
   getZakatSummary,
+  getNisabGKG,
+  setRendemenRatio,
+  getRendemenRatio,
 } from './zakat';
 
 const EPSILON = 1e-4;
@@ -79,28 +83,53 @@ describe('calculateGKG', () => {
   });
 });
 
+describe('rendemen & nisab', () => {
+  const nisabDefault = getNisabGKG();
+
+  it('nisab default = 520 kg beras ÷ rendemen 60% = 866.67 kg GKG', () => {
+    closeTo(nisabDefault, 866.6666667);
+    assert.equal(NISAB_BERAS_KG, 520);
+    assert.equal(DEFAULT_RENDEMEN_RATIO, 0.6);
+  });
+
+  it('rendemen bisa diubah: 65% → nisab 800 kg GKG', () => {
+    setRendemenRatio(0.65);
+    closeTo(getRendemenRatio(), 0.65);
+    closeTo(getNisabGKG(), 800);
+    setRendemenRatio(0.6);
+    closeTo(getNisabGKG(), nisabDefault);
+  });
+
+  it('rendemen tidak valid (0/negatif/NaN) diabaikan', () => {
+    setRendemenRatio(0);
+    assert.equal(getRendemenRatio(), 0.6);
+    setRendemenRatio(-0.5);
+    assert.equal(getRendemenRatio(), 0.6);
+  });
+});
+
 describe('isZakatWajib', () => {
   it('GKG di bawah nisab → tidak wajib', () => {
-    assert.equal(isZakatWajib(NISAB_KG - 0.01), false);
+    assert.equal(isZakatWajib(getNisabGKG() - 0.01), false);
   });
 
   it('GKG tepat di nisab → wajib', () => {
-    assert.equal(isZakatWajib(NISAB_KG), true);
+    assert.equal(isZakatWajib(getNisabGKG()), true);
   });
 
   it('GKG di atas nisab → wajib', () => {
-    assert.equal(isZakatWajib(NISAB_KG + 100), true);
+    assert.equal(isZakatWajib(getNisabGKG() + 100), true);
   });
 });
 
 describe('calculateZakatKg', () => {
   it('di bawah nisab → 0', () => {
-    assert.equal(calculateZakatKg(NISAB_KG - 0.01), 0);
+    assert.equal(calculateZakatKg(getNisabGKG() - 0.01), 0);
   });
 
   it('di atas nisab → 5% dari GKG', () => {
-    closeTo(calculateZakatKg(666.6666666), 666.6666666 * ZAKAT_RATE);
-    assert.equal(calculateZakatKg(NISAB_KG), NISAB_KG * ZAKAT_RATE);
+    closeTo(calculateZakatKg(900), 45);
+    assert.equal(calculateZakatKg(getNisabGKG()), getNisabGKG() * ZAKAT_RATE);
   });
 });
 
@@ -120,12 +149,14 @@ describe('calculateZakatRupiah', () => {
 
 describe('getZakatSummary', () => {
   it('GKG di atas nisab: wajib, progress 100%, sisa 0', () => {
-    const s = getZakatSummary(666.6666666, 5500);
+    const s = getZakatSummary(900, 5500);
     assert.equal(s.wajib, true);
-    assert.equal(s.nisab, NISAB_KG);
+    closeTo(s.nisab, getNisabGKG());
+    assert.equal(s.nisabBerasKg, NISAB_BERAS_KG);
+    assert.equal(s.rendemen, DEFAULT_RENDEMEN_RATIO);
     assert.equal(s.rate, ZAKAT_RATE);
-    closeTo(s.zakatKg, 33.3333333);
-    closeTo(s.zakatRp, 183333.3333);
+    closeTo(s.zakatKg, 45);
+    closeTo(s.zakatRp, 247500);
     assert.equal(s.progressToNisab, 100);
     assert.equal(s.remainingToNisab, 0);
   });
@@ -135,14 +166,14 @@ describe('getZakatSummary', () => {
     assert.equal(s.wajib, false);
     assert.equal(s.zakatKg, 0);
     assert.equal(s.zakatRp, 0);
-    closeTo(s.progressToNisab, (500 / NISAB_KG) * 100);
-    closeTo(s.remainingToNisab, NISAB_KG - 500);
+    closeTo(s.progressToNisab, (500 / getNisabGKG()) * 100);
+    closeTo(s.remainingToNisab, getNisabGKG() - 500);
   });
 });
 
 describe('skenario alur lengkap (integration)', () => {
-  it('GKP 1000 kg, gacong 1/6, harga Rp 5.500', () => {
-    const gkp = 1000;
+  it('GKP 1400 kg, gacong 1/6, harga Rp 5.500', () => {
+    const gkp = 1400;
     const gacongType = GACONG_PEMBAGIAN;
     const gacongInput = 6;
     const price = 5500;
@@ -153,38 +184,38 @@ describe('skenario alur lengkap (integration)', () => {
     const revenue = gkgWeight * price;
     const summary = getZakatSummary(gkgWeight, price);
 
-    closeTo(gacongWeight, 166.6666667); // 1000 / 6
-    closeTo(netGKP, 833.3333333); // 1000 - 166.67
-    closeTo(gkgWeight, 666.6666666); // 833.33 × 0.8
-    closeTo(revenue, 3666666.6666); // 666.67 × 5500
-    assert.equal(summary.wajib, true); // 666.67 >= 653
-    closeTo(summary.zakatKg, 33.3333333); // 666.67 × 5%
-    closeTo(summary.zakatRp, 183333.3333); // 33.33 × 5500
+    closeTo(gacongWeight, 233.3333333); // 1400 / 6
+    closeTo(netGKP, 1166.6666667); // 1400 - 233.33
+    closeTo(gkgWeight, 933.3333333); // 1166.67 × 0.8
+    closeTo(revenue, 5133333.3333); // 933.33 × 5500
+    assert.equal(summary.wajib, true); // 933.33 >= 866.67
+    closeTo(summary.zakatKg, 46.6666667); // 933.33 × 5%
+    closeTo(summary.zakatRp, 256666.6667); // 46.67 × 5500
   });
 
-  it('GKP 1000 kg, gacong berat 100 kg, tanpa harga → zakat Rp 0', () => {
-    const gacongWeight = calculateGacongWeight(1000, GACONG_BERAT, 100);
-    const netGKP = calculateNetGKP(1000, gacongWeight);
+  it('GKP 1200 kg, gacong berat 100 kg, tanpa harga → zakat Rp 0', () => {
+    const gacongWeight = calculateGacongWeight(1200, GACONG_BERAT, 100);
+    const netGKP = calculateNetGKP(1200, gacongWeight);
     const gkgWeight = calculateGKG(netGKP);
     const summary = getZakatSummary(gkgWeight, 0);
 
     assert.equal(gacongWeight, 100);
-    assert.equal(netGKP, 900);
-    assert.equal(gkgWeight, 720);
-    assert.equal(summary.wajib, true); // 720 >= 653
-    closeTo(summary.zakatKg, 36); // 720 × 5%
+    assert.equal(netGKP, 1100);
+    assert.equal(gkgWeight, 880);
+    assert.equal(summary.wajib, true); // 880 >= 866.67
+    closeTo(summary.zakatKg, 44); // 880 × 5%
     assert.equal(summary.zakatRp, 0); // harga belum diisi
   });
 
-  it('batas nisab: net GKP 816.25 kg → GKG tepat 653 kg → wajib', () => {
-    const gkgWeight = calculateGKG(816.25);
-    closeTo(gkgWeight, 653);
+  it('batas nisab: net GKP 1083.34 kg → GKG ~866.67 kg → wajib', () => {
+    const gkgWeight = calculateGKG(1083.3334);
+    closeTo(gkgWeight, getNisabGKG());
     assert.equal(isZakatWajib(gkgWeight), true);
   });
 
-  it('di bawah batas: net GKP 816 kg → GKG 652.8 → belum wajib', () => {
-    const gkgWeight = calculateGKG(816);
-    closeTo(gkgWeight, 652.8);
+  it('di bawah batas: net GKP 1083 kg → GKG 866.4 → belum wajib', () => {
+    const gkgWeight = calculateGKG(1083);
+    closeTo(gkgWeight, 866.4);
     assert.equal(isZakatWajib(gkgWeight), false);
   });
 

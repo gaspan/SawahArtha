@@ -12,19 +12,56 @@ export const SETTING_KEYS = {
   lastBackupAt: 'last_backup_at',
   notificationsEnabled: 'notifications_enabled', // '1' | '0'
   farmReminderEnabled: 'farm_reminder_enabled', // '1' | '0'
+  rendemenRatio: 'rendemen_ratio', // '0.6' GKG → beras milling yield
+  appsScriptUrl: 'apps_script_url',
 } as const;
 
 export type SettingKey = (typeof SETTING_KEYS)[keyof typeof SETTING_KEYS];
+
+export async function getAllSettings(
+  db: SQLiteDatabase
+): Promise<Record<string, string>> {
+  try {
+    const rows = await db.getAllAsync<{ key: string; value: string }>(
+      'SELECT key, value FROM settings'
+    );
+    const map: Record<string, string> = {};
+    for (const r of rows) {
+      map[r.key] = r.value;
+    }
+    return map;
+  } catch (error: any) {
+    if (
+      error?.message?.includes('already released') ||
+      error?.message?.includes('closed') ||
+      error?.message?.includes('no such table')
+    ) {
+      return {};
+    }
+    throw error;
+  }
+}
 
 export async function getSetting(
   db: SQLiteDatabase,
   key: SettingKey
 ): Promise<string | null> {
-  const row = await db.getFirstAsync<{ value: string }>(
-    'SELECT value FROM settings WHERE key = ?',
-    [key]
-  );
-  return row?.value ?? null;
+  try {
+    const row = await db.getFirstAsync<{ value: string }>(
+      'SELECT value FROM settings WHERE key = ?',
+      [key]
+    );
+    return row?.value ?? null;
+  } catch (error: any) {
+    if (
+      error?.message?.includes('already released') ||
+      error?.message?.includes('closed') ||
+      error?.message?.includes('no such table')
+    ) {
+      return null;
+    }
+    throw error;
+  }
 }
 
 export async function setSetting(
@@ -32,8 +69,19 @@ export async function setSetting(
   key: SettingKey,
   value: string
 ): Promise<void> {
-  await db.runAsync(
-    'INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)',
-    [key, value]
-  );
+  try {
+    await db.runAsync(
+      'INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)',
+      [key, value]
+    );
+  } catch (error: any) {
+    if (
+      error?.message?.includes('already released') ||
+      error?.message?.includes('closed')
+    ) {
+      return;
+    }
+    throw error;
+  }
 }
+

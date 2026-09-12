@@ -74,6 +74,8 @@ export interface ThemeColors {
   cardShadow: string;
   categoryBg: Record<string, string>;
   categoryText: Record<string, string>;
+  glassBg: string;
+  glassBorder: string;
 }
 
 export const LIGHT_COLORS: ThemeColors = {
@@ -141,6 +143,10 @@ export const LIGHT_COLORS: ThemeColors = {
   // Category badge colors
   categoryBg: { ...categoryBgLight } as Record<string, string>,
   categoryText: { ...categoryTextLight } as Record<string, string>,
+
+  // Glassmorphism
+  glassBg: 'rgba(255, 255, 255, 0.7)',
+  glassBorder: 'rgba(255, 255, 255, 0.5)',
 };
 
 export const DARK_COLORS: ThemeColors = {
@@ -216,6 +222,10 @@ export const DARK_COLORS: ThemeColors = {
     Herbisida: '#5EEAD4',
     Moluksida: '#A5B4FC',
   } as Record<string, string>,
+
+  // Glassmorphism
+  glassBg: 'rgba(0, 0, 0, 0.2)',
+  glassBorder: 'rgba(255, 255, 255, 0.1)',
 };
 
 export const COLORS: ThemeColors = LIGHT_COLORS;

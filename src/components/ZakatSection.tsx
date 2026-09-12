@@ -9,7 +9,7 @@ import {
 } from '../constants/theme';
 import { useTheme, useThemedStyles } from '../context/ThemeContext';
 import { formatIDR } from '../utils/currency';
-import { getZakatSummary, NISAB_KG, ZAKAT_RATE } from '../utils/zakat';
+import { getZakatSummary, ZAKAT_RATE } from '../utils/zakat';
 
 interface Props {
   totalGKG: number;
@@ -80,7 +80,9 @@ export default function ZakatSection({ totalGKG, avgPricePerKg }: Props) {
         </View>
         <View style={styles.progressMarkers}>
           <Text style={styles.progressMarkerText}>0 kg</Text>
-          <Text style={styles.progressMarkerText}>{NISAB_KG} kg</Text>
+          <Text style={styles.progressMarkerText}>
+            {summary.nisab.toLocaleString('id-ID', { maximumFractionDigits: 0 })} kg
+          </Text>
         </View>
       </View>
 
@@ -88,7 +90,7 @@ export default function ZakatSection({ totalGKG, avgPricePerKg }: Props) {
       <View style={styles.infoSection}>
         <InfoRow
           label="Nisab"
-          value={`${NISAB_KG.toLocaleString('id-ID')} kg GKG`}
+          value={`${summary.nisab.toLocaleString('id-ID', { maximumFractionDigits: 1 })} kg GKG`}
         />
         <InfoRow
           label="Total GKG Anda"
@@ -161,7 +163,9 @@ export default function ZakatSection({ totalGKG, avgPricePerKg }: Props) {
       {/* Decorative footer note */}
       <View style={styles.footerNote}>
         <Text style={styles.footerNoteText}>
-          💡 Nisab dihitung berdasarkan berat GKG (Gabah Kering Giling). Tarif
+          💡 Nisab = 520 kg beras ÷ rendemen{' '}
+          {Math.round(summary.rendemen * 100)}% ≈{' '}
+          {summary.nisab.toLocaleString('id-ID', { maximumFractionDigits: 0 })} kg GKG. Tarif
           5% berlaku untuk lahan irigasi.
         </Text>
       </View>

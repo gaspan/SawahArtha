@@ -16,6 +16,7 @@ export interface Expense {
   vendor_name: string | null;
   payment_date: string | null;
   plot_id: number | null;
+  has_receipt?: number;
 }
 
 export interface ExpenseInput {
@@ -27,6 +28,8 @@ export interface ExpenseInput {
   is_paid?: number;
   vendor_name?: string;
   plot_id?: number | null;
+  receipt_image_uri?: string | null;
+  receipt_raw_text?: string | null;
 }
 
 export interface CategoryTotal {
@@ -86,8 +89,9 @@ export async function addExpense(
   db: SQLiteDatabase,
   expense: ExpenseInput
 ): Promise<number> {
+  const hasReceipt = expense.receipt_image_uri ? 1 : 0;
   const result = await db.runAsync(
-    'INSERT INTO expenses (title, description, amount, category, season_code, date, is_paid, vendor_name, plot_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    'INSERT INTO expenses (title, description, amount, category, season_code, date, is_paid, vendor_name, plot_id, has_receipt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
     [
       expense.title,
       expense.description || '',
@@ -98,9 +102,17 @@ export async function addExpense(
       expense.is_paid ?? 1,
       expense.vendor_name || null,
       expense.plot_id ?? null,
+      hasReceipt,
     ]
   );
-  return result.lastInsertRowId;
+  const expenseId = result.lastInsertRowId;
+  if (expense.receipt_image_uri) {
+    await db.runAsync(
+      'INSERT INTO receipt_images (expense_id, image_uri, ocr_raw_text) VALUES (?, ?, ?)',
+      [expenseId, expense.receipt_image_uri, expense.receipt_raw_text ?? null]
+    );
+  }
+  return expenseId;
 }
 
 export async function deleteExpense(

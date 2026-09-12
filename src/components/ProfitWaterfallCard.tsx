@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import {
   SPACING,
   BORDER_RADIUS,
@@ -41,15 +42,20 @@ export default function ProfitWaterfallCard({
   };
 
   return (
-    <View style={styles.card}>
+    <LinearGradient
+      colors={['#065F46', '#047857', '#0284C7']}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.card}
+    >
       <Text style={styles.title}>Rincian Laba Bersih</Text>
 
       <View style={styles.rows}>
         <WaterfallRow
           label="Pendapatan Kotor"
           value={totalRevenue}
-          color={colors.chartRevenue}
-          bar={renderBar(colors.chartRevenue, totalRevenue)}
+          color="#4ADE80" // Lighter green for dark bg
+          bar={renderBar('#4ADE80', totalRevenue)}
           isPositive={true}
           styles={styles}
         />
@@ -57,8 +63,8 @@ export default function ProfitWaterfallCard({
         <WaterfallRow
           label="Zakat (5%)"
           value={zakatRp}
-          color={colors.secondary}
-          bar={renderBar(colors.secondary, zakatRp)}
+          color="#FDE047" // Yellow for dark bg
+          bar={renderBar('#FDE047', zakatRp)}
           isPositive={false}
           dimmed={zakatRp === 0}
           styles={styles}
@@ -68,8 +74,8 @@ export default function ProfitWaterfallCard({
           <WaterfallRow
             label="Nilai Gacong"
             value={gacongValueRp}
-            color={colors.textLight}
-            bar={renderBar(colors.borderLight, gacongValueRp)}
+            color="rgba(255, 255, 255, 0.6)"
+            bar={renderBar('rgba(255, 255, 255, 0.3)', gacongValueRp)}
             isPositive={false}
             info
             styles={styles}
@@ -79,25 +85,25 @@ export default function ProfitWaterfallCard({
         <WaterfallRow
           label="Total Modal"
           value={totalExpenses}
-          color={colors.danger}
-          bar={renderBar(colors.danger, totalExpenses)}
+          color="#F87171" // Light red for dark bg
+          bar={renderBar('#F87171', totalExpenses)}
           isPositive={false}
           styles={styles}
         />
       </View>
 
-      <View style={[styles.divider, { backgroundColor: isProfit ? colors.successLight : colors.dangerLight }]} />
+      <View style={[styles.divider, { backgroundColor: isProfit ? 'rgba(74, 222, 128, 0.3)' : 'rgba(248, 113, 113, 0.3)' }]} />
 
       <WaterfallRow
         label="Laba Bersih Riil"
         value={netProfit}
-        color={isProfit ? colors.success : colors.danger}
-        bar={renderBar(isProfit ? colors.success : colors.danger, netProfit)}
+        color={isProfit ? '#4ADE80' : '#F87171'}
+        bar={renderBar(isProfit ? '#4ADE80' : '#F87171', netProfit)}
         isPositive={isProfit}
         isBold
         styles={styles}
       />
-    </View>
+    </LinearGradient>
   );
 }
 
@@ -160,22 +166,22 @@ const makeStyles = (colors: ThemeColors, fs: typeof import('../constants/theme')
   },
   infoLabel: {
     fontSize: fs.xs,
-    color: colors.textLight,
+    color: 'rgba(255, 255, 255, 0.7)',
   },
   infoText: {
     fontWeight: FONT_WEIGHT.normal,
-    color: colors.textLight,
+    color: 'rgba(255, 255, 255, 0.7)',
     fontSize: fs.xs,
   },
   label: {
     fontSize: fs.xs + 1,
     fontWeight: FONT_WEIGHT.medium,
-    color: colors.textSecondary,
+    color: 'rgba(255, 255, 255, 0.85)',
     width: 95,
   },
   labelBold: {
     fontWeight: FONT_WEIGHT.bold,
-    color: colors.text,
+    color: '#FFFFFF',
     fontSize: fs.sm,
   },
   value: {
@@ -189,8 +195,7 @@ const makeStyles = (colors: ThemeColors, fs: typeof import('../constants/theme')
     fontWeight: FONT_WEIGHT.bold,
   },
   card: {
-    backgroundColor: colors.surface,
-    borderRadius: BORDER_RADIUS.lg,
+    borderRadius: BORDER_RADIUS.xl,
     padding: SPACING.md + 4,
     marginHorizontal: SPACING.md,
     marginBottom: SPACING.md,
@@ -199,7 +204,7 @@ const makeStyles = (colors: ThemeColors, fs: typeof import('../constants/theme')
   title: {
     fontSize: fs.md,
     fontWeight: FONT_WEIGHT.bold,
-    color: colors.text,
+    color: '#FFFFFF',
     marginBottom: SPACING.md,
   },
   rows: {
@@ -212,7 +217,7 @@ const makeStyles = (colors: ThemeColors, fs: typeof import('../constants/theme')
   barTrack: {
     flex: 1,
     height: 6,
-    backgroundColor: colors.borderLight,
+    backgroundColor: 'rgba(255, 255, 255, 0.16)',
     borderRadius: BORDER_RADIUS.full,
     overflow: 'hidden',
   },

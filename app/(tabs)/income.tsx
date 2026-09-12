@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   TouchableOpacity,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from 'expo-router';
 import { useIncome } from '../../src/hooks/useIncome';
 import { useSales } from '../../src/hooks/useSales';
@@ -130,13 +131,18 @@ export default function IncomeScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <View style={styles.header}>
+      <LinearGradient
+        colors={['#065F46', '#047857', '#0284C7']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.header}
+      >
         <Text style={styles.headerEmoji}>🌾</Text>
         <View>
           <Text style={styles.headerTitle}>Penghasilan</Text>
           <Text style={styles.headerSubtitle}>Data panen & penjualan gabah</Text>
         </View>
-      </View>
+      </LinearGradient>
 
       <ScrollView
         style={styles.scrollView}

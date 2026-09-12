@@ -13,12 +13,28 @@ export interface Plot {
   land_size_m2: number;
   note: string | null;
   date: string;
+  location_type?: 'none' | 'point' | 'polygon';
+  latitude?: number | null;
+  longitude?: number | null;
+  location_accuracy?: number | null;
+  polygon_coords?: string | null;
+  calculated_area?: number | null;
+  address?: string | null;
+  location_tagged_at?: string | null;
 }
 
 export interface PlotInput {
   name: string;
   landSizeM2: number;
   note?: string;
+  location_type?: 'none' | 'point' | 'polygon';
+  latitude?: number | null;
+  longitude?: number | null;
+  location_accuracy?: number | null;
+  polygon_coords?: string | null;
+  calculated_area?: number | null;
+  address?: string | null;
+  location_tagged_at?: string | null;
 }
 
 export async function getPlots(
@@ -37,13 +53,25 @@ export async function addPlot(
   input: PlotInput
 ): Promise<void> {
   await db.runAsync(
-    'INSERT INTO plots (season_code, name, land_size_m2, note, date) VALUES (?, ?, ?, ?, ?)',
+    `INSERT INTO plots (
+      season_code, name, land_size_m2, note, date,
+      location_type, latitude, longitude, location_accuracy,
+      polygon_coords, calculated_area, address, location_tagged_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       seasonCode,
       input.name,
       input.landSizeM2,
       input.note ?? null,
       new Date().toISOString().split('T')[0],
+      input.location_type ?? 'none',
+      input.latitude ?? null,
+      input.longitude ?? null,
+      input.location_accuracy ?? null,
+      input.polygon_coords ?? null,
+      input.calculated_area ?? null,
+      input.address ?? null,
+      input.location_tagged_at ?? (input.latitude || input.polygon_coords ? new Date().toISOString() : null),
     ]
   );
 }
@@ -54,8 +82,25 @@ export async function updatePlot(
   input: PlotInput
 ): Promise<void> {
   await db.runAsync(
-    'UPDATE plots SET name = ?, land_size_m2 = ?, note = ? WHERE id = ?',
-    [input.name, input.landSizeM2, input.note ?? null, id]
+    `UPDATE plots SET
+      name = ?, land_size_m2 = ?, note = ?,
+      location_type = ?, latitude = ?, longitude = ?, location_accuracy = ?,
+      polygon_coords = ?, calculated_area = ?, address = ?, location_tagged_at = ?
+    WHERE id = ?`,
+    [
+      input.name,
+      input.landSizeM2,
+      input.note ?? null,
+      input.location_type ?? 'none',
+      input.latitude ?? null,
+      input.longitude ?? null,
+      input.location_accuracy ?? null,
+      input.polygon_coords ?? null,
+      input.calculated_area ?? null,
+      input.address ?? null,
+      input.location_tagged_at ?? (input.latitude || input.polygon_coords ? new Date().toISOString() : null),
+      id,
+    ]
   );
 }
 

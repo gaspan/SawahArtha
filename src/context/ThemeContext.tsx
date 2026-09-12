@@ -13,24 +13,27 @@ import React, {
 } from 'react';
 import { useColorScheme } from 'react-native';
 import { useSQLiteContext } from 'expo-sqlite';
+import { getAllSettings, getSetting, setSetting, SETTING_KEYS } from '../database/settingsService';
 import {
   LIGHT_COLORS,
   DARK_COLORS,
   FONT_SIZE,
+  SPACING,
+  BORDER_RADIUS,
   FONT_SCALE_MAP,
   type ThemeColors,
-  type ThemeMode,
-  type FontScaleLevel,
 } from '../constants/theme';
-import { getSetting, setSetting, SETTING_KEYS } from '../database/settingsService';
+
+export type ThemeMode = 'light' | 'dark' | 'system';
+export type FontScaleLevel = 'small' | 'medium' | 'large';
 
 interface ThemeContextType {
   theme: ThemeMode;
   setTheme: (mode: ThemeMode) => Promise<void>;
-  fontScale: FontScaleLevel;
-  setFontScale: (level: FontScaleLevel) => Promise<void>;
   isDark: boolean;
   colors: ThemeColors;
+  fontScale: FontScaleLevel;
+  setFontScale: (level: FontScaleLevel) => Promise<void>;
   fs: typeof FONT_SIZE;
 }
 
@@ -53,25 +56,40 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
     const load = async () => {
       try {
-        const [savedTheme, savedFont] = await Promise.all([
-          getSetting(db, SETTING_KEYS.theme),
-          getSetting(db, SETTING_KEYS.fontScale),
-        ]);
+        const settings = await getAllSettings(db);
+        if (!isMounted) return;
+
+        const savedTheme = settings[SETTING_KEYS.theme];
+        const savedFont = settings[SETTING_KEYS.fontScale];
+
         if (savedTheme === 'dark' || savedTheme === 'light' || savedTheme === 'system') {
           setThemeState(savedTheme);
         }
         if (savedFont === 'small' || savedFont === 'medium' || savedFont === 'large') {
           setFontScaleState(savedFont);
         }
-      } catch (error) {
+      } catch (error: any) {
+        if (!isMounted) return;
+        if (
+          error?.message?.includes('already released') ||
+          error?.message?.includes('closed')
+        ) {
+          return;
+        }
         console.error('Error loading settings:', error);
       } finally {
-        setIsLoaded(true);
+        if (isMounted) {
+          setIsLoaded(true);
+        }
       }
     };
     load();
+    return () => {
+      isMounted = false;
+    };
   }, [db]);
 
   const setTheme = useCallback(

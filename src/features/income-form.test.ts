@@ -80,10 +80,10 @@ describe('Alur form: estimasi vs riil', () => {
   });
 
   it('zakat mengikuti effectiveGKG (riil)', () => {
-    // estimated 760 → wajib (760 >= 653)
-    assert.strictEqual(isZakatWajib(760), true);
-    // input riil 700 → masih wajib (>= 653), zakat 35 kg
-    assert.strictEqual(calculateZakatKg(700), 35);
+    // estimated 760 → belum wajib (760 < 866.67)
+    assert.strictEqual(isZakatWajib(760), false);
+    // input riil 900 → wajib (>= 866.67), zakat 45 kg
+    assert.strictEqual(calculateZakatKg(900), 45);
   });
 
   it('reset GKG → kembali ke estimasi', () => {

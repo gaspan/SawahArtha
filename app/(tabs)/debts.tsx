@@ -9,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from 'expo-router';
 import { useDebts } from '../../src/hooks/useDebts';
 import { formatIDR } from '../../src/utils/currency';
@@ -56,13 +57,18 @@ export default function DebtsScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <View style={styles.header}>
+      <LinearGradient
+        colors={['#065F46', '#047857', '#0284C7']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.header}
+      >
         <Text style={styles.headerEmoji}>💳</Text>
         <View>
           <Text style={styles.headerTitle}>Hutang & Piutang</Text>
           <Text style={styles.headerSubtitle}>Pinjaman, cicilan & piutang usaha</Text>
         </View>
-      </View>
+      </LinearGradient>
 
       <ScrollView
         style={styles.scrollView}

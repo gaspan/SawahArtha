@@ -49,17 +49,9 @@ import {
   isNotificationsAvailable,
 } from '../src/services/notificationService';
 import {
-  useDriveAuthRequest,
-  hasDriveClientId,
-  clearDriveToken,
-  saveAuthToken,
-  exchangeDriveCode,
-  driveRedirectUri,
-  uploadBackupToDrive,
-  listDriveBackups,
-  downloadBackupFromDrive,
-  type DriveBackupFile,
-} from '../src/services/driveService';
+  uploadBackupToAppsScript,
+  downloadBackupFromAppsScript,
+} from '../src/services/appsScriptService';
 import Constants from 'expo-constants';
 
 function SectionHeader({ title }: { title: string }) {
@@ -147,17 +139,16 @@ export default function SettingsScreen() {
     setNotificationsEnabled,
     farmReminderEnabled,
     setFarmReminderEnabled,
+    rendemenRatio,
+    setRendemenRatioSetting,
+    appsScriptUrl,
+    setAppsScriptUrl,
   } = useSettings();
   const { selectedSeason, seasons } = useSeason();
   const { refreshBudgets } = useBudget();
 
   const [busy, setBusy] = useState('');
-  const [driveBackups, setDriveBackups] = useState<DriveBackupFile[]>([]);
-  const [showDriveBackups, setShowDriveBackups] = useState(false);
 
-  const driveEnabled = hasDriveClientId();
-  const [driveRequest, driveResponse, promptDriveAuth] = useDriveAuthRequest();
-  const [driveAuthed, setDriveAuthed] = useState(false);
 
   const seasonObj = seasons.find((s) => s.season_code === selectedSeason);
 
@@ -254,68 +245,46 @@ export default function SettingsScreen() {
       );
     });
 
-  const handleDriveAuth = () =>
-    run('drive', async () => {
-      if (!driveRequest) return;
-      const result = await promptDriveAuth();
-
-      if (result.type === 'success') {
-        const code = result.params?.code;
-        if (!code) {
-          Alert.alert('Gagal ❌', 'Google tidak mengirim kode otorisasi.');
-          return;
-        }
-        const token = await exchangeDriveCode(code, driveRequest.codeVerifier);
-        if (!token.accessToken) {
-          Alert.alert('Gagal ❌', 'Penukaran kode ke token gagal.');
-          return;
-        }
-        await saveAuthToken(token);
-        setDriveAuthed(true);
-        Alert.alert('Berhasil ✅', 'Terhubung ke Google Drive.');
-      } else if (result.type === 'error') {
-        const detail =
-          result.params?.error_description ||
-          result.error?.message ||
-          result.params?.error ||
-          'Autentikasi gagal.';
-        Alert.alert('Gagal ❌', `${detail}\n\nRedirect: ${driveRedirectUri()}`);
+  const handleAppsScriptUpload = () =>
+    run('cloud', async () => {
+      if (!appsScriptUrl) {
+        Alert.alert('Gagal ❌', 'Masukkan URL Web App Google Apps Script terlebih dahulu.');
+        return;
       }
-    });
-
-  const handleDriveUpload = () =>
-    run('drive', async () => {
       const { buildBackupData } = await import('../src/utils/jsonBackup');
       const payload = await buildBackupData(db);
-      await uploadBackupToDrive(backupFileName(), JSON.stringify(payload));
+      await uploadBackupToAppsScript(appsScriptUrl, JSON.stringify(payload));
       await setLastBackupAt(new Date().toISOString());
-      Alert.alert('Backup Drive ✅', 'Backup berhasil diunggah ke Google Drive.');
+      Alert.alert('Backup Cloud ✅', 'Backup berhasil diunggah ke Google Apps Script.');
     });
 
-  const handleDriveList = () =>
-    run('drive', async () => {
-      const backups = await listDriveBackups();
-      setDriveBackups(backups);
-      setShowDriveBackups(true);
-    });
-
-  const handleDriveRestore = (file: DriveBackupFile) =>
-    run('drive', async () => {
-      const content = await downloadBackupFromDrive(file.id);
-      const payload = parseBackupPayload(content);
+  const handleAppsScriptRestore = () =>
+    run('cloud', async () => {
+      if (!appsScriptUrl) {
+        Alert.alert('Gagal ❌', 'Masukkan URL Web App Google Apps Script terlebih dahulu.');
+        return;
+      }
+      const content = await downloadBackupFromAppsScript(appsScriptUrl);
+      let payload;
+      try {
+        payload = parseBackupPayload(content);
+      } catch (error: any) {
+        Alert.alert('Gagal ❌', error?.message || 'Format file backup tidak valid.');
+        return;
+      }
       Alert.alert(
         'Konfirmasi Restore 🔄',
-        `Kembalikan data dari "${file.name}"?`,
+        'Kembalikan data dari backup Cloud ini?',
         [
           { text: 'Batal', style: 'cancel' },
           {
             text: 'Restore',
             onPress: () =>
-              run('drive', async () => {
+              run('cloud', async () => {
                 const counts = await restoreFromBackup(db, payload);
                 await refreshBudgets();
                 const total = Object.values(counts).reduce((a, b) => a + b, 0);
-                Alert.alert('Restore Berhasil ✅', `Berhasil memulihkan ${total} catatan.`);
+                Alert.alert('Restore Berhasil ✅', `Berhasil memulihkan ${total} catatan dari Cloud.`);
               }),
           },
         ]
@@ -370,6 +339,20 @@ export default function SettingsScreen() {
       'numeric'
     ) ??
     Alert.alert('Default Harga Referensi', `Saat ini Rp ${defaultRefPrice}/kg.`);
+
+  const handleEditRendemen = () =>
+    Alert.prompt?.(
+      'Rendemen GKG → Beras',
+      'Persen beras hasil giling dari GKG (contoh: 60 untuk 60%).\nNisab zakat = 520 kg beras ÷ rendemen.',
+      async (text) => {
+        const v = parseFloat(text);
+        if (!isNaN(v) && v > 0 && v <= 100) await setRendemenRatioSetting(v / 100);
+      },
+      'plain-text',
+      String(Math.round(rendemenRatio * 100)),
+      'numeric'
+    ) ??
+    Alert.alert('Rendemen GKG → Beras', `Saat ini ${Math.round(rendemenRatio * 100)}%.`);
 
   const notificationsAvailable = isNotificationsAvailable();
 
@@ -487,6 +470,11 @@ export default function SettingsScreen() {
             onPress={handleEditDefaultRefPrice}
           />
           <Row
+            title="Rendemen GKG → Beras"
+            subtitle={`${Math.round(rendemenRatio * 100)}% → nisab ±${(520 / rendemenRatio).toLocaleString('id-ID', { maximumFractionDigits: 0 })} kg GKG`}
+            onPress={handleEditRendemen}
+          />
+          <Row
             title="Reset Anggaran Default"
             subtitle="Kembalikan semua kategori ke rasio RAB standar"
             onPress={handleResetBudget}
@@ -561,52 +549,30 @@ export default function SettingsScreen() {
           />
         </View>
 
-        {/* ── Google Drive ── */}
-        <SectionHeader title="Google Drive" />
+        {/* ── Google Apps Script Backup ── */}
+        <SectionHeader title="Backup Cloud (Apps Script)" />
         <View style={styles.card}>
-          {!driveEnabled ? (
-            <Text style={styles.warningText}>
-              Google Drive belum dikonfigurasi. Tambahkan googleDriveClientIds di
-              app.json (lihat readme Tier 4D), lalu build ulang.
-            </Text>
-          ) : (
-            <>
-              <Row
-                title={driveAuthed || driveResponse?.type === 'success' ? 'Terhubung ✅' : 'Hubungkan Google Drive'}
-                subtitle="Scope drive.file — hanya file app ini"
-                onPress={handleDriveAuth}
-              />
-              <Row title="Upload Backup ke Drive" onPress={handleDriveUpload} />
-              <Row
-                title={showDriveBackups ? 'Daftar Backup Drive' : 'Lihat Backup di Drive'}
-                subtitle={lastBackupAt ? `Terakhir: ${new Date(lastBackupAt).toLocaleString('id-ID')}` : undefined}
-                onPress={handleDriveList}
-              />
-              {showDriveBackups && driveBackups.length > 0 ? (
-                driveBackups.map((f) => (
-                  <TouchableOpacity
-                    key={f.id}
-                    style={styles.driveItem}
-                    onPress={() => handleDriveRestore(f)}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.driveItemName} numberOfLines={1}>
-                      {f.name}
-                    </Text>
-                    <Text style={styles.driveItemDate}>
-                      {new Date(f.createdTime).toLocaleString('id-ID')}
-                    </Text>
-                  </TouchableOpacity>
-                ))
-              ) : showDriveBackups ? (
-                <Text style={styles.warningText}>Belum ada backup di Drive.</Text>
-              ) : null}
-              <Row title="Putuskan Koneksi Drive" onPress={() => run('drive', async () => {
-                await clearDriveToken();
-                setDriveAuthed(false);
-              })} />
-            </>
-          )}
+          <Row
+            title="URL Google Apps Script"
+            subtitle={appsScriptUrl || 'Belum diatur'}
+            onPress={() => {
+              Alert.prompt?.(
+                'Apps Script Web App URL',
+                'Masukkan URL Web App dari Google Apps Script untuk backup.',
+                async (text) => {
+                  await setAppsScriptUrl(text.trim());
+                },
+                'plain-text',
+                appsScriptUrl
+              );
+            }}
+          />
+          <Row title="Upload Backup ke Cloud" onPress={handleAppsScriptUpload} />
+          <Row
+            title="Restore Backup dari Cloud"
+            subtitle={lastBackupAt ? `Terakhir upload: ${new Date(lastBackupAt).toLocaleString('id-ID')}` : undefined}
+            onPress={handleAppsScriptRestore}
+          />
         </View>
 
         {/* ── Tentang ── */}
