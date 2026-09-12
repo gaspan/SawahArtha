@@ -36,3 +36,4 @@ ios/
 # Tool cache
 .graphify/
 graphify-out/
+*.apk

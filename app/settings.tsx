@@ -16,6 +16,8 @@ import {
   ActivityIndicator,
   Linking,
   Switch,
+  Modal,
+  TextInput,
 } from 'react-native';
 import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
@@ -148,6 +150,28 @@ export default function SettingsScreen() {
   const { refreshBudgets } = useBudget();
 
   const [busy, setBusy] = useState('');
+
+  const [promptConfig, setPromptConfig] = useState({
+    visible: false,
+    title: '',
+    message: '',
+    defaultValue: '',
+    keyboardType: 'default' as 'default' | 'numeric' | 'url',
+    onSubmit: (text: string) => {},
+  });
+  const [promptValue, setPromptValue] = useState('');
+
+  const showPrompt = (
+    title: string,
+    message: string,
+    defaultValue: string,
+    keyboardType: 'default' | 'numeric' | 'url',
+    onSubmit: (text: string) => void
+  ) => {
+    setPromptValue(defaultValue);
+    setPromptConfig({ visible: true, title, message, defaultValue, keyboardType, onSubmit });
+  };
+
 
 
   const seasonObj = seasons.find((s) => s.season_code === selectedSeason);
@@ -313,32 +337,28 @@ export default function SettingsScreen() {
     });
 
   const handleEditDefaultLandSize = () =>
-    Alert.prompt?.(
+    showPrompt(
       'Default Luas Lahan',
       'Luas lahan otomatis untuk musim baru (m²)',
+      String(defaultLandSize),
+      'numeric',
       async (text) => {
         const v = parseFloat(text);
         if (!isNaN(v) && v > 0) await setDefaultLandSize(v);
-      },
-      'plain-text',
-      String(defaultLandSize),
-      'numeric'
-    ) ??
-    Alert.alert('Default Luas Lahan', `Saat ini ${defaultLandSize} m².`);
+      }
+    );
 
   const handleEditDefaultRefPrice = () =>
-    Alert.prompt?.(
+    showPrompt(
       'Default Harga Referensi',
       'Harga jual gabah (Rp/kg) otomatis untuk musim baru',
+      String(defaultRefPrice),
+      'numeric',
       async (text) => {
         const v = parseFloat(text);
         if (!isNaN(v) && v >= 0) await setDefaultRefPrice(v);
-      },
-      'plain-text',
-      String(defaultRefPrice),
-      'numeric'
-    ) ??
-    Alert.alert('Default Harga Referensi', `Saat ini Rp ${defaultRefPrice}/kg.`);
+      }
+    );
 
   const handleEditRendemen = () =>
     Alert.prompt?.(
@@ -556,14 +576,14 @@ export default function SettingsScreen() {
             title="URL Google Apps Script"
             subtitle={appsScriptUrl || 'Belum diatur'}
             onPress={() => {
-              Alert.prompt?.(
+              showPrompt(
                 'Apps Script Web App URL',
                 'Masukkan URL Web App dari Google Apps Script untuk backup.',
+                appsScriptUrl || '',
+                'url',
                 async (text) => {
                   await setAppsScriptUrl(text.trim());
-                },
-                'plain-text',
-                appsScriptUrl
+                }
               );
             }}
           />
@@ -592,6 +612,49 @@ export default function SettingsScreen() {
             <Text style={styles.busyText}>Memproses...</Text>
           </View>
         ) : null}
+        
+      <Modal
+        visible={promptConfig.visible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setPromptConfig((prev) => ({ ...prev, visible: false }))}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>{promptConfig.title}</Text>
+            {!!promptConfig.message && (
+              <Text style={styles.modalMessage}>{promptConfig.message}</Text>
+            )}
+            <TextInput
+              style={styles.modalInput}
+              value={promptValue}
+              onChangeText={setPromptValue}
+              keyboardType={promptConfig.keyboardType}
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoFocus
+            />
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={styles.modalBtnCancel}
+                onPress={() => setPromptConfig((prev) => ({ ...prev, visible: false }))}
+              >
+                <Text style={styles.modalBtnCancelText}>Batal</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.modalBtnSubmit}
+                onPress={() => {
+                  promptConfig.onSubmit(promptValue);
+                  setPromptConfig((prev) => ({ ...prev, visible: false }));
+                }}
+              >
+                <Text style={styles.modalBtnSubmitText}>Simpan</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
         <View style={{ height: SPACING.xl }} />
       </ScrollView>
     </View>
@@ -736,4 +799,66 @@ const makeStyles = (colors: ThemeColors, fs: typeof import('../src/constants/the
       fontSize: fs.sm,
       color: colors.textSecondary,
     },
+
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: SPACING.lg,
+    },
+    modalContent: {
+      width: '100%',
+      backgroundColor: colors.surface,
+      borderRadius: BORDER_RADIUS.lg,
+      padding: SPACING.lg,
+      ...SHADOW.lg,
+    },
+    modalTitle: {
+      fontSize: fs.lg,
+      fontWeight: FONT_WEIGHT.bold,
+      color: colors.text,
+      marginBottom: SPACING.xs,
+    },
+    modalMessage: {
+      fontSize: fs.sm,
+      color: colors.textSecondary,
+      marginBottom: SPACING.md,
+    },
+    modalInput: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: BORDER_RADIUS.md,
+      padding: SPACING.sm,
+      fontSize: fs.md,
+      color: colors.text,
+      marginBottom: SPACING.lg,
+    },
+    modalActions: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      gap: SPACING.sm,
+    },
+    modalBtnCancel: {
+      paddingVertical: SPACING.sm,
+      paddingHorizontal: SPACING.md,
+      borderRadius: BORDER_RADIUS.md,
+    },
+    modalBtnCancelText: {
+      fontSize: fs.md,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.textSecondary,
+    },
+    modalBtnSubmit: {
+      paddingVertical: SPACING.sm,
+      paddingHorizontal: SPACING.lg,
+      backgroundColor: colors.primary,
+      borderRadius: BORDER_RADIUS.md,
+    },
+    modalBtnSubmitText: {
+      fontSize: fs.md,
+      fontWeight: FONT_WEIGHT.semibold,
+      color: colors.surface,
+    },
+
   });
