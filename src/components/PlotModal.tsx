@@ -338,16 +338,19 @@ export default function PlotModal({ visible, plot, onSave, onDelete, onClose }: 
       >
         <SafeAreaView style={styles.pickerModalContainer}>
           <View style={styles.pickerModalHeader}>
-            <View>
-              <Text style={styles.pickerModalTitle}>Pilih Lokasi Petak</Text>
-              <Text style={styles.pickerModalSubtitle}>Tentukan titik pusat atau batas sawah</Text>
-            </View>
             <TouchableOpacity
               onPress={() => setShowLocationPicker(false)}
               style={styles.pickerModalCloseBtn}
+              activeOpacity={0.7}
             >
-              <Text style={styles.pickerModalCloseText}>✕ Tutup</Text>
+              <Text style={styles.pickerModalCloseIcon}>←</Text>
+              <Text style={styles.pickerModalCloseText}>Kembali</Text>
             </TouchableOpacity>
+            <View style={styles.pickerModalTitleWrap}>
+              <Text style={styles.pickerModalTitle}>Pilih Lokasi Petak</Text>
+              <Text style={styles.pickerModalSubtitle}>Tentukan titik pusat atau batas sawah</Text>
+            </View>
+            <View style={styles.pickerModalCloseSpacer} />
           </View>
 
           {/* Mode Switcher */}
@@ -623,10 +626,36 @@ const makeStyles = (colors: ThemeColors, fs: typeof import('../constants/theme')
       justifyContent: 'space-between',
       alignItems: 'center',
       paddingHorizontal: SPACING.md,
-      paddingVertical: SPACING.sm,
+      paddingVertical: SPACING.sm + 4,
       borderBottomWidth: 1,
       borderBottomColor: colors.borderLight,
       backgroundColor: colors.surface,
+      ...SHADOW.sm,
+    },
+    pickerModalCloseBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: SPACING.md,
+      paddingVertical: SPACING.sm + 2,
+      borderRadius: BORDER_RADIUS.md,
+      backgroundColor: colors.primaryLight,
+      gap: SPACING.xs,
+      minHeight: 44,
+      minWidth: 44,
+    },
+    pickerModalCloseIcon: {
+      fontSize: fs.lg,
+      fontWeight: FONT_WEIGHT.bold,
+      color: colors.primaryDark,
+    },
+    pickerModalCloseText: {
+      fontSize: fs.sm,
+      fontWeight: FONT_WEIGHT.bold,
+      color: colors.primaryDark,
+    },
+    pickerModalTitleWrap: {
+      flex: 1,
+      alignItems: 'center',
     },
     pickerModalTitle: {
       fontSize: fs.md,
@@ -636,17 +665,11 @@ const makeStyles = (colors: ThemeColors, fs: typeof import('../constants/theme')
     pickerModalSubtitle: {
       fontSize: fs.xs,
       color: colors.textLight,
+      marginTop: 1,
     },
-    pickerModalCloseBtn: {
-      paddingHorizontal: SPACING.sm + 2,
-      paddingVertical: SPACING.xs,
-      borderRadius: BORDER_RADIUS.sm,
-      backgroundColor: colors.borderLight,
-    },
-    pickerModalCloseText: {
-      fontSize: fs.sm,
-      fontWeight: FONT_WEIGHT.semibold,
-      color: colors.textSecondary,
+    pickerModalCloseSpacer: {
+      // Same approx width as the close button to keep title centered
+      width: 100,
     },
     pickerModeRow: {
       flexDirection: 'row',

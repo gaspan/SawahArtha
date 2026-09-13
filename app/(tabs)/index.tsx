@@ -320,6 +320,7 @@ export default function DashboardScreen() {
               plots={plots}
               onAddPlot={() => { setEditingPlot(null); setPlotModalVisible(true); }}
               onEditPlot={(p) => { setEditingPlot(p); setPlotModalVisible(true); }}
+              onDeletePlot={(p) => deletePlot(p.id)}
             />
 
             {/* KPI Metrics */}

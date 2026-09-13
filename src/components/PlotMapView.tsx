@@ -41,11 +41,36 @@ export default function PlotMapView({ plots, onPlotPress, showFullscreen = false
     );
   }
 
+  // Compute center from plots with location data so map starts at the right position
+  const plotCenter = React.useMemo(() => {
+    if (plotsWithLocation.length === 0) return undefined;
+    let lats: number[] = [];
+    let lngs: number[] = [];
+    for (const p of plotsWithLocation) {
+      if (p.location_type === 'polygon' && p.polygon_coords) {
+        try {
+          const coords = JSON.parse(p.polygon_coords) as { latitude: number; longitude: number }[];
+          coords.forEach(c => { lats.push(c.latitude); lngs.push(c.longitude); });
+        } catch {}
+      } else if (p.latitude && p.longitude) {
+        lats.push(p.latitude);
+        lngs.push(p.longitude);
+      }
+    }
+    if (lats.length === 0) return undefined;
+    return {
+      latitude: lats.reduce((a, b) => a + b, 0) / lats.length,
+      longitude: lngs.reduce((a, b) => a + b, 0) / lngs.length,
+    };
+  }, [plotsWithLocation]);
+
   return (
     <View style={[styles.container, showFullscreen && styles.fullscreen]}>
       <LeafletMap
         mode="view"
         plots={plotsWithLocation as PlotMapData[]}
+        initialCenter={plotCenter}
+        initialZoom={plotsWithLocation.length === 1 ? 17 : 15}
         onPlotPress={onPlotPress}
         showLayerToggle={true}
         style={styles.map}
